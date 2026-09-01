@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Menu Management - SachBite</title>
+<link rel="stylesheet" href="../css/dashboard.css" />
+<style>
+  .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
+  .menu-item-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .menu-item-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .menu-item-icon { font-size: 28px; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:10px; flex-shrink:0; }
+  .menu-item-name { font-weight: 700; font-size: 15px; }
+  .menu-item-cat { font-size: 12px; color: var(--text-gray); }
+  .menu-item-price { color: var(--primary); font-weight: 700; font-size: 16px; margin-bottom: 10px; }
+  .menu-item-actions { display: flex; gap: 8px; }
+  .menu-item-actions button { flex: 1; border-radius: 8px; padding: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1.5px solid var(--border); background: #fff; }
+  .btn-avail.on { border-color: var(--green); color: var(--green); }
+  .btn-avail.off { border-color: #d1d5db; color: var(--text-gray); }
+  .btn-edit-menu { border-color: var(--primary); color: var(--primary); }
+  .btn-del-menu { border-color: #fca5a5; color: var(--red); }
+
+  .modal-overlay { display:none; position: fixed; inset:0; background: rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index: 100; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background:#fff; border-radius: var(--radius); padding: 26px; width: 380px; max-width: 92vw; }
+  .modal-box h3 { margin-bottom: 16px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .form-group input, .form-group select { width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; outline:none; }
+  .modal-actions { display:flex; gap:10px; margin-top: 10px; }
+  .modal-actions button { flex:1; padding: 11px; border-radius: 10px; font-weight:700; cursor:pointer; }
+  .btn-save { background: var(--primary); color:#fff; border:none; }
+  .btn-cancel { background:#fff; border:1.5px solid var(--border); }
+
+  .btn-add-item { background: var(--primary); color:#fff; border:none; border-radius: 30px; padding: 12px 20px; font-weight:700; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebarRoot"></aside>
+
+<main class="main">
+  <div class="topbar" id="topbarRoot"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div>
+        <h2>Menu Management</h2>
+        <p>Apna menu add, edit ya remove karein.</p>
+      </div>
+      <button class="btn-add-item" id="addItemBtn">+ Add New Item</button>
+    </div>
+
+    <div class="menu-grid" id="menuGrid"></div>
+  </div>
+</main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3 id="modalTitle">Add New Item</h3>
+    <input type="hidden" id="itemId" />
+    <div class="form-group">
+      <label>Item Name</label>
+      <input type="text" id="itemName" placeholder="e.g. Veg Biryani" />
+    </div>
+    <div class="form-group">
+      <label>Price (₹)</label>
+      <input type="number" id="itemPrice" placeholder="e.g. 149" />
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="itemCategory">
+        <option>Main Course</option>
+        <option>Fast Food</option>
+        <option>Snacks</option>
+        <option>Dessert</option>
+        <option>Beverages</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Emoji / Icon</label>
+      <input type="text" id="itemIcon" placeholder="🍕" maxlength="4" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelModalBtn">Cancel</button>
+      <button class="btn-save" id="saveItemBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/admin-guard.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  renderSidebar("menu.html");
+  renderTopbar("Restaurant Dashboard");
+</script>
+<script src="../js/menu.js"></script>
+</body>
+</html>

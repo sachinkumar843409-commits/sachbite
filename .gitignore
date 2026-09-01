@@ -1,0 +1,5 @@
+node_modules/
+razorpay-config.js
+uploads/*
+!uploads/.gitkeep
+package-lock.json

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Offers - SachBite</title>
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .offer-public-card { background: linear-gradient(120deg, #fff6ee, #fff); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .offer-public-discount { background: var(--primary); color: #fff; font-weight: 800; font-size: 20px; padding: 14px 22px; border-radius: 14px; white-space: nowrap; }
+  .offer-public-title { font-weight: 700; font-size: 17px; margin-bottom: 6px; }
+  .offer-public-dates { color: var(--text-gray); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header class="topbar" id="headerRoot"></header>
+
+<section class="section container">
+  <div class="section-head"><h2>🏷️ Today's Offers</h2></div>
+  <div id="offersList"></div>
+</section>
+
+<footer>© 2026 SachBite. Food delivered with love ❤️ — <span id="footerLocation">Kanti, Muzaffarpur</span></footer>
+
+<script src="js/images.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main-cart.js"></script>
+<script src="js/customer-layout.js"></script>
+<script>renderCustomerHeader("offers.html");</script>
+<script src="js/site-settings.js"></script>
+<script src="js/offers-public.js"></script>
+</body>
+</html>

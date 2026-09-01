@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard - SachBite</title>
+<link rel="stylesheet" href="../css/dashboard.css" />
+<style>
+  .grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; margin-top: 20px; }
+  .panel { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
+  .panel h3 { font-size: 16px; margin-bottom: 18px; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 12px; height: 180px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .bar-fill { width: 100%; max-width: 34px; background: linear-gradient(180deg, var(--primary), #ffb37a); border-radius: 8px 8px 0 0; transition: height 0.4s; }
+  .bar-label { font-size: 11px; color: var(--text-gray); margin-top: 8px; }
+  .bar-value { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+  .list-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .list-row:last-child { border-bottom: none; }
+  .rank { width: 24px; height: 24px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-right: 10px; }
+  .rank-name { display: flex; align-items: center; }
+  .compare-row { display: flex; gap: 14px; margin-top: 16px; }
+  .compare-card { flex: 1; background: var(--bg); border-radius: 12px; padding: 14px; text-align: center; }
+  .compare-card .t { font-size: 12px; color: var(--text-gray); }
+  .compare-card .v { font-size: 20px; font-weight: 800; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebarRoot"></aside>
+
+<main class="main">
+  <div class="topbar" id="topbarRoot"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div>
+        <h2>Dashboard</h2>
+        <p>Aapke restaurant ka overview, ek nazar me.</p>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon orange">🛍️</div>
+          <div>
+            <div class="label">Today's Orders</div>
+            <div class="value" id="todayOrders">0</div>
+            <div class="sub" id="pendingOrders">0 pending</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">₹</div>
+          <div>
+            <div class="label">Today's Sales</div>
+            <div class="value" id="todaySales">Rs 0</div>
+            <div class="sub">Total earnings today</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>📊 Last 7 Days Sales</h3>
+        <div class="bar-chart" id="barChart"></div>
+        <div class="compare-row">
+          <div class="compare-card">
+            <div class="t">Today vs Yesterday (Orders)</div>
+            <div class="v" id="orderCompare">-</div>
+          </div>
+          <div class="compare-card">
+            <div class="t">Today vs Yesterday (Sales)</div>
+            <div class="v" id="salesCompare">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>🔥 Top Selling Items</h3>
+        <div id="topItemsList"><p style="color:var(--text-gray); font-size:14px;">Loading...</p></div>
+
+        <h3 style="margin-top:24px;">⏰ Peak Order Hours</h3>
+        <div id="peakHoursList"><p style="color:var(--text-gray); font-size:14px;">Loading...</p></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../js/admin-guard.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  renderSidebar("overview.html");
+  renderTopbar("Restaurant Dashboard");
+</script>
+<script src="../js/overview.js"></script>
+</body>
+</html>

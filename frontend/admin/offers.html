@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Offers - SachBite</title>
+<link rel="stylesheet" href="../css/dashboard.css" />
+<style>
+  .offer-card-admin { background:#fff; border:1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; display:flex; align-items:center; justify-content:space-between; gap: 16px; flex-wrap: wrap; }
+  .offer-title { font-weight:700; font-size:16px; margin-bottom:6px; }
+  .offer-dates { font-size:13px; color:var(--text-gray); }
+  .offer-discount { background: var(--primary-light); color: var(--primary); font-weight:700; font-size:13px; padding:6px 14px; border-radius:20px; display:inline-block; margin-bottom:6px; }
+  .offer-status { font-size:12px; font-weight:700; padding:5px 12px; border-radius:20px; }
+  .offer-status.active { background: var(--green-bg); color: var(--green); }
+  .offer-status.expired { background:#fee2e2; color:var(--red); }
+  .offer-actions { display:flex; gap:8px; }
+  .offer-actions button { border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; border:1.5px solid var(--border); background:#fff; }
+  .btn-edit-menu { border-color: var(--primary); color: var(--primary); }
+  .btn-del-menu { border-color: #fca5a5; color: var(--red); }
+  .btn-add-item { background: var(--primary); color:#fff; border:none; border-radius: 30px; padding: 12px 20px; font-weight:700; cursor:pointer; }
+
+  .modal-overlay { display:none; position: fixed; inset:0; background: rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index: 100; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background:#fff; border-radius: var(--radius); padding: 26px; width: 380px; max-width: 92vw; }
+  .modal-box h3 { margin-bottom: 16px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .form-group input { width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; outline:none; }
+  .modal-actions { display:flex; gap:10px; margin-top: 10px; }
+  .modal-actions button { flex:1; padding: 11px; border-radius: 10px; font-weight:700; cursor:pointer; }
+  .btn-save { background: var(--primary); color:#fff; border:none; }
+  .btn-cancel { background:#fff; border:1.5px solid var(--border); }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebarRoot"></aside>
+
+<main class="main">
+  <div class="topbar" id="topbarRoot"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div>
+        <h2>Offers</h2>
+        <p>Discounts aur promo codes manage karein.</p>
+      </div>
+      <button class="btn-add-item" id="addOfferBtn">+ Add New Offer</button>
+    </div>
+
+    <div id="offersContainer"></div>
+  </div>
+</main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3>Add New Offer</h3>
+    <input type="hidden" id="offerId" />
+    <div class="form-group">
+      <label>Offer Title</label>
+      <input type="text" id="offerTitle" placeholder="e.g. Flat 30% OFF on Burgers" />
+    </div>
+    <div class="form-group">
+      <label>Discount Label</label>
+      <input type="text" id="offerDiscount" placeholder="e.g. 30% OFF" />
+    </div>
+    <div class="form-group">
+      <label>Valid From</label>
+      <input type="date" id="offerFrom" />
+    </div>
+    <div class="form-group">
+      <label>Valid Until</label>
+      <input type="date" id="offerUntil" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelModalBtn">Cancel</button>
+      <button class="btn-save" id="saveOfferBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/admin-guard.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  renderSidebar("offers.html");
+  renderTopbar("Restaurant Dashboard");
+</script>
+<script src="../js/offers.js"></script>
+</body>
+</html>

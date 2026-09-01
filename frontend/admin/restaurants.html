@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Restaurants - SachBite Admin</title>
+<link rel="stylesheet" href="../css/dashboard.css" />
+<style>
+  .rest-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; margin-bottom: 30px; }
+  .rest-admin-card { background:#fff; border:1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .rest-admin-top { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .rest-admin-thumb { width: 52px; height: 52px; border-radius: 12px; overflow:hidden; background: var(--primary-light); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .rest-admin-thumb img { width:100%; height:100%; object-fit:cover; }
+  .rest-admin-name { font-weight:700; font-size:15px; }
+  .rest-admin-tags { font-size:12px; color:var(--text-gray); }
+  .rest-admin-meta { display:flex; gap:10px; font-size:12px; color:var(--text-gray); font-weight:600; margin-bottom:12px; }
+  .rest-admin-badge { background: var(--primary-light); color:var(--primary); font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; display:inline-block; margin-bottom:12px; }
+  .rest-admin-actions { display:flex; gap:8px; }
+  .rest-admin-actions button { flex:1; border-radius:8px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; border:1.5px solid var(--border); background:#fff; }
+  .btn-edit-menu { border-color: var(--primary); color: var(--primary); }
+  .btn-del-menu { border-color: #fca5a5; color: var(--red); }
+  .btn-add-item { background: var(--primary); color:#fff; border:none; border-radius: 30px; padding: 12px 20px; font-weight:700; cursor:pointer; }
+
+  .modal-overlay { display:none; position: fixed; inset:0; background: rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index: 100; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background:#fff; border-radius: var(--radius); padding: 26px; width: 420px; max-width: 92vw; max-height: 88vh; overflow-y:auto; }
+  .modal-box h3 { margin-bottom: 16px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .form-group input { width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; outline:none; }
+  .modal-actions { display:flex; gap:10px; margin-top: 10px; }
+  .modal-actions button { flex:1; padding: 11px; border-radius: 10px; font-weight:700; cursor:pointer; }
+  .btn-save { background: var(--primary); color:#fff; border:none; }
+  .btn-cancel { background:#fff; border:1.5px solid var(--border); }
+
+  /* Sales report table */
+  .report-table { width:100%; border-collapse: collapse; background:#fff; border:1px solid var(--border); border-radius: var(--radius); overflow:hidden; }
+  .report-table th, .report-table td { text-align:left; padding: 14px 18px; font-size:14px; border-bottom:1px solid var(--border); }
+  .report-table th { background: var(--bg); color: var(--text-gray); font-size:12px; text-transform:uppercase; }
+  .report-table tr:last-child td { border-bottom:none; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebarRoot"></aside>
+
+<main class="main">
+  <div class="topbar" id="topbarRoot"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div>
+        <h2>Restaurants</h2>
+        <p>Restaurants add/edit/delete karein aur unka sales track karein.</p>
+      </div>
+      <button class="btn-add-item" id="addRestBtn">+ Add New Restaurant</button>
+    </div>
+
+    <div class="rest-admin-grid" id="restGrid"></div>
+
+    <div class="page-head">
+      <div>
+        <h2 style="font-size:20px;">📊 Restaurant-wise Sales Report</h2>
+        <p>Kis restaurant se kitna order/revenue aaya hai.</p>
+      </div>
+    </div>
+    <table class="report-table">
+      <thead>
+        <tr><th>Restaurant</th><th>Total Orders</th><th>Items Sold</th><th>Revenue</th></tr>
+      </thead>
+      <tbody id="reportBody"></tbody>
+    </table>
+  </div>
+</main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3 id="modalTitle">Add New Restaurant</h3>
+    <input type="hidden" id="restId" />
+    <div class="form-group">
+      <label>Restaurant Name</label>
+      <input type="text" id="restName" placeholder="e.g. Spice Villa" />
+    </div>
+    <div class="form-group">
+      <label>Tags (cuisine types)</label>
+      <input type="text" id="restTags" placeholder="e.g. North Indian • Chinese" />
+    </div>
+    <div class="form-group">
+      <label>Rating (out of 5)</label>
+      <input type="number" step="0.1" min="0" max="5" id="restRating" placeholder="4.5" />
+    </div>
+    <div class="form-group">
+      <label>Review Count Text</label>
+      <input type="text" id="restReviews" placeholder="e.g. 500+" />
+    </div>
+    <div class="form-group">
+      <label>Delivery Time</label>
+      <input type="text" id="restTime" placeholder="e.g. 25-35 min" />
+    </div>
+    <div class="form-group">
+      <label>Discount Badge (dikhne wala offer text)</label>
+      <input type="text" id="restBadge" placeholder="e.g. 20% OFF, FREE DELIVERY" />
+    </div>
+    <hr style="border:none; border-top:1px solid var(--border); margin: 18px 0;" />
+    <p style="font-size:12px; color:var(--text-gray); font-weight:600; margin-bottom:12px;">📩 Order Notification — jab is restaurant ka order aaye to yahan bheja jayega</p>
+    <div class="form-group">
+      <label>Contact Email (order notification yahan jayegi)</label>
+      <input type="email" id="restContactEmail" placeholder="e.g. restaurant@example.com" />
+    </div>
+    <div class="form-group">
+      <label>Contact Phone (record ke liye)</label>
+      <input type="tel" id="restContactPhone" placeholder="e.g. 9876543210" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelModalBtn">Cancel</button>
+      <button class="btn-save" id="saveRestBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/admin-guard.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  renderSidebar("restaurants.html");
+  renderTopbar("Restaurant Dashboard");
+</script>
+<script src="../js/restaurants-admin.js"></script>
+</body>
+</html>

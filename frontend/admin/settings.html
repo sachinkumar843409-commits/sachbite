@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings - SachBite</title>
+<link rel="stylesheet" href="../css/dashboard.css" />
+<style>
+  .settings-wrap { max-width: 560px; }
+  .panel { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+  .panel h3 { font-size: 16px; margin-bottom: 18px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .form-group input { width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; outline:none; }
+  .row-2 { display:flex; gap: 14px; }
+  .row-2 .form-group { flex:1; }
+  .btn-save-settings { background: var(--primary); color:#fff; border:none; border-radius: 30px; padding: 12px 24px; font-weight:700; cursor:pointer; }
+  .success-msg { color: var(--green); font-size: 13px; font-weight: 600; margin-top: 10px; display:none; }
+  .error-msg { color: var(--red); font-size: 13px; font-weight: 600; margin-top: 10px; display:none; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebarRoot"></aside>
+
+<main class="main">
+  <div class="topbar" id="topbarRoot"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div>
+        <h2>Settings</h2>
+        <p>Restaurant ki basic settings manage karein.</p>
+      </div>
+    </div>
+
+    <div class="settings-wrap">
+      <div class="panel">
+        <h3>🏪 Restaurant Info</h3>
+        <div class="form-group">
+          <label>Restaurant Name</label>
+          <input type="text" id="restaurantName" />
+        </div>
+        <div class="form-group">
+          <label>Location (header pill, hero section aur footer me dikhti hai)</label>
+          <input type="text" id="address" />
+          <div style="font-size:11.5px; color:var(--text-gray); margin-top:4px;">Chhota area/city naam yahan bharein — jaise "Kanti, Muzaffarpur". Save karne ke baad website refresh karke check karein.</div>
+        </div>
+        <div class="row-2">
+          <div class="form-group">
+            <label>Opening Time</label>
+            <input type="time" id="openTime" />
+          </div>
+          <div class="form-group">
+            <label>Closing Time</label>
+            <input type="time" id="closeTime" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Delivery Radius (km)</label>
+          <input type="number" id="deliveryRadiusKm" />
+        </div>
+        <div class="form-group">
+          <label>Admin Name</label>
+          <input type="text" id="adminName" />
+        </div>
+        <button class="btn-save-settings" id="saveInfoBtn">Save Changes</button>
+        <div class="success-msg" id="infoSuccess">✅ Settings saved!</div>
+      </div>
+
+      <div class="panel">
+        <h3>ℹ️ About Us (Home page par dikhta hai)</h3>
+        <div class="form-group">
+          <label>About Text</label>
+          <textarea id="aboutText" rows="4" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; outline:none; font-family:inherit;" placeholder="Apne restaurant/business ke baare me likhein..."></textarea>
+        </div>
+        <button class="btn-save-settings" id="saveAboutBtn">Save About Text</button>
+        <div class="success-msg" id="aboutSuccess">✅ About text saved!</div>
+      </div>
+
+      <div class="panel">
+        <h3>📧 Contact Info (Home page par dikhta hai)</h3>
+        <div class="form-group">
+          <label>Contact Email</label>
+          <input type="email" id="contactEmail" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" id="contactPhone" placeholder="e.g. +91 93040 96306" />
+        </div>
+        <div class="form-group">
+          <label>Full Address</label>
+          <input type="text" id="contactAddress" placeholder="e.g. Kanti, Muzaffarpur, Bihar - 843109" />
+        </div>
+        <div class="form-group">
+          <label>Support Hours</label>
+          <input type="text" id="supportHours" placeholder="e.g. 24x7 Support" />
+        </div>
+        <button class="btn-save-settings" id="saveContactBtn">Save Contact Info</button>
+        <div class="success-msg" id="contactSuccess">✅ Contact info saved!</div>
+      </div>
+
+      <div class="panel">
+        <h3>🔥 Home Page Offer Banner</h3>
+        <p style="font-size:12.5px; color:var(--text-gray); margin-top:-12px; margin-bottom:14px;">Yeh hero section ke top-right corner me dikhta hai (jaise "🔥 TODAY'S OFFER — Up to 50% OFF").</p>
+        <div class="form-group">
+          <label>Small Tag</label>
+          <input type="text" id="heroOfferTag" placeholder="🔥 TODAY'S OFFER" />
+        </div>
+        <div class="form-group">
+          <label>Main Offer Text</label>
+          <input type="text" id="heroOfferTitle" placeholder="Up to 50% OFF" />
+        </div>
+        <div class="form-group">
+          <label>Subtitle</label>
+          <input type="text" id="heroOfferSubtitle" placeholder="On Selected Items" />
+        </div>
+        <button class="btn-save-settings" id="saveOfferBtn">Save Offer Banner</button>
+        <div class="success-msg" id="offerSuccess">✅ Offer banner updated!</div>
+      </div>
+
+      <div class="panel">
+        <h3>🔒 Change Admin Password</h3>
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" id="currentPassword" placeholder="Current password" />
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="newPassword" placeholder="New password" />
+        </div>
+        <button class="btn-save-settings" id="savePasswordBtn">Update Password</button>
+        <div class="success-msg" id="passSuccess">✅ Password updated!</div>
+        <div class="error-msg" id="passError">❌ Current password galat hai.</div>
+      </div>
+
+      <div class="panel">
+        <h3>🛡️ Forgot Password Recovery</h3>
+        <p style="font-size:12.5px; color:var(--text-gray); margin-top:-12px; margin-bottom:14px;">Agar aap password bhool jaayein, to login page par "Password bhool gaye?" se yeh sawaal-jawaab reset karne ke kaam aayega. Isse set karne ke liye current password bharna zaroori hai.</p>
+        <div class="form-group">
+          <label>Security Question</label>
+          <input type="text" id="securityQuestion" placeholder="e.g. Aapke pehle pet ka naam kya tha?" />
+        </div>
+        <div class="form-group">
+          <label>Answer</label>
+          <input type="text" id="securityAnswer" placeholder="Iska jawaab yaad rakhna zaroori hai" />
+        </div>
+        <div class="form-group">
+          <label>Current Password (confirm karne ke liye)</label>
+          <input type="password" id="securityCurrentPassword" placeholder="Current password" />
+        </div>
+        <button class="btn-save-settings" id="saveSecurityBtn">Security Question Save Karein</button>
+        <div class="success-msg" id="securitySuccess">✅ Security question saved!</div>
+        <div class="error-msg" id="securityError"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../js/admin-guard.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  renderSidebar("settings.html");
+  renderTopbar("Restaurant Dashboard");
+</script>
+<script src="../js/settings.js"></script>
+</body>
+</html>

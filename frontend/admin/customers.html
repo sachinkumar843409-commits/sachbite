@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Customers - SachBite</title>
+<link rel="stylesheet" href="../css/dashboard.css" />
+<style>
+  .cust-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .cust-table th, .cust-table td { text-align: left; padding: 14px 18px; font-size: 14px; border-bottom: 1px solid var(--border); }
+  .cust-table th { background: var(--bg); color: var(--text-gray); font-size: 12px; text-transform: uppercase; }
+  .cust-table tr:last-child td { border-bottom: none; }
+  .cust-table tr:hover { background: #fafafa; cursor: pointer; }
+  .repeat-tag { background: var(--green-bg); color: var(--green); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .history-panel { display:none; background:#fff; border:1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 16px; }
+  .history-panel.show { display:block; }
+  .history-row { display:flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebarRoot"></aside>
+
+<main class="main">
+  <div class="topbar" id="topbarRoot"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div>
+        <h2>Customers</h2>
+        <p>Sabhi customers jo order kar chuke hain.</p>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon orange">👥</div>
+          <div>
+            <div class="label">Total Customers</div>
+            <div class="value" id="totalCustomers">0</div>
+            <div class="sub">Unique customers</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <table class="cust-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Address</th>
+          <th>Orders</th>
+          <th>Total Spent</th>
+        </tr>
+      </thead>
+      <tbody id="custTableBody"></tbody>
+    </table>
+
+    <div class="history-panel" id="historyPanel">
+      <h3 id="historyTitle">Order History</h3>
+      <div id="historyList"></div>
+    </div>
+  </div>
+</main>
+
+<script src="../js/admin-guard.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  renderSidebar("customers.html");
+  renderTopbar("Restaurant Dashboard");
+</script>
+<script src="../js/customers.js"></script>
+</body>
+</html>

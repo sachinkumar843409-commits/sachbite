@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Login - SachBite</title>
+<style>
+  :root {
+    --primary: #ff7a1a;
+    --primary-dark: #e85d04;
+    --text-dark: #1e1e1e;
+    --text-gray: #6b7280;
+    --border: #eee;
+    --green: #16a34a;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: linear-gradient(135deg, #fff6ee, #ffe9d6);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-box {
+    background: #fff;
+    border-radius: 20px;
+    padding: 40px 36px;
+    width: 380px;
+    max-width: 92vw;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .logo { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .logo span { color: var(--primary); }
+  .tagline { font-size: 13px; color: var(--text-gray); margin-bottom: 26px; }
+  .form-group { text-align: left; margin-bottom: 16px; }
+  .form-group label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .form-group input { width:100%; padding: 12px 16px; border:1px solid var(--border); border-radius: 10px; font-size:14px; outline:none; }
+  .btn-login { width:100%; background: var(--primary); color:#fff; border:none; padding: 13px; border-radius: 30px; font-weight:700; font-size:15px; cursor:pointer; margin-top: 8px; }
+  .btn-login:hover { background: var(--primary-dark); }
+  .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+  .error-msg { color:#dc2626; font-size:13px; font-weight:600; margin-top:12px; display:none; }
+  .success-msg { color: var(--green); font-size:13px; font-weight:600; margin-top:12px; display:none; }
+  .back-link { display:block; margin-top: 18px; font-size: 13px; color: var(--text-gray); text-decoration:none; }
+  .forgot-link { display:block; margin-top: 14px; font-size: 13px; color: var(--primary); text-decoration:none; font-weight: 600; cursor: pointer; }
+  .hidden { display: none; }
+  .question-box { background: #f9f9f9; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--text-dark); margin-bottom: 14px; text-align: left; }
+</style>
+</head>
+<body>
+
+<div class="login-box">
+  <div class="logo">Sach<span>Bite</span> 🛵</div>
+  <div class="tagline">Restaurant Admin Panel</div>
+
+  <!-- ===== LOGIN FORM ===== -->
+  <div id="loginView">
+    <div class="form-group">
+      <label>Admin Password</label>
+      <input type="password" id="password" placeholder="Enter admin password" />
+    </div>
+
+    <button class="btn-login" id="loginBtn">Login</button>
+    <div class="error-msg" id="errorMsg"></div>
+
+    <a class="forgot-link" id="showForgotBtn">Password bhool gaye?</a>
+    <a href="../index.html" class="back-link">← Website par wapas jaayein</a>
+  </div>
+
+  <!-- ===== FORGOT PASSWORD — STEP 1: Security Question ===== -->
+  <div id="forgotView" class="hidden">
+    <div id="questionBox" class="question-box"></div>
+
+    <div class="form-group">
+      <label>Aapka Jawaab</label>
+      <input type="text" id="securityAnswer" placeholder="Security question ka jawaab" />
+    </div>
+    <div class="form-group">
+      <label>Naya Password</label>
+      <input type="password" id="newPassword" placeholder="Kam se kam 6 characters" />
+    </div>
+
+    <button class="btn-login" id="resetPasswordBtn">Password Reset Karein</button>
+    <div class="error-msg" id="forgotErrorMsg"></div>
+    <div class="success-msg" id="forgotSuccessMsg"></div>
+
+    <a class="forgot-link" id="backToLoginBtn">← Login par wapas jaayein</a>
+  </div>
+</div>
+
+<script>
+  const API = "/api";
+
+  // ---------- Normal Login ----------
+  async function attemptLogin() {
+    const password = document.getElementById("password").value;
+    const errorMsg = document.getElementById("errorMsg");
+    const btn = document.getElementById("loginBtn");
+    errorMsg.style.display = "none";
+
+    if (!password) {
+      alert("Password daalein.");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Checking...";
+
+    try {
+      const res = await fetch(`${API}/admin/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorMsg.textContent = "❌ " + (data.error || "Galat password.");
+        errorMsg.style.display = "block";
+        btn.disabled = false;
+        btn.textContent = "Login";
+        return;
+      }
+
+      localStorage.setItem("sachbite_admin_token", data.token);
+      window.location.href = "overview.html";
+    } catch (e) {
+      alert("Server se connect nahi ho paya. Server chal raha hai check karein.");
+      btn.disabled = false;
+      btn.textContent = "Login";
+    }
+  }
+
+  document.getElementById("loginBtn").addEventListener("click", attemptLogin);
+  document.getElementById("password").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") attemptLogin();
+  });
+
+  // ---------- Forgot Password ----------
+  document.getElementById("showForgotBtn").addEventListener("click", async () => {
+    document.getElementById("loginView").classList.add("hidden");
+    document.getElementById("forgotView").classList.remove("hidden");
+
+    const questionBox = document.getElementById("questionBox");
+    questionBox.textContent = "Loading...";
+
+    try {
+      const res = await fetch(`${API}/admin/security-question`);
+      const data = await res.json();
+      if (!res.ok) {
+        questionBox.textContent = "⚠️ " + data.error;
+        document.getElementById("securityAnswer").disabled = true;
+        document.getElementById("newPassword").disabled = true;
+        document.getElementById("resetPasswordBtn").disabled = true;
+        return;
+      }
+      questionBox.textContent = "❓ " + data.question;
+    } catch (e) {
+      questionBox.textContent = "Server se connect nahi ho paya.";
+    }
+  });
+
+  document.getElementById("backToLoginBtn").addEventListener("click", () => {
+    document.getElementById("forgotView").classList.add("hidden");
+    document.getElementById("loginView").classList.remove("hidden");
+    document.getElementById("forgotErrorMsg").style.display = "none";
+    document.getElementById("forgotSuccessMsg").style.display = "none";
+  });
+
+  document.getElementById("resetPasswordBtn").addEventListener("click", async () => {
+    const answer = document.getElementById("securityAnswer").value.trim();
+    const newPassword = document.getElementById("newPassword").value;
+    const errorMsg = document.getElementById("forgotErrorMsg");
+    const successMsg = document.getElementById("forgotSuccessMsg");
+    errorMsg.style.display = "none";
+    successMsg.style.display = "none";
+
+    if (!answer || !newPassword) {
+      errorMsg.textContent = "Jawaab aur naya password dono bharein.";
+      errorMsg.style.display = "block";
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/admin/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answer, newPassword }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorMsg.textContent = "❌ " + data.error;
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      successMsg.textContent = "✅ Password reset ho gaya! Ab naye password se login karein.";
+      successMsg.style.display = "block";
+      setTimeout(() => {
+        document.getElementById("backToLoginBtn").click();
+      }, 2000);
+    } catch (e) {
+      errorMsg.textContent = "Server se connect nahi ho paya.";
+      errorMsg.style.display = "block";
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Restaurants - SachBite</title>
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .page-header { padding: 32px 0 10px; }
+  .page-header h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .filter-search { display:flex; gap: 10px; max-width: 480px; margin: 18px 0 8px; }
+  .filter-search input { flex:1; padding: 12px 16px; border:1px solid var(--border); border-radius: 30px; outline:none; font-size:14px; }
+</style>
+</head>
+<body>
+
+<header class="topbar" id="headerRoot"></header>
+
+<section class="section container">
+  <div class="page-header">
+    <h1>🍴 All Restaurants</h1>
+    <p style="color:var(--text-gray);">Apni pasand ka restaurant chunein aur order karein.</p>
+    <div class="filter-search">
+      <input type="text" id="filterInput" placeholder="Search restaurant or cuisine..." />
+    </div>
+  </div>
+
+  <div class="restaurant-row" id="allRestaurantsRow" style="margin-top:20px;"></div>
+</section>
+
+<footer>© 2026 SachBite. Food delivered with love ❤️ — <span id="footerLocation">Kanti, Muzaffarpur</span></footer>
+
+<script src="js/images.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main-cart.js"></script>
+<script src="js/customer-layout.js"></script>
+<script>renderCustomerHeader("restaurants.html");</script>
+<script src="js/site-settings.js"></script>
+<script src="js/restaurants.js"></script>
+</body>
+</html>

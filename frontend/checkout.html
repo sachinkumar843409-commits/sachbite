@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Checkout - SachBite</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .checkout-wrap { max-width: 560px; margin: 40px auto; padding: 0 20px; }
+  .checkout-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:26px; margin-bottom:20px; }
+  .checkout-card h3 { margin-bottom:16px; }
+  .cart-item-row { display:flex; justify-content:space-between; align-items:center; font-size:14px; margin-bottom:12px; }
+  .cart-item-row .qty-btns button { border:1px solid var(--border); background:#fff; width:26px; height:26px; border-radius:6px; cursor:pointer; }
+  .form-group { margin-bottom:14px; }
+  .form-group label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .form-group input, .form-group textarea { width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; outline:none; }
+  .total-line { display:flex; justify-content:space-between; font-weight:700; font-size:16px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); }
+  .btn-location { width:100%; background:#fff; border:1.5px solid var(--primary); color:var(--primary); border-radius:10px; padding:11px; font-weight:700; font-size:13px; cursor:pointer; margin-bottom:14px; }
+  .btn-location:hover { background: var(--primary-light); }
+  #locationPreviewMap { height: 180px; border-radius: 12px; margin-bottom: 14px; display:none; }
+  .location-status { font-size:12px; color:var(--green); font-weight:600; margin-bottom:10px; display:none; }
+
+  .payment-options { display:flex; flex-direction:column; gap:10px; }
+  .payment-opt { display:flex; align-items:center; gap:12px; border:1.5px solid var(--border); border-radius:10px; padding:13px 16px; cursor:pointer; font-weight:600; font-size:14px; transition:0.15s; }
+  .payment-opt:hover { border-color: var(--primary); }
+  .payment-opt.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+  .payment-opt input { accent-color: var(--primary); width:16px; height:16px; }
+  .payment-opt .icon { font-size:18px; }
+  .payment-note { font-size:11.5px; color:var(--text-gray); margin-top:6px; }
+</style>
+</head>
+<body>
+
+<header class="topbar" id="headerRoot"></header>
+
+<div class="checkout-wrap">
+  <div class="checkout-card">
+    <h3>🛒 Your Cart</h3>
+    <div id="cartItems"></div>
+    <div class="total-line"><span>Item Total</span><span id="itemTotal">₹0</span></div>
+    <div class="total-line" style="color:var(--green); font-weight:600;"><span>Delivery</span><span>FREE</span></div>
+    <div class="total-line"><span>Grand Total</span><span id="grandTotal">₹0</span></div>
+  </div>
+
+  <div class="checkout-card">
+    <h3>📍 Delivery Details</h3>
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" id="custName" placeholder="Your full name" />
+    </div>
+    <div class="form-group">
+      <label>Phone</label>
+      <input type="text" id="custPhone" placeholder="Phone number" />
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <textarea id="custAddress" rows="2" placeholder="Delivery address"></textarea>
+    </div>
+
+    <button class="btn-location" id="useLocationBtn">📍 Use My Current Location (delivery tracking ke liye)</button>
+    <div class="location-status" id="locationStatus">✅ Location captured! Delivery boy isi jagah par delivery karega.</div>
+    <div id="locationPreviewMap"></div>
+  </div>
+
+  <div class="checkout-card">
+    <h3>💳 Payment Method</h3>
+    <div class="payment-options" id="paymentOptions">
+      <label class="payment-opt selected">
+        <input type="radio" name="payment" value="Cash on Delivery" checked />
+        <span class="icon">💵</span> Cash on Delivery
+      </label>
+      <label class="payment-opt">
+        <input type="radio" name="payment" value="UPI" />
+        <span class="icon">📱</span> UPI (Google Pay / PhonePe / Paytm)
+      </label>
+      <label class="payment-opt">
+        <input type="radio" name="payment" value="Credit/Debit Card" />
+        <span class="icon">💳</span> Credit / Debit Card
+      </label>
+    </div>
+    <div class="payment-note">UPI/Card select karne par Razorpay ka secure payment window khulega (abhi Test Mode me hai — real paise nahi katenge).</div>
+    <button class="btn btn-primary" style="width:100%; padding:14px; margin-top:16px;" id="placeOrderBtn">Place Order</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="js/images.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main-cart.js"></script>
+<script src="js/customer-layout.js"></script>
+<script>renderCustomerHeader("checkout.html");</script>
+<script src="js/site-settings.js"></script>
+<script src="js/checkout.js"></script>
+</body>
+</html>

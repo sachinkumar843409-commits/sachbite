@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Appearance - SachBite</title>
+<link rel="stylesheet" href="../css/dashboard.css" />
+<style>
+  .appear-section { background:#fff; border:1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 22px; }
+  .appear-section h3 { font-size: 16px; margin-bottom: 4px; }
+  .appear-section .sub { font-size: 13px; color: var(--text-gray); margin-bottom: 18px; }
+
+  /* Big single-image slots (hero / banner) */
+  .slot-row { display:flex; gap: 20px; flex-wrap: wrap; }
+  .slot-card { flex: 1; min-width: 260px; border: 1.5px dashed var(--border); border-radius: 14px; padding: 14px; }
+  .slot-card h4 { font-size: 13px; font-weight:700; margin-bottom: 10px; color: var(--text-dark); }
+  .slot-preview { width: 100%; height: 150px; border-radius: 10px; background: var(--bg) center/cover no-repeat; display:flex; align-items:center; justify-content:center; color: var(--text-gray); font-size: 12px; border: 1px solid var(--border); margin-bottom: 10px; overflow:hidden; }
+  .slot-preview img { width:100%; height:100%; object-fit:cover; }
+  .slot-actions { display:flex; gap:8px; }
+
+  /* Grid of many items (restaurants / menu / offers) */
+  .photo-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+  .photo-card { border:1px solid var(--border); border-radius: 12px; overflow:hidden; }
+  .photo-card .thumb { width:100%; height: 110px; background: var(--bg) center/cover no-repeat; display:flex; align-items:center; justify-content:center; font-size: 34px; color: var(--text-gray); }
+  .photo-card .thumb img { width:100%; height:100%; object-fit:cover; }
+  .photo-card .meta { padding: 10px 12px; }
+  .photo-card .meta .pname { font-weight:700; font-size:13px; margin-bottom: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .photo-card .meta .pactions { display:flex; gap:6px; }
+
+  .btn-mini { border-radius: 8px; padding: 7px 12px; font-size:12px; font-weight:700; cursor:pointer; border:1.5px solid var(--border); background:#fff; flex:1; }
+  .btn-mini.primary { border-color: var(--primary); color: var(--primary); }
+  .btn-mini.danger { border-color: #fca5a5; color: var(--red); }
+  .btn-mini:hover { filter: brightness(0.97); }
+
+  .empty-note { color: var(--text-gray); font-size: 13px; }
+
+  /* ---------- File Manager Modal ---------- */
+  .fm-overlay { display:none; position: fixed; inset:0; background: rgba(0,0,0,0.45); align-items:center; justify-content:center; z-index: 500; padding: 20px; }
+  .fm-overlay.show { display:flex; }
+  .fm-box { background:#fff; border-radius: var(--radius); width: 720px; max-width: 96vw; max-height: 88vh; display:flex; flex-direction:column; overflow:hidden; }
+  .fm-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .fm-head h3 { font-size:16px; }
+  .fm-close { background:none; border:none; font-size: 20px; cursor:pointer; color: var(--text-gray); }
+
+  .fm-dropzone { margin: 18px 22px 0; border: 2px dashed var(--primary); background: var(--primary-light); border-radius: 12px; padding: 22px; text-align:center; cursor:pointer; transition: background .15s; }
+  .fm-dropzone.drag { background: #ffe3cc; }
+  .fm-dropzone p { font-size: 13px; color: var(--text-gray); margin-top: 4px; }
+  .fm-dropzone strong { color: var(--primary); }
+  .fm-upload-status { margin: 10px 22px 0; font-size: 12.5px; font-weight:600; color: var(--primary); display:none; }
+
+  .fm-body { padding: 18px 22px 22px; overflow-y:auto; flex:1; }
+  .fm-body h4 { font-size: 13px; font-weight:700; margin-bottom: 12px; color: var(--text-gray); text-transform:uppercase; letter-spacing:.03em; }
+  .fm-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+  .fm-item { position: relative; border-radius: 10px; overflow: hidden; border: 2px solid transparent; cursor: pointer; aspect-ratio: 1/1; background: var(--bg); }
+  .fm-item:hover { border-color: var(--primary); }
+  .fm-item img { width:100%; height:100%; object-fit:cover; display:block; }
+  .fm-item .fm-del { position:absolute; top:4px; right:4px; background: rgba(0,0,0,0.55); color:#fff; border:none; width:22px; height:22px; border-radius:50%; font-size: 12px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .fm-item .fm-del:hover { background: var(--red); }
+
+  input[type=file] { display:none; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebarRoot"></aside>
+
+<main class="main">
+  <div class="topbar" id="topbarRoot"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div>
+        <h2>Appearance / Customization</h2>
+        <p>Hero image, banner, restaurant, menu aur offer photos — sab yahan se manage karein.</p>
+      </div>
+    </div>
+
+    <!-- Site Images -->
+    <div class="appear-section">
+      <h3>🖼️ Site Images</h3>
+      <div class="sub">Home page ka hero image aur bottom promo banner.</div>
+      <div class="slot-row">
+        <div class="slot-card">
+          <h4>Hero Background (poora hero section, text ke peeche bhi)</h4>
+          <div class="slot-preview" id="heroPreview">Koi image nahi — default gradient dikh raha hai</div>
+          <div class="slot-actions">
+            <button class="btn-mini primary" onclick="openPickerFor('hero')">🖼️ Change Image</button>
+            <button class="btn-mini danger" onclick="clearSlot('hero')">✖ Remove</button>
+          </div>
+        </div>
+        <div class="slot-card">
+          <h4>Promo Banner (bottom "Hungry?" section background)</h4>
+          <div class="slot-preview" id="bannerPreview">Koi image nahi — default gradient dikh raha hai</div>
+          <div class="slot-actions">
+            <button class="btn-mini primary" onclick="openPickerFor('banner')">🖼️ Change Image</button>
+            <button class="btn-mini danger" onclick="clearSlot('banner')">✖ Remove</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px; max-width: 360px;">
+        <h4 style="margin-bottom:8px;">🎬 Hero Background Animation</h4>
+        <select id="heroAnimationSelect" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; outline:none;">
+          <option value="none">None (static)</option>
+          <option value="zoom">Zoom (Ken Burns slow zoom-in)</option>
+          <option value="pan">Pan (side to side)</option>
+          <option value="fade">Fade Pulse (subtle breathing)</option>
+        </select>
+        <p class="sub" style="margin-top:8px; margin-bottom:0;">Yeh animation Hero Background photo par lagti hai — pehle upar Hero Background image set karein, uske baad ye animation home page par nazar aayegi.</p>
+
+        <label style="display:flex; align-items:center; gap:8px; margin-top:16px; font-size:14px; font-weight:600; cursor:pointer;">
+          <input type="checkbox" id="heroFoodAnimToggle" style="width:16px; height:16px;" />
+          🍕 Floating Food Animation (hero ke kinaron par dancing food icons)
+        </label>
+        <p class="sub" style="margin-top:4px; margin-bottom:0;">Ye default OFF rehti hai — sirf image lagane se ye apne aap enable nahi hoti, jab tak yahan se explicitly on na karein.</p>
+
+        <div style="margin-top:12px;">
+          <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Konse Food Emojis dikhein? (max 6, space se separate karein)</label>
+          <input type="text" id="heroFoodEmojisInput" placeholder="🍕 🍔 🍛 🍜 🍰" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:16px; outline:none;" />
+          <p class="sub" style="margin-top:6px; margin-bottom:0;">Jaise: 🍛 🍕 🍔 🍜 🍰 🍩 — apna keyboard/phone ka emoji picker use karke koi bhi food emoji daal sakte hain. Save karne ke liye is field se bahar click karein.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Restaurant Photos -->
+    <div class="appear-section">
+      <h3>🏪 Restaurant Photos</h3>
+      <div class="sub">Har restaurant card aur uske detail page banner ke liye photo.</div>
+      <div class="photo-grid" id="restaurantGrid"></div>
+    </div>
+
+    <!-- Menu Item Photos -->
+    <div class="appear-section">
+      <h3>🍽️ Menu Item Photos</h3>
+      <div class="sub">Home page categories aur restaurant menu list me dikhti hain. Photo na ho to emoji icon fallback hota hai.</div>
+      <div class="photo-grid" id="menuGrid"></div>
+    </div>
+
+    <!-- Offer Images -->
+    <div class="appear-section">
+      <h3>🏷️ Offer Images</h3>
+      <div class="sub">Optional — Offers page par offer card ke saath ek chhoti image dikhti hai.</div>
+      <div class="photo-grid" id="offersGrid"></div>
+    </div>
+  </div>
+</main>
+
+<!-- File Manager Modal -->
+<div class="fm-overlay" id="fmOverlay">
+  <div class="fm-box">
+    <div class="fm-head">
+      <h3>Select or Upload Image</h3>
+      <button class="fm-close" onclick="closePicker()">✖</button>
+    </div>
+
+    <div class="fm-dropzone" id="fmDropzone">
+      <div style="font-size:26px;">📤</div>
+      <p><strong>Click to browse</strong> ya image yahan drag-drop karein</p>
+      <p>JPG, PNG, WEBP, GIF, SVG • Max 5MB</p>
+      <input type="file" id="fmFileInput" accept="image/*" />
+    </div>
+    <div class="fm-upload-status" id="fmUploadStatus">⏳ Upload ho raha hai...</div>
+
+    <div class="fm-body">
+      <h4>Pehle se upload ki hui images</h4>
+      <div class="fm-grid" id="fmGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/admin-guard.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  renderSidebar("appearance.html");
+  renderTopbar("Restaurant Dashboard");
+</script>
+<script src="../js/appearance.js"></script>
+</body>
+</html>
