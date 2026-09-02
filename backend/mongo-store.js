@@ -53,7 +53,11 @@ async function initStore() {
   }
 
   try {
-    const client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 8000 });
+    const client = new MongoClient(MONGODB_URI, {
+      serverSelectionTimeoutMS: 8000,
+      tls: true,
+      retryWrites: true,
+    });
     await client.connect();
     const db = client.db(DB_NAME);
     collection = db.collection(COLLECTION_NAME);
