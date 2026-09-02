@@ -25,6 +25,12 @@ if (!razorpayKeys.KEY_ID || !razorpayKeys.KEY_SECRET) {
   console.warn(
     "⚠️  Razorpay keys nahi mili! RAZORPAY_KEY_ID aur RAZORPAY_KEY_SECRET environment variables set karein (Render > Environment tab), warna payment kaam nahi karega."
   );
+} else {
+  // DIAGNOSTIC: values ka sirf pehla/aakhri hissa dikhate hain (poora secret kabhi nahi),
+  // taaki Render ke Environment tab me galti se aayi extra space/quote pakdi ja sake.
+  const mask = (s) => (s.length > 8 ? `${s.slice(0, 4)}...${s.slice(-4)} (length: ${s.length})` : `(length: ${s.length})`);
+  console.log("🔍 RAZORPAY_KEY_ID diagnostic:", mask(razorpayKeys.KEY_ID));
+  console.log("🔍 RAZORPAY_KEY_SECRET diagnostic:", mask(razorpayKeys.KEY_SECRET));
 }
 
 const razorpay = new Razorpay({
