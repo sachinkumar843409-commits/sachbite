@@ -205,7 +205,9 @@
     "supportHours": "24x7 Support",
     "heroOfferTag": "🔥 TODAY'S OFFER",
     "heroOfferTitle": "Up to 50% OFF",
-    "heroOfferSubtitle": "On Selected Items"
+    "heroOfferSubtitle": "On Selected Items",
+    "businessUpiId": "",
+    "businessUpiName": "SachBite"
   },
   "uploads": [],
   "accounts": []

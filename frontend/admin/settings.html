@@ -120,6 +120,21 @@
       </div>
 
       <div class="panel">
+        <h3>📱 UPI Payment Settings (Direct UPI)</h3>
+        <p style="font-size:12.5px; color:var(--text-gray); margin-top:-12px; margin-bottom:14px;">Yahan apna UPI ID daalein — customer checkout par isi par seedha GPay/PhonePe se payment kar sakega (koi middleman/fee nahi).</p>
+        <div class="form-group">
+          <label>Business UPI ID</label>
+          <input type="text" id="businessUpiId" placeholder="jaise: sachinkumar@paytm" />
+        </div>
+        <div class="form-group">
+          <label>Payee Name (customer ko dikhega)</label>
+          <input type="text" id="businessUpiName" placeholder="SachBite" />
+        </div>
+        <button class="btn-save-settings" id="saveUpiBtn">Save UPI Settings</button>
+        <div class="success-msg" id="upiSuccess">✅ UPI settings saved!</div>
+      </div>
+
+      <div class="panel">
         <h3>🔒 Change Admin Password</h3>
         <div class="form-group">
           <label>Current Password</label>

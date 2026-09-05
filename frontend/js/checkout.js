@@ -1,6 +1,17 @@
 const API = "/api";
 let capturedLocation = null;
 let previewMap = null;
+let businessUpiId = "";
+let businessUpiName = "SachBite";
+
+// Business UPI details load karo (Admin Settings se aayenge)
+fetch(`${API}/settings`)
+  .then((r) => r.json())
+  .then((s) => {
+    businessUpiId = s.businessUpiId || "";
+    businessUpiName = s.businessUpiName || "SachBite";
+  })
+  .catch(() => {});
 
 function renderCart() {
   const cart = getCart();
@@ -45,6 +56,9 @@ function changeCartQty(index, delta) {
 
   saveCart(cart);
   renderCart();
+  if (document.getElementById("upiDirectBox").classList.contains("show")) {
+    updateUpiDirectDetails();
+  }
 }
 
 // ---------- Geolocation capture ----------
@@ -95,13 +109,49 @@ if (loggedInUser) {
   document.getElementById("custPhone").value = loggedInUser.phone || "";
 }
 
-// ---------- Payment method selection (visual highlight) ----------
+// ---------- Payment method selection (visual highlight + UPI Direct box) ----------
 document.querySelectorAll(".payment-opt input").forEach((input) => {
   input.addEventListener("change", () => {
     document.querySelectorAll(".payment-opt").forEach((label) => label.classList.remove("selected"));
     input.closest(".payment-opt").classList.add("selected");
+    toggleUpiDirectBox();
   });
 });
+
+function toggleUpiDirectBox() {
+  const box = document.getElementById("upiDirectBox");
+  const payment = getSelectedPayment();
+
+  if (payment === "UPI (Direct)") {
+    box.classList.add("show");
+    updateUpiDirectDetails();
+  } else {
+    box.classList.remove("show");
+  }
+}
+
+function updateUpiDirectDetails() {
+  const cart = getCart();
+  const amount = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  document.getElementById("upiAmountDisplay").textContent = `₹${amount}`;
+
+  if (!businessUpiId) {
+    document.getElementById("upiQrImage").style.display = "none";
+    document.getElementById("upiAppLink").style.display = "none";
+    document.getElementById("upiAmountDisplay").insertAdjacentHTML(
+      "afterend",
+      `<div style="color:var(--red); font-size:13px; font-weight:600;" id="upiNotSetupMsg">⚠️ Abhi UPI ID set nahi hui hai. Cash on Delivery choose karein, ya admin se contact karein.</div>`
+    );
+    return;
+  }
+
+  const note = encodeURIComponent(`SachBite Order`);
+  const upiLink = `upi://pay?pa=${encodeURIComponent(businessUpiId)}&pn=${encodeURIComponent(businessUpiName)}&am=${amount}&cu=INR&tn=${note}`;
+
+  document.getElementById("upiAppLink").href = upiLink;
+  document.getElementById("upiQrImage").src =
+    `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
+}
 
 function getSelectedPayment() {
   const checked = document.querySelector(".payment-opt input:checked");
@@ -133,9 +183,20 @@ document.getElementById("placeOrderBtn").addEventListener("click", async () => {
 
   if (payment === "Cash on Delivery") {
     // Seedha order place karo, koi payment gateway nahi chahiye
-    await finalizeOrder(customer, cart, null);
+    await finalizeOrder(customer, cart, null, null);
+  } else if (payment === "UPI (Direct)") {
+    const upiReference = document.getElementById("upiReferenceInput").value.trim();
+    if (!businessUpiId) {
+      showToast("UPI abhi setup nahi hai", "Cash on Delivery choose karein.", "error");
+      return;
+    }
+    if (!upiReference) {
+      showToast("UTR number zaroori hai", "Payment karne ke baad UPI transaction/reference ID bharein.", "error");
+      return;
+    }
+    await finalizeOrder(customer, cart, null, upiReference);
   } else {
-    // UPI ya Card — Razorpay checkout widget kholo
+    // Credit/Debit Card — Razorpay checkout widget kholo
     await startRazorpayPayment(customer, cart);
   }
 });
@@ -185,7 +246,7 @@ async function startRazorpayPayment(customer, cart) {
         const verifyData = await verifyRes.json();
 
         if (verifyData.verified) {
-          await finalizeOrder(customer, cart, response.razorpay_payment_id);
+          await finalizeOrder(customer, cart, response.razorpay_payment_id, null);
         } else {
           showToast("Payment verify nahi ho paya", "Agar paisa kata hai to support se contact karein.", "error");
           resetPlaceOrderBtn();
@@ -205,7 +266,7 @@ async function startRazorpayPayment(customer, cart) {
     });
     rzp.open();
   } catch (e) {
-    showToast("Payment shuru nahi ho paya", "Server chal raha hai check karein.", "error");
+    showToast("Payment shuru nahi ho paya", e.message || "Server chal raha hai check karein.", "error");
     resetPlaceOrderBtn();
   }
 }
@@ -217,12 +278,13 @@ function resetPlaceOrderBtn() {
 }
 
 // ---------- Final step: SachBite order create karo ----------
-async function finalizeOrder(customer, cart, paymentReference) {
+async function finalizeOrder(customer, cart, paymentReference, upiReference) {
   const body = {
     customer,
     items: cart,
     location: capturedLocation,
     paymentReference,
+    upiReference,
   };
 
   try {

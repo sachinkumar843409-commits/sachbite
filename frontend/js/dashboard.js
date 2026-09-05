@@ -68,6 +68,8 @@ function renderOrderCard(order) {
         <div class="row"><span class="k">📍</span> Address: ${escapeHtml(order.customer.address)}</div>
         <div class="row"><span class="k">💳</span> Payment: <span class="pay">${escapeHtml(order.customer.payment)}</span></div>
         ${order.paymentStatus ? `<div class="row"><span class="k">✅</span> Status: <span class="pay">${order.paymentStatus}</span></div>` : ""}
+        ${order.upiReference ? `<div class="row"><span class="k">🔢</span> UTR/Ref ID: <span class="pay">${escapeHtml(order.upiReference)}</span></div>` : ""}
+        ${order.paymentStatus === "Awaiting Verification (Direct UPI)" ? `<button class="btn-edit-menu" style="margin-top:8px; width:100%;" onclick="markPaymentVerified('${order.id}')">✅ Payment Verify Karein</button>` : ""}
       </div>
 
       <div class="order-col items-list">
@@ -114,6 +116,12 @@ async function deleteOrder(id) {
   await adminFetch(`${API}/orders/${id}`, { method: "DELETE" });
   loadOrders();
   loadStats();
+}
+
+async function markPaymentVerified(id) {
+  if (!confirm("Confirm karein ki aapne apne bank/UPI app me yeh payment aata hua dekh liya hai?")) return;
+  await adminFetch(`${API}/orders/${id}/payment-status`, { method: "PATCH" });
+  loadOrders();
 }
 
 document.getElementById("clearAllBtn").addEventListener("click", async () => {

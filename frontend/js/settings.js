@@ -19,7 +19,24 @@ async function loadSettings() {
   document.getElementById("heroOfferSubtitle").value = s.heroOfferSubtitle || "";
   document.getElementById("aboutText").value = s.aboutText || "";
   document.getElementById("securityQuestion").value = s.adminSecurityQuestion || "";
+  document.getElementById("businessUpiId").value = s.businessUpiId || "";
+  document.getElementById("businessUpiName").value = s.businessUpiName || "";
 }
+
+document.getElementById("saveUpiBtn").addEventListener("click", async () => {
+  const body = {
+    businessUpiId: document.getElementById("businessUpiId").value.trim(),
+    businessUpiName: document.getElementById("businessUpiName").value.trim(),
+  };
+  await adminFetch(`${API}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const msg = document.getElementById("upiSuccess");
+  msg.style.display = "block";
+  setTimeout(() => (msg.style.display = "none"), 2500);
+});
 
 document.getElementById("saveAboutBtn").addEventListener("click", async () => {
   const body = { aboutText: document.getElementById("aboutText").value };

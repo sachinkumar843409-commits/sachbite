@@ -6,13 +6,36 @@ const multer = require("multer");
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const bcrypt = require("bcryptjs");
-let razorpayKeys; try { razorpayKeys = require("./razorpay-config"); } catch (e) { razorpayKeys = { KEY_ID: process.env.RAZORPAY_KEY_ID, KEY_SECRET: process.env.RAZORPAY_KEY_SECRET }; }
+// razorpay-config.js .gitignore me hai (security ke liye), isliye Render (ya kisi bhi
+// fresh clone) par ye file exist nahi karti. Agar file mile to usse use karo (local dev),
+// warna seedha environment variables se keys utha lo (production/Render ke liye).
+let razorpayKeys;
+try {
+  razorpayKeys = require("./razorpay-config");
+} catch (e) {
+  razorpayKeys = {
+    KEY_ID: process.env.RAZORPAY_KEY_ID,
+    KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
+  };
+}
 const { sendRestaurantOrderNotifications } = require("./notify");
 const { initStore, readDB, writeDB } = require("./mongo-store");
 
+if (!razorpayKeys.KEY_ID || !razorpayKeys.KEY_SECRET) {
+  console.warn(
+    "⚠️  Razorpay keys nahi mili! RAZORPAY_KEY_ID aur RAZORPAY_KEY_SECRET environment variables set karein (Render > Environment tab), warna payment kaam nahi karega."
+  );
+} else {
+  // DIAGNOSTIC: values ka sirf pehla/aakhri hissa dikhate hain (poora secret kabhi nahi),
+  // taaki Render ke Environment tab me galti se aayi extra space/quote pakdi ja sake.
+  const mask = (s) => (s.length > 8 ? `${s.slice(0, 4)}...${s.slice(-4)} (length: ${s.length})` : `(length: ${s.length})`);
+  console.log("🔍 RAZORPAY_KEY_ID diagnostic:", mask(razorpayKeys.KEY_ID));
+  console.log("🔍 RAZORPAY_KEY_SECRET diagnostic:", mask(razorpayKeys.KEY_SECRET));
+}
+
 const razorpay = new Razorpay({
-  key_id: razorpayKeys.KEY_ID,
-  key_secret: razorpayKeys.KEY_SECRET,
+  key_id: razorpayKeys.KEY_ID || "rzp_test_placeholder",
+  key_secret: razorpayKeys.KEY_SECRET || "placeholder_secret",
 });
 
 const app = express();
@@ -396,7 +419,7 @@ app.get("/api/orders/stats", (req, res) => {
 // Place a new order (from checkout page)
 app.post("/api/orders", (req, res) => {
   const db = readDB();
-  const { customer, items, location, paymentReference } = req.body;
+  const { customer, items, location, paymentReference, upiReference } = req.body;
 
   if (!customer || !items || items.length === 0) {
     return res.status(400).json({ error: "Customer details and items are required" });
@@ -411,6 +434,11 @@ app.post("/api/orders", (req, res) => {
   const itemTotal = trusted.total;
   const delivery = 0; // FREE delivery, matches design
 
+  let paymentStatus = "Pending";
+  if (paymentReference) paymentStatus = "Paid";
+  else if (customer.payment === "Cash on Delivery") paymentStatus = "Pending (COD)";
+  else if (customer.payment === "UPI (Direct)" && upiReference) paymentStatus = "Awaiting Verification (Direct UPI)";
+
   const newOrder = {
     id: generateOrderId(),
     date: new Date().toISOString(),
@@ -423,8 +451,9 @@ app.post("/api/orders", (req, res) => {
     location: location && location.lat && location.lng ? location : null,
     estimatedDeliveryMinutes: 25,
     outForDeliveryAt: null,
-    paymentStatus: paymentReference ? "Paid" : (customer.payment === "Cash on Delivery" ? "Pending (COD)" : "Pending"),
+    paymentStatus,
     paymentReference: paymentReference || null,
+    upiReference: upiReference || null,
   };
 
   db.orders.push(newOrder);
@@ -436,6 +465,18 @@ app.post("/api/orders", (req, res) => {
   sendRestaurantOrderNotifications(newOrder, db.restaurants).catch((err) =>
     console.error("Restaurant notification error:", err.message)
   );
+});
+
+// Admin: Direct UPI payment ko manually "Verified" mark karna (bank/UPI app me
+// paisa check karne ke baad)
+app.patch("/api/orders/:id/payment-status", requireAdmin, (req, res) => {
+  const db = readDB();
+  const order = db.orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+
+  order.paymentStatus = "Paid (Verified)";
+  writeDB(db);
+  res.json(order);
 });
 
 // Update order status
@@ -674,6 +715,8 @@ app.put("/api/settings", requireAdmin, (req, res) => {
     "heroOfferTitle",
     "heroOfferSubtitle",
     "aboutText",
+    "businessUpiId",
+    "businessUpiName",
   ];
   allowedFields.forEach((field) => {
     if (req.body[field] !== undefined) db.settings[field] = req.body[field];
@@ -980,4 +1023,3 @@ initStore().then(() => {
     console.log(`   Admin Dashboard: http://localhost:${PORT}/dashboard.html\n`);
   });
 });
-
