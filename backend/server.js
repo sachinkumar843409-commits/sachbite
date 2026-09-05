@@ -6,7 +6,7 @@ const multer = require("multer");
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const bcrypt = require("bcryptjs");
-const razorpayKeys = require("./razorpay-config");
+let razorpayKeys; try { razorpayKeys = require("./razorpay-config"); } catch (e) { razorpayKeys = { KEY_ID: process.env.RAZORPAY_KEY_ID, KEY_SECRET: process.env.RAZORPAY_KEY_SECRET }; }
 const { sendRestaurantOrderNotifications } = require("./notify");
 const { initStore, readDB, writeDB } = require("./mongo-store");
 
@@ -980,3 +980,4 @@ initStore().then(() => {
     console.log(`   Admin Dashboard: http://localhost:${PORT}/dashboard.html\n`);
   });
 });
+
