@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "SachBite - Food Delivery Website Backend",
   "main": "server.js",
-  "engines": {
-    "node": "20.x"
-  },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
@@ -17,6 +14,6 @@
     "razorpay": "^2.9.4",
     "bcryptjs": "^2.4.3",
     "nodemailer": "^6.9.14",
-    "mongodb": "^6.10.0"
+    "mongodb": "^6.9.0"
   }
 }
