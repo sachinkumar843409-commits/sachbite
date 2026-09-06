@@ -119,20 +119,15 @@ app.use(express.static(path.join(__dirname, "..", "frontend")));
 app.use("/uploads", express.static(UPLOADS_DIR));
 
 // ---------- Image upload (multer) ----------
+// IMPORTANT: memoryStorage use karte hain, disk par nahi — kyunki Render free tier
+// ka disk temporary hai (service "so jaane" ke baad restart hote hi saari uploaded
+// files gayab ho jaati hain, jisse hero banner/menu images "crash"/broken dikhti thi).
+// Ab image ko seedha base64 format me MongoDB me save karte hain, jo permanent hai.
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
-    const unique = crypto.randomBytes(8).toString("hex") + "-" + Date.now();
-    cb(null, `${unique}${ext}`);
-  },
-});
-
 const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB max (base64 me MongoDB me store hoga, size chhota rakhein)
   fileFilter: (req, file, cb) => {
     if (!ALLOWED_MIME.includes(file.mimetype)) {
       return cb(new Error("Sirf image files allowed hain (jpg, png, webp, gif, svg)"));
@@ -186,17 +181,23 @@ function generateId(prefix) {
 // ---------- MEDIA LIBRARY / FILE MANAGER (Appearance panel) ----------
 
 // Upload a new image. Field name must be "image".
-// Saves the file to /backend/uploads and registers it in db.json's uploads[] library.
+// Image ko base64 format me MongoDB ke uploads[] library me save karte hain — isse
+// Render restart/sleep hone par bhi image kabhi delete/crash nahi hoti (permanent hai).
 app.post("/api/upload", requireAdmin, (req, res) => {
   upload.single("image")(req, res, (err) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: "Koi image file nahi mili" });
 
+    const base64 = req.file.buffer.toString("base64");
+    const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
+    const ext = path.extname(req.file.originalname || "").toLowerCase() || ".jpg";
+    const filename = crypto.randomBytes(8).toString("hex") + "-" + Date.now() + ext;
+
     const db = readDB();
     const fileRecord = {
-      filename: req.file.filename,
+      filename,
       originalName: req.file.originalname,
-      url: `/uploads/${req.file.filename}`,
+      url: dataUrl,
       size: req.file.size,
       uploadedAt: new Date().toISOString(),
     };
@@ -214,20 +215,16 @@ app.get("/api/uploads", (req, res) => {
   res.json(db.uploads || []);
 });
 
-// Delete an image from disk + library
+// Delete an image from the library (MongoDB me save hai, disk par kuch nahi hai ab)
 app.delete("/api/uploads/:filename", requireAdmin, (req, res) => {
   const db = readDB();
   db.uploads = db.uploads || [];
   const exists = db.uploads.some((u) => u.filename === req.params.filename);
   if (!exists) return res.status(404).json({ error: "File library me nahi mili" });
 
-  const filePath = path.join(UPLOADS_DIR, req.params.filename);
-  fs.unlink(filePath, () => {
-    // File disk se already gayab ho to bhi library se hata do
-    db.uploads = db.uploads.filter((u) => u.filename !== req.params.filename);
-    writeDB(db);
-    res.json({ success: true });
-  });
+  db.uploads = db.uploads.filter((u) => u.filename !== req.params.filename);
+  writeDB(db);
+  res.json({ success: true });
 });
 
 // ---------- MENU (public - home page) ----------

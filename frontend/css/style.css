@@ -901,3 +901,53 @@ footer {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ---------- MOBILE RESPONSIVE FIXES (customer-facing pages) ---------- */
+body { overflow-x: hidden; }
+
+@media (max-width: 600px) {
+  .container { padding: 0 16px; }
+
+  /* Header: chhoti screen par location pill hide karke sirf zaroori buttons dikhayein */
+  .topbar-inner { padding: 12px 16px; gap: 8px; flex-wrap: wrap; }
+  .logo { font-size: 20px; }
+  .logo small { font-size: 9px; }
+  .location-pill { display: none; }
+  #langToggleBtn { padding: 6px 10px !important; font-size: 12px !important; }
+  #loginBtn { padding: 8px 12px; font-size: 12px; }
+  .cart-icon { width: 36px; height: 36px; }
+
+  /* Hero section */
+  .hero-inner { flex-direction: column; padding: 30px 0; }
+  .hero-left, .hero-right { min-width: 0; width: 100%; }
+  .hero-left h1 { font-size: 26px; }
+  .hero-left p { font-size: 14px; }
+  .search-bar { max-width: 100%; padding: 4px 4px 4px 16px; flex-wrap: nowrap; }
+  .search-bar input { font-size: 13px; min-width: 0; }
+  .rating-card { padding: 10px 12px; font-size: 12px; }
+  .offer-card { padding: 12px 14px !important; }
+
+  /* Sections */
+  .section { padding: 30px 0 !important; }
+  .section-head h2 { font-size: 20px; }
+  .category-row { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Promo banner */
+  .promo-banner { padding: 24px 20px; flex-direction: column; text-align: center; }
+  .promo-banner h2 { font-size: 20px; }
+  .promo-banner img { width: 140px; margin: 0 auto; }
+
+  /* Contact cards */
+  .contact-grid { gap: 12px; }
+  .contact-card { padding: 14px !important; }
+
+  /* Restaurants / filter / track search bars */
+  .filter-search, .track-search { max-width: 100%; }
+
+  /* Checkout page */
+  .checkout-wrap { padding: 0 14px; margin: 20px auto; }
+  .checkout-card { padding: 18px; }
+
+  /* Modal */
+  .modal-box { padding: 20px; width: 100%; }
+}

@@ -183,9 +183,8 @@ document.getElementById("placeOrderBtn").addEventListener("click", async () => {
     return;
   }
   if (!capturedLocation) {
-    if (!confirm("Aapne live location share nahi ki — isse delivery tracking (live map) kaam nahi karega. Bina location ke order place karein?")) {
-      return;
-    }
+    showToast("Location zaroori hai", "Delivery tracking ke liye 'Use My Current Location' button dabakar location share karein.", "error");
+    return;
   }
 
   const customer = { name, phone, address, payment };
