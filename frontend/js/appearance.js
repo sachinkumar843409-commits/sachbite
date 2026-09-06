@@ -283,8 +283,8 @@ async function uploadFile(file) {
     alert("Sirf image files upload ki ja sakti hain.");
     return;
   }
-  if (file.size > 5 * 1024 * 1024) {
-    alert("Image 5MB se badi nahi honi chahiye.");
+  if (file.size > 3 * 1024 * 1024) {
+    alert("Image 3MB se badi nahi honi chahiye.");
     return;
   }
 
@@ -294,7 +294,14 @@ async function uploadFile(file) {
 
   try {
     const res = await adminFetch(`${API}/upload`, { method: "POST", body: formData });
-    const data = await res.json();
+
+    let data;
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      throw new Error("Server se sahi response nahi mila. Image chhoti karke (2MB se kam) dobara try karein.");
+    }
+
     if (!res.ok) throw new Error(data.error || "Upload fail hua");
 
     // Upload hote hi seedha active slot par apply kar do — file manager ka pura point yahi hai

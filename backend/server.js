@@ -91,7 +91,10 @@ const UPLOADS_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 app.use(cors());
-app.use(express.json());
+// Default JSON body limit sirf 100KB hoti hai — lekin humare images ab base64 format
+// me JSON ke through bhejte hain (hero banner, menu item photos), jo isse kahin zyada
+// bade hote hain. Isliye limit badhakar 8mb kar di, taaki image upload/apply crash na ho.
+app.use(express.json({ limit: "8mb" }));
 
 // Admin-only routes ko protect karne wala middleware — token na ho ya galat/expired ho
 // to request yahin reject ho jaati hai. Isse koi bhi bina admin login kiye seedha API
@@ -1093,6 +1096,16 @@ app.post("/api/admin/security-question", (req, res) => {
   db.settings.adminSecurityAnswerHash = bcrypt.hashSync(answer.trim().toLowerCase(), 10);
   writeDB(db);
   res.json({ success: true });
+});
+
+// Global error handler — koi bhi error (jaise "request too large") HTML page ki jagah
+// hamesha JSON me hi wapas bheja jaaye, warna frontend ka res.json() crash ho jata hai.
+app.use((err, req, res, next) => {
+  console.error("Server error:", err.message);
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({ error: "Image/data bahut badi hai. Chhoti image try karein." });
+  }
+  res.status(500).json({ error: "Server me kuch galat ho gaya. Dobara try karein." });
 });
 
 // Server start karne se pehle data store (MongoDB ya local file) load karna zaroori hai,
