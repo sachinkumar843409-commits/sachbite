@@ -26,19 +26,20 @@
 
 <section class="section container">
   <div class="track-wrap">
-    <div class="section-head"><h2>📦 Track Your Order</h2></div>
-    <p style="color:var(--text-gray); margin-bottom:10px;">Apna phone number daalein jisse order kiya tha:</p>
+    <div class="section-head"><h2 data-i18n="track_heading">📦 Track Your Order</h2></div>
+    <p style="color:var(--text-gray); margin-bottom:10px;" data-i18n="track_desc">Enter the phone number used for the order:</p>
     <div class="track-search">
-      <input type="text" id="phoneInput" placeholder="Phone number" />
-      <button class="btn btn-primary" id="trackBtn">Track</button>
+      <input type="text" id="phoneInput" data-i18n-placeholder="phone_placeholder" placeholder="Phone number" />
+      <button class="btn btn-primary" id="trackBtn" data-i18n="track_btn">Track</button>
     </div>
     <div id="trackResults"></div>
   </div>
 </section>
 
-<footer>© 2026 SachBite. Food delivered with love ❤️ — <span id="footerLocation">Kanti, Muzaffarpur</span></footer>
+<footer>© 2026 SachBite. <span data-i18n="footer_text">Food delivered with love ❤️</span> — <span id="footerLocation">Kanti, Muzaffarpur</span></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/images.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/main-cart.js"></script>

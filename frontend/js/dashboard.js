@@ -69,7 +69,10 @@ function renderOrderCard(order) {
         <div class="row"><span class="k">💳</span> Payment: <span class="pay">${escapeHtml(order.customer.payment)}</span></div>
         ${order.paymentStatus ? `<div class="row"><span class="k">✅</span> Status: <span class="pay">${order.paymentStatus}</span></div>` : ""}
         ${order.upiReference ? `<div class="row"><span class="k">🔢</span> UTR/Ref ID: <span class="pay">${escapeHtml(order.upiReference)}</span></div>` : ""}
-        ${order.paymentStatus === "Awaiting Verification (Direct UPI)" ? `<button class="btn-edit-menu" style="margin-top:8px; width:100%;" onclick="markPaymentVerified('${order.id}')">✅ Payment Verify Karein</button>` : ""}
+        ${order.paymentStatus === "Awaiting Verification (Direct UPI)" ? `
+          <button class="btn-edit-menu" style="margin-top:8px; width:100%;" onclick="markPaymentVerified('${order.id}')">✅ Payment Verify Karein</button>
+          <button class="btn-delete" style="margin-top:8px; width:100%;" onclick="rejectPayment('${order.id}')">❌ UTR Galat Hai</button>
+        ` : ""}
       </div>
 
       <div class="order-col items-list">
@@ -119,8 +122,14 @@ async function deleteOrder(id) {
 }
 
 async function markPaymentVerified(id) {
-  if (!confirm("Confirm karein ki aapne apne bank/UPI app me yeh payment aata hua dekh liya hai?")) return;
+  if (!confirm("Confirm karein ki aapne apne bank/UPI app me yeh payment aata hua dekh liya hai? Customer ko SMS chala jayega.")) return;
   await adminFetch(`${API}/orders/${id}/payment-status`, { method: "PATCH" });
+  loadOrders();
+}
+
+async function rejectPayment(id) {
+  if (!confirm("Kya UTR galat hai/match nahi hua? Customer ko SMS chala jayega dobara sahi UTR bhejne ke liye.")) return;
+  await adminFetch(`${API}/orders/${id}/reject-payment`, { method: "PATCH" });
   loadOrders();
 }
 

@@ -72,7 +72,22 @@ async function sendOtp() {
     pendingAuthName = name;
 
     document.getElementById("authOtpSentTo").textContent = `+91 ${phone}`;
-    // Demo mode note: real SMS gateway abhi connected nahi hai, isliye OTP yahin dikha dete hain testing ke liye
+
+    // Naye customer ko "Sign In" aur purane customer ko "Login" wala friendly message dikhayein
+    const welcomeNote = document.getElementById("authWelcomeNote");
+    if (welcomeNote) {
+      if (data.isNewUser) {
+        welcomeNote.textContent = "🆕 Naya account bana rahe hain — Sign In karein!";
+        welcomeNote.style.background = "#e6f4ea";
+        welcomeNote.style.color = "#166534";
+      } else {
+        welcomeNote.textContent = "👋 Wapas swagat hai — Login karein!";
+        welcomeNote.style.background = "#eef2ff";
+        welcomeNote.style.color = "#3730a3";
+      }
+    }
+
+    // Agar SMS gateway setup nahi hai to backend testing OTP bhej deta hai, warna yeh khali rahega
     document.getElementById("authOtpDemoNote").textContent = data.demoOtp
       ? `📩 Demo mode: aapka OTP hai ${data.demoOtp}`
       : "";

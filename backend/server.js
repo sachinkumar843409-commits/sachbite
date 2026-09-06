@@ -21,6 +21,50 @@ try {
 const { sendRestaurantOrderNotifications } = require("./notify");
 const { initStore, readDB, writeDB } = require("./mongo-store");
 
+// ---------- CUSTOMER SMS NOTIFICATIONS (SMS Gateway for Android) ----------
+// Apne hi Android phone ko SMS-gateway banate hain (sms-gate.app app se) — bilkul
+// free, koi per-message charge nahi, SMS aapke phone ke SIM se hi jaata hai.
+// Render me SMS_GATEWAY_USERNAME aur SMS_GATEWAY_PASSWORD environment variables
+// set karna zaroori hai (app me "Cloud Server" mode se milte hain).
+async function sendCustomerSms(phoneNumber, message) {
+  const username = process.env.SMS_GATEWAY_USERNAME;
+  const password = process.env.SMS_GATEWAY_PASSWORD;
+
+  if (!username || !password) {
+    console.warn("⚠️ SMS_GATEWAY_USERNAME/PASSWORD set nahi hai — SMS nahi bheja gaya.");
+    return;
+  }
+  if (!phoneNumber) {
+    console.warn("⚠️ Customer ka phone number nahi mila — SMS nahi bheja gaya.");
+    return;
+  }
+
+  // Number ko +91 format me convert karo (agar already country code nahi hai)
+  let formattedPhone = phoneNumber.toString().replace(/\D/g, "");
+  if (formattedPhone.length === 10) formattedPhone = "91" + formattedPhone;
+  formattedPhone = "+" + formattedPhone;
+
+  try {
+    const auth = Buffer.from(`${username}:${password}`).toString("base64");
+    const response = await fetch("https://api.sms-gate.app/3rdparty/v1/messages", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        textMessage: { text: message },
+        phoneNumbers: [formattedPhone],
+      }),
+    });
+    if (!response.ok) {
+      console.error("SMS bhejne me error:", response.status, await response.text());
+    }
+  } catch (err) {
+    console.error("SMS bhejne me error:", err.message);
+  }
+}
+
 if (!razorpayKeys.KEY_ID || !razorpayKeys.KEY_SECRET) {
   console.warn(
     "⚠️  Razorpay keys nahi mili! RAZORPAY_KEY_ID aur RAZORPAY_KEY_SECRET environment variables set karein (Render > Environment tab), warna payment kaam nahi karega."
@@ -437,7 +481,10 @@ app.post("/api/orders", (req, res) => {
   let paymentStatus = "Pending";
   if (paymentReference) paymentStatus = "Paid";
   else if (customer.payment === "Cash on Delivery") paymentStatus = "Pending (COD)";
-  else if (customer.payment === "UPI (Direct)" && upiReference) paymentStatus = "Awaiting Verification (Direct UPI)";
+  // UTR ab customer se nahi mangte — payment SMS webhook automatically match karke
+  // verify kar dega. Jab tak match na ho, order "Awaiting Verification" me rehta hai
+  // aur admin dashboard se bhi manually verify kiya ja sakta hai (backup ke roop me).
+  else if (customer.payment === "UPI (Direct)") paymentStatus = "Awaiting Verification (Direct UPI)";
 
   const newOrder = {
     id: generateOrderId(),
@@ -468,16 +515,41 @@ app.post("/api/orders", (req, res) => {
 });
 
 // Admin: Direct UPI payment ko manually "Verified" mark karna (bank/UPI app me
-// paisa check karne ke baad)
-app.patch("/api/orders/:id/payment-status", requireAdmin, (req, res) => {
+// paisa check karne ke baad) — verify hote hi customer ko SMS chala jata hai
+app.patch("/api/orders/:id/payment-status", requireAdmin, async (req, res) => {
   const db = readDB();
   const order = db.orders.find((o) => o.id === req.params.id);
   if (!order) return res.status(404).json({ error: "Order not found" });
 
   order.paymentStatus = "Paid (Verified)";
   writeDB(db);
+
+  sendCustomerSms(
+    order.customer.phone,
+    `SachBite: Aapka payment verify ho gaya hai! Order #${order.id} confirm ho gaya hai. Dhanyawad!`
+  );
+
   res.json(order);
 });
+
+// Admin: UTR galat/na milne par order reject karna — customer ko SMS chala jata hai
+// taaki wo sahi UTR dobara bhej sake
+app.patch("/api/orders/:id/reject-payment", requireAdmin, async (req, res) => {
+  const db = readDB();
+  const order = db.orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+
+  order.paymentStatus = "Payment Rejected (UTR Not Matched)";
+  writeDB(db);
+
+  sendCustomerSms(
+    order.customer.phone,
+    `SachBite: Order #${order.id} ka UTR match nahi hua. Kripya sahi UTR number dobara bhejein ya humse contact karein.`
+  );
+
+  res.json(order);
+});
+
 
 // Update order status
 app.patch("/api/orders/:id/status", requireAdmin, (req, res) => {
@@ -826,7 +898,7 @@ app.get("/api/analytics", (req, res) => {
 let otpStore = {}; // phone -> { otp, name, expiresAt }
 let customerTokens = {}; // token -> phone
 
-app.post("/api/auth/send-otp", (req, res) => {
+app.post("/api/auth/send-otp", async (req, res) => {
   const { name, phone } = req.body;
   if (!name || !phone) return res.status(400).json({ error: "Name aur phone number dono zaroori hain" });
   if (!/^[0-9]{10}$/.test(phone)) return res.status(400).json({ error: "Sahi 10-digit phone number bharein" });
@@ -834,8 +906,20 @@ app.post("/api/auth/send-otp", (req, res) => {
   const otp = String(Math.floor(1000 + Math.random() * 9000));
   otpStore[phone] = { otp, name, expiresAt: Date.now() + 5 * 60 * 1000 };
 
+  // Naya customer hai ya pehle se account hai — frontend isse sahi popup message dikhayega
+  const db = readDB();
+  const isNewUser = !(db.accounts || []).some((a) => a.phone === phone);
+
   console.log(`[OTP] ${phone} ke liye OTP generate hua: ${otp}`);
-  res.json({ success: true, demoOtp: otp });
+
+  const smsConfigured = !!(process.env.SMS_GATEWAY_USERNAME && process.env.SMS_GATEWAY_PASSWORD);
+  if (smsConfigured) {
+    await sendCustomerSms(phone, `SachBite: Aapka OTP hai ${otp}. Yeh 5 minute me expire ho jayega. Kisi ke saath share na karein.`);
+    res.json({ success: true, isNewUser });
+  } else {
+    // SMS gateway abhi setup nahi hai — testing ke liye OTP response me bhi bhej dete hain
+    res.json({ success: true, isNewUser, demoOtp: otp });
+  }
 });
 
 app.post("/api/auth/verify-otp", (req, res) => {

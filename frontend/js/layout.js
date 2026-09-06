@@ -48,7 +48,7 @@ function renderTopbar(title, extraHTML = "") {
 
   root.innerHTML = `
     <div class="topbar-left">
-      <div class="menu-icon">☰</div>
+      <div class="menu-icon" id="mobileMenuBtn">☰</div>
       <h1>${title}</h1>
     </div>
     <div class="topbar-right">
@@ -57,6 +57,29 @@ function renderTopbar(title, extraHTML = "") {
       ${extraHTML}
     </div>
   `;
+
+  // Mobile: hamburger (☰) dabane se sidebar slide-in hokar khulta hai, backdrop dabane se band
+  const menuBtn = document.getElementById("mobileMenuBtn");
+  const sidebar = document.getElementById("sidebarRoot");
+  let backdrop = document.getElementById("sidebarBackdrop");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.id = "sidebarBackdrop";
+    backdrop.className = "sidebar-backdrop";
+    document.body.appendChild(backdrop);
+  }
+  function closeSidebar() {
+    sidebar?.classList.remove("open");
+    backdrop.classList.remove("open");
+  }
+  if (menuBtn && !menuBtn.dataset.wired) {
+    menuBtn.addEventListener("click", () => {
+      sidebar?.classList.toggle("open");
+      backdrop.classList.toggle("open");
+    });
+    menuBtn.dataset.wired = "true";
+  }
+  backdrop.onclick = closeSidebar;
 
   // Notification count = pending orders
   fetch("/api/orders/stats")

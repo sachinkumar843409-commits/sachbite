@@ -18,18 +18,19 @@
 
 <section class="section container">
   <div class="page-header">
-    <h1>🍴 All Restaurants</h1>
-    <p style="color:var(--text-gray);">Apni pasand ka restaurant chunein aur order karein.</p>
+    <h1 data-i18n="all_restaurants">🍴 All Restaurants</h1>
+    <p style="color:var(--text-gray);" data-i18n="choose_restaurant">Choose your favourite restaurant and order.</p>
     <div class="filter-search">
-      <input type="text" id="filterInput" placeholder="Search restaurant or cuisine..." />
+      <input type="text" id="filterInput" data-i18n-placeholder="search_restaurant" placeholder="Search restaurant or cuisine..." />
     </div>
   </div>
 
   <div class="restaurant-row" id="allRestaurantsRow" style="margin-top:20px;"></div>
 </section>
 
-<footer>© 2026 SachBite. Food delivered with love ❤️ — <span id="footerLocation">Kanti, Muzaffarpur</span></footer>
+<footer>© 2026 SachBite. <span data-i18n="footer_text">Food delivered with love ❤️</span> — <span id="footerLocation">Kanti, Muzaffarpur</span></footer>
 
+<script src="js/i18n.js"></script>
 <script src="js/images.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/main-cart.js"></script>

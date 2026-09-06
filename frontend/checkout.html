@@ -43,69 +43,70 @@
 
 <div class="checkout-wrap">
   <div class="checkout-card">
-    <h3>🛒 Your Cart</h3>
+    <h3 data-i18n="your_cart">🛒 Your Cart</h3>
     <div id="cartItems"></div>
-    <div class="total-line"><span>Item Total</span><span id="itemTotal">₹0</span></div>
-    <div class="total-line" style="color:var(--green); font-weight:600;"><span>Delivery</span><span>FREE</span></div>
-    <div class="total-line"><span>Grand Total</span><span id="grandTotal">₹0</span></div>
+    <div class="total-line"><span data-i18n="item_total">Item Total</span><span id="itemTotal">₹0</span></div>
+    <div class="total-line" style="color:var(--green); font-weight:600;"><span data-i18n="delivery">Delivery</span><span data-i18n="free">FREE</span></div>
+    <div class="total-line"><span data-i18n="grand_total">Grand Total</span><span id="grandTotal">₹0</span></div>
   </div>
 
   <div class="checkout-card">
-    <h3>📍 Delivery Details</h3>
+    <h3 data-i18n="delivery_details">📍 Delivery Details</h3>
     <div class="form-group">
-      <label>Name</label>
-      <input type="text" id="custName" placeholder="Your full name" />
+      <label data-i18n="label_fullname">Name</label>
+      <input type="text" id="custName" data-i18n-placeholder="placeholder_fullname" placeholder="Your full name" />
     </div>
     <div class="form-group">
-      <label>Phone</label>
-      <input type="text" id="custPhone" placeholder="Phone number" />
+      <label data-i18n="label_phone">Phone</label>
+      <input type="text" id="custPhone" data-i18n-placeholder="phone_placeholder" placeholder="Phone number" />
     </div>
     <div class="form-group">
-      <label>Address</label>
-      <textarea id="custAddress" rows="2" placeholder="Delivery address"></textarea>
+      <label data-i18n="label_address">Address</label>
+      <textarea id="custAddress" rows="2" data-i18n-placeholder="placeholder_address" placeholder="Delivery address"></textarea>
     </div>
 
-    <button class="btn-location" id="useLocationBtn">📍 Use My Current Location (delivery tracking ke liye)</button>
-    <div class="location-status" id="locationStatus">✅ Location captured! Delivery boy isi jagah par delivery karega.</div>
+    <button class="btn-location" id="useLocationBtn" data-i18n="use_location">📍 Use My Current Location (for delivery tracking)</button>
+    <div class="location-status" id="locationStatus" data-i18n="location_captured">✅ Location captured! Delivery boy will deliver here.</div>
     <div id="locationPreviewMap"></div>
   </div>
 
   <div class="checkout-card">
-    <h3>💳 Payment Method</h3>
+    <h3 data-i18n="payment_method">💳 Payment Method</h3>
     <div class="payment-options" id="paymentOptions">
       <label class="payment-opt selected">
         <input type="radio" name="payment" value="Cash on Delivery" checked />
-        <span class="icon">💵</span> Cash on Delivery
+        <span class="icon">💵</span> <span data-i18n="cod">Cash on Delivery</span>
       </label>
       <label class="payment-opt">
         <input type="radio" name="payment" value="UPI (Direct)" />
-        <span class="icon">📱</span> UPI (Google Pay / PhonePe / Paytm) — Direct
+        <span class="icon">📱</span> <span data-i18n="upi_direct">UPI (Google Pay / PhonePe / Paytm) — Direct</span>
       </label>
       <label class="payment-opt">
         <input type="radio" name="payment" value="Credit/Debit Card" />
-        <span class="icon">💳</span> Credit / Debit Card
+        <span class="icon">💳</span> <span data-i18n="card">Credit / Debit Card</span>
       </label>
     </div>
 
     <div class="upi-direct-box" id="upiDirectBox">
-      <div>Yeh amount pay karein:</div>
+      <div data-i18n="pay_this_amount">Pay this amount:</div>
       <div class="upi-amount" id="upiAmountDisplay">₹0</div>
       <img id="upiQrImage" src="" alt="UPI QR Code" />
-      <div><a href="#" id="upiAppLink" class="btn-upi-app">📱 Pay via UPI App</a></div>
-      <div style="font-size:12px; color:var(--text-gray); margin-bottom:12px;">Mobile par ऊपर wala button dabayein (GPay/PhonePe seedha khulega), ya QR code scan karein.</div>
+      <div><a href="#" id="upiAppLink" class="btn-upi-app" data-i18n="pay_via_upi">📱 Pay via UPI App</a></div>
+      <div style="font-size:12px; color:var(--text-gray); margin-bottom:12px;" data-i18n="upi_note_1">On mobile, tap the button above (GPay/PhonePe will open directly), or scan the QR code.</div>
       <div class="form-group" style="text-align:left;">
-        <label>Payment ke baad UPI Transaction/Reference ID (UTR) daalein</label>
-        <input type="text" id="upiReferenceInput" placeholder="Jaise: 123456789012" />
+        <label data-i18n="utr_label">Enter UPI Transaction/Reference ID (UTR) after payment</label>
+        <input type="text" id="upiReferenceInput" data-i18n-placeholder="utr_placeholder" placeholder="e.g. 123456789012" />
       </div>
     </div>
 
-    <div class="payment-note">UPI (Direct) me paisa seedha humare account me aata hai — payment karne ke baad UTR number zaroor bharein, hum manually verify karke order confirm karenge. Card payment Razorpay se secure hota hai.</div>
-    <button class="btn btn-primary" style="width:100%; padding:14px; margin-top:16px;" id="placeOrderBtn">Place Order</button>
+    <div class="payment-note" data-i18n="upi_note_2">In Direct UPI, money comes straight to our account — after paying, please enter your UTR number, we'll verify and confirm your order. Card payment is secured via Razorpay.</div>
+    <button class="btn btn-primary" style="width:100%; padding:14px; margin-top:16px;" id="placeOrderBtn" data-i18n="place_order">Place Order</button>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/images.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/main-cart.js"></script>

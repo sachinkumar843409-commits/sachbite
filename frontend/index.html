@@ -12,21 +12,22 @@
   <div class="topbar-inner">
     <a href="index.html" class="logo">
       Sach<span>Bite</span> 🛵
-      <small>Food delivered with love ❤️</small>
+      <small data-i18n="tagline">Food delivered with love ❤️</small>
     </a>
 
     <nav class="main-nav">
-      <a href="index.html" class="active">Home</a>
-      <a href="restaurants.html">Restaurants</a>
-      <a href="offers.html">Offers</a>
-      <a href="track-order.html">Track Order</a>
-      <a href="#about">About</a>
-      <a href="#contact">Contact</a>
+      <a href="index.html" class="active" data-i18n="nav_home">Home</a>
+      <a href="restaurants.html" data-i18n="nav_restaurants">Restaurants</a>
+      <a href="offers.html" data-i18n="nav_offers">Offers</a>
+      <a href="track-order.html" data-i18n="nav_track">Track Order</a>
+      <a href="#about" data-i18n="nav_about">About</a>
+      <a href="#contact" data-i18n="nav_contact">Contact</a>
     </nav>
 
     <div class="topbar-right">
       <div class="location-pill"><span class="pin">📍</span> Kanti, Muzaffarpur <span>▾</span></div>
-      <button class="btn btn-primary" id="loginBtn">Login / Signup</button>
+      <button class="btn" id="langToggleBtn" style="border:1.5px solid var(--primary); background:#fff; color:var(--primary); border-radius:20px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">हिं</button>
+      <button class="btn btn-primary" id="loginBtn" data-i18n="login_signup">Login / Signup</button>
       <a href="checkout.html" class="cart-icon">
         🛒
         <span class="cart-badge" id="cartCount">0</span>
@@ -51,28 +52,28 @@
 
   <div class="container hero-inner">
     <div class="hero-left">
-      <div class="hero-tag">🔥 FRESH FOOD • FAST DELIVERY</div>
-      <h1>Delicious food,<br /><span>just a bite away.</span></h1>
-      <p>Discover delicious food from restaurants near you and get it delivered straight to your door.</p>
+      <div class="hero-tag" data-i18n="hero_tag">🔥 FRESH FOOD • FAST DELIVERY</div>
+      <h1><span data-i18n="hero_title_1">Delicious food,</span><br /><span data-i18n="hero_title_2">just a bite away.</span></h1>
+      <p data-i18n="hero_desc">Discover delicious food from restaurants near you and get it delivered straight to your door.</p>
 
       <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Search for pizza, burger, momos..." />
-        <button class="btn btn-primary" id="searchBtn">Search</button>
+        <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder" placeholder="Search for pizza, burger, momos..." />
+        <button class="btn btn-primary" id="searchBtn" data-i18n="search_btn">Search</button>
       </div>
 
       <div class="delivering-row">
-        📍 Delivering near <strong id="deliveringLocation">Kanti, Muzaffarpur</strong>
-        <span class="pill-green">Fast Delivery</span>
+        <span data-i18n="delivering_near">📍 Delivering near</span> <strong id="deliveringLocation">Kanti, Muzaffarpur</strong>
+        <span class="pill-green" data-i18n="fast_delivery">Fast Delivery</span>
       </div>
     </div>
 
     <div class="hero-right">
       <img id="heroImg" src="" alt="Pizza" />
       <div class="rating-card">
-        😍 <div><span class="num">4.9</span><small>1000+ Happy Customers</small></div>
+        😍 <div><span class="num">4.9</span><small data-i18n="happy_customers">1000+ Happy Customers</small></div>
       </div>
       <div class="offer-card">
-        <div class="tag" id="heroOfferTag">🔥 TODAY'S OFFER</div>
+        <div class="tag" id="heroOfferTag" data-i18n="todays_offer">🔥 TODAY'S OFFER</div>
         <div class="big" id="heroOfferTitle">Up to 50% OFF</div>
         <small id="heroOfferSubtitle">On Selected Items</small>
       </div>
@@ -82,15 +83,15 @@
 
 <section class="section container" id="categories">
   <div class="section-head">
-    <h2>What are you craving?</h2>
+    <h2 data-i18n="craving_heading">What are you craving?</h2>
   </div>
   <div class="category-row" id="categoryRow"></div>
 </section>
 
 <section class="section container" id="restaurants">
   <div class="section-head">
-    <h2>Popular restaurants</h2>
-    <a href="restaurants.html" class="view-all">View all →</a>
+    <h2 data-i18n="popular_restaurants">Popular restaurants</h2>
+    <a href="restaurants.html" class="view-all" data-i18n="view_all">View all →</a>
   </div>
   <div class="restaurant-row" id="restaurantRow"></div>
 </section>
@@ -98,9 +99,9 @@
 <section class="section container">
   <div class="promo-banner">
     <div>
-      <h2>🏷️ HUNGRY?<br />Let's fix that! 😊</h2>
-      <p>Order your favourite food from restaurants near you with SachBite.</p>
-      <a href="restaurants.html" class="btn btn-white">Explore Food →</a>
+      <h2><span data-i18n="promo_heading">🏷️ HUNGRY?</span><br /><span data-i18n="promo_sub">Let's fix that! 😊</span></h2>
+      <p data-i18n="promo_desc">Order your favourite food from restaurants near you with SachBite.</p>
+      <a href="restaurants.html" class="btn btn-white" data-i18n="explore_food">Explore Food →</a>
     </div>
     <img id="bannerImg" src="" alt="Burger" />
   </div>
@@ -108,7 +109,7 @@
 
 <section class="section container" id="about">
   <div class="section-head">
-    <h2>About Us</h2>
+    <h2 data-i18n="about_heading">About Us</h2>
   </div>
   <div class="about-box">
     <p id="aboutText">SachBite ek local food delivery service hai jo aapke favourite restaurants ko aapke ghar tak pahunchata hai.</p>
@@ -117,34 +118,34 @@
 
 <section class="section container" id="contact">
   <div class="section-head">
-    <h2>Contact Us</h2>
+    <h2 data-i18n="contact_heading">Contact Us</h2>
   </div>
   <div class="contact-grid">
     <div class="contact-card">
       <div class="contact-icon">📧</div>
       <div>
-        <div class="contact-label">Email us</div>
+        <div class="contact-label" data-i18n="email_us">Email us</div>
         <a href="mailto:sachinkumar843409@gmail.com" id="contactEmail" class="contact-value">sachinkumar843409@gmail.com</a>
       </div>
     </div>
     <div class="contact-card">
       <div class="contact-icon">📞</div>
       <div>
-        <div class="contact-label">Call us</div>
+        <div class="contact-label" data-i18n="call_us">Call us</div>
         <a href="tel:+919304096306" id="contactPhone" class="contact-value">+91 93040 96306</a>
       </div>
     </div>
     <div class="contact-card">
       <div class="contact-icon">🕒</div>
       <div>
-        <div class="contact-label">Support</div>
-        <div class="contact-value" id="supportHours">24x7 Support</div>
+        <div class="contact-label" data-i18n="support">Support</div>
+        <div class="contact-value" id="supportHours" data-i18n="support_hours">24x7 Support</div>
       </div>
     </div>
     <div class="contact-card">
       <div class="contact-icon">📍</div>
       <div>
-        <div class="contact-label">Location</div>
+        <div class="contact-label" data-i18n="location_label">Location</div>
         <div class="contact-value" id="contactLocation">Kanti, Muzaffarpur</div>
       </div>
     </div>
@@ -152,44 +153,45 @@
 </section>
 
 <footer>
-  © 2026 SachBite. Food delivered with love ❤️ — <span id="footerLocation">Kanti, Muzaffarpur</span>
+  © 2026 SachBite. <span data-i18n="footer_text">Food delivered with love ❤️</span> — <span id="footerLocation">Kanti, Muzaffarpur</span>
 </footer>
 
 <!-- Login/Signup Modal -->
 <div class="modal-overlay" id="authModal">
   <div class="modal-box">
-    <h3>Login / Signup</h3>
+    <h3 data-i18n="modal_title">Login / Signup</h3>
 
     <div id="authStepDetails">
       <div class="form-group">
-        <label>Name</label>
-        <input type="text" id="authName" placeholder="Your name" />
+        <label data-i18n="label_name">Name</label>
+        <input type="text" id="authName" data-i18n-placeholder="placeholder_name" placeholder="Your name" />
       </div>
       <div class="form-group">
-        <label>Phone Number</label>
-        <input type="text" id="authPhone" placeholder="10-digit phone number" maxlength="10" />
+        <label data-i18n="label_phone">Phone Number</label>
+        <input type="text" id="authPhone" data-i18n-placeholder="placeholder_phone" placeholder="10-digit phone number" maxlength="10" />
       </div>
       <div class="modal-actions">
-        <button class="btn-cancel" id="authCancelBtn">Cancel</button>
-        <button class="btn-save" id="authSendOtpBtn">Send OTP</button>
+        <button class="btn-cancel" id="authCancelBtn" data-i18n="cancel">Cancel</button>
+        <button class="btn-save" id="authSendOtpBtn" data-i18n="send_otp">Send OTP</button>
       </div>
     </div>
 
     <div id="authStepOtp" style="display:none;">
+      <p id="authWelcomeNote" style="font-size:14px; font-weight:700; padding:10px 12px; border-radius:10px; margin-bottom:10px;"></p>
       <p style="font-size:13px; color:var(--text-gray); margin-bottom:10px;">
-        <span id="authOtpSentTo"></span> par OTP bhej diya gaya hai.
+        <span data-i18n="otp_sent_to">OTP sent to</span> <span id="authOtpSentTo"></span>
       </p>
       <div class="form-group">
-        <label>Enter OTP</label>
-        <input type="text" id="authOtp" placeholder="4-digit OTP" maxlength="4" inputmode="numeric" />
+        <label data-i18n="label_otp">Enter OTP</label>
+        <input type="text" id="authOtp" data-i18n-placeholder="placeholder_otp" placeholder="4-digit OTP" maxlength="4" inputmode="numeric" />
       </div>
       <p id="authOtpDemoNote" style="font-size:12px; color:var(--primary); font-weight:600; margin-bottom:6px;"></p>
       <div class="modal-actions">
-        <button class="btn-cancel" id="authBackBtn">← Back</button>
-        <button class="btn-save" id="authVerifyOtpBtn">Verify &amp; Continue</button>
+        <button class="btn-cancel" id="authBackBtn" data-i18n="back">← Back</button>
+        <button class="btn-save" id="authVerifyOtpBtn" data-i18n="verify_continue">Verify &amp; Continue</button>
       </div>
       <div style="text-align:center; margin-top:10px;">
-        <a href="#" id="authResendBtn" style="font-size:12px; color:var(--primary); font-weight:600;">Resend OTP</a>
+        <a href="#" id="authResendBtn" data-i18n="resend_otp" style="font-size:12px; color:var(--primary); font-weight:600;">Resend OTP</a>
       </div>
     </div>
 
@@ -197,6 +199,7 @@
   </div>
 </div>
 
+<script src="js/i18n.js"></script>
 <script src="js/images.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/main-cart.js"></script>
