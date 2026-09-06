@@ -1,7 +1,9 @@
 const API = "/api";
 const STATUS_STEPS = ["Order Confirmed", "Preparing", "Out for Delivery", "Delivered"];
 let liveMaps = {}; // orderId -> { map, bikeMarker }
+let etaCountdowns = {}; // orderId -> seconds remaining (local live countdown)
 let pollInterval = null;
+let tickInterval = null;
 
 function formatDate(iso) {
   return new Date(iso).toLocaleString("en-IN", {
@@ -24,7 +26,9 @@ async function trackByPhone() {
 
   results.innerHTML = "<p style='color:var(--text-gray)'>Dhoondh rahe hain...</p>";
   liveMaps = {};
+  etaCountdowns = {};
   if (pollInterval) clearInterval(pollInterval);
+  if (tickInterval) clearInterval(tickInterval);
 
   try {
     const res = await fetch(`${API}/customers/${encodeURIComponent(phone)}/orders`);
@@ -38,8 +42,9 @@ async function trackByPhone() {
     results.innerHTML = orders
       .map((o) => {
         const currentIndex = STATUS_STEPS.indexOf(o.status);
+        const progressPct = currentIndex <= 0 ? "0%" : `${(currentIndex / (STATUS_STEPS.length - 1)) * 100}%`;
         const stepsHTML = STATUS_STEPS.map(
-          (step, i) => `<div class="track-step ${i <= currentIndex ? "done" : ""}">${step}</div>`
+          (step, i) => `<div class="track-step ${i <= currentIndex ? "done" : ""} ${i === currentIndex ? "current" : ""}">${step}</div>`
         ).join("");
 
         const showMap = o.status === "Out for Delivery" && o.location;
@@ -48,8 +53,8 @@ async function trackByPhone() {
         <div class="track-order-card">
           <div><span class="oid">${o.id}</span> — ${formatDate(o.date)}</div>
           <div style="margin-top:6px; font-size:14px; color:var(--text-gray);">Grand Total: ₹${o.grandTotal}</div>
-          <div class="track-status">${stepsHTML}</div>
-          ${showMap ? `<div class="live-map-box" id="map-${o.id}"></div><div class="live-eta" id="eta-${o.id}">Live tracking load ho raha hai...</div>` : ""}
+          <div class="track-status" style="--progress-pct: ${progressPct};">${stepsHTML}</div>
+          ${showMap ? `<div class="live-map-box" id="map-${o.id}"></div><div class="live-eta" id="eta-${o.id}"><span class="eta-bike">🛵</span> <span id="eta-text-${o.id}">Live tracking load ho raha hai...</span></div>` : ""}
         </div>`;
       })
       .join("");
@@ -62,6 +67,10 @@ async function trackByPhone() {
       pollInterval = setInterval(() => {
         liveOrders.forEach((o) => updateLiveMap(o.id));
       }, 5000);
+      // Har second local countdown timer tick karta hai (asli update har 5s me hota hai poll se)
+      tickInterval = setInterval(() => {
+        liveOrders.forEach((o) => tickCountdown(o.id));
+      }, 1000);
     }
   } catch (e) {
     results.innerHTML = "<p style='color:var(--text-gray)'>Kuch galat ho gaya. Backend chal raha hai check karein.</p>";
@@ -120,13 +129,42 @@ async function updateLiveMap(orderId) {
 }
 
 function updateETAText(orderId, progress) {
-  const el = document.getElementById(`eta-${orderId}`);
-  if (!el) return;
+  const box = document.getElementById(`eta-${orderId}`);
+  if (!box) return;
+
   if (progress.arrived) {
-    el.textContent = "✅ Delivery boy pahunch chuka hai!";
-  } else {
-    el.textContent = `🛵 ${progress.distanceRemainingKm} km baaki — ETA: ${progress.etaMinutes} minute`;
+    box.classList.add("arrived");
+    box.innerHTML = `<span class="eta-bike">✅</span> <span>Delivery boy pahunch chuka hai!</span>`;
+    delete etaCountdowns[orderId];
+    return;
   }
+
+  // Naye poll data se local countdown resync karein (server ka data hamesha sahi maana jata hai)
+  etaCountdowns[orderId] = progress.etaMinutes * 60;
+  renderEtaText(orderId, progress.distanceRemainingKm);
+}
+
+function renderEtaText(orderId, distanceKm) {
+  const textEl = document.getElementById(`eta-text-${orderId}`);
+  if (!textEl || etaCountdowns[orderId] === undefined) return;
+
+  const totalSec = Math.max(0, etaCountdowns[orderId]);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  const timeStr = `${min}:${String(sec).padStart(2, "0")}`;
+
+  textEl.innerHTML = `${distanceKm} km baaki <span class="eta-timer">⏱ ${timeStr}</span>`;
+}
+
+// Har second countdown ko 1 second se ghataata hai — sirf visual smoothness ke liye,
+// asli data hamesha 5-second poll se hi aata hai (yeh sirf beech ke seconds "jeevit" dikhata hai)
+function tickCountdown(orderId) {
+  if (etaCountdowns[orderId] === undefined) return;
+  if (etaCountdowns[orderId] > 0) etaCountdowns[orderId] -= 1;
+
+  const cachedDistanceEl = document.getElementById(`eta-text-${orderId}`);
+  const lastDistance = cachedDistanceEl?.textContent.match(/^([\d.]+)/)?.[1] || "";
+  renderEtaText(orderId, lastDistance);
 }
 
 document.getElementById("trackBtn").addEventListener("click", trackByPhone);

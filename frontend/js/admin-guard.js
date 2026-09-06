@@ -2,7 +2,7 @@
 // Agar valid token nahi hai to login page par bhej deta hai
 
 (async function guardAdminPage() {
-  const token = localStorage.getItem("sachbite_admin_token");
+  const token = sessionStorage.getItem("sachbite_admin_token");
 
   if (!token) {
     window.location.href = "login.html";
@@ -17,7 +17,7 @@
     });
 
     if (!res.ok) {
-      localStorage.removeItem("sachbite_admin_token");
+      sessionStorage.removeItem("sachbite_admin_token");
       window.location.href = "login.html";
     }
   } catch (e) {
@@ -27,13 +27,13 @@
 })();
 
 function adminLogout() {
-  const token = localStorage.getItem("sachbite_admin_token");
+  const token = sessionStorage.getItem("sachbite_admin_token");
   fetch("/api/admin/logout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token }),
   }).finally(() => {
-    localStorage.removeItem("sachbite_admin_token");
+    sessionStorage.removeItem("sachbite_admin_token");
     window.location.href = "login.html";
   });
 }
@@ -61,11 +61,11 @@ function escapeHtml(str) {
 // jud jaaye. Backend ab in requests ko token ke bina reject kar deta hai — isse koi
 // bhi bina login kiye seedha API call karke data change nahi kar sakta.
 async function adminFetch(url, options = {}) {
-  const token = localStorage.getItem("sachbite_admin_token");
+  const token = sessionStorage.getItem("sachbite_admin_token");
   const headers = { ...(options.headers || {}), Authorization: `Bearer ${token || ""}` };
   const res = await fetch(url, { ...options, headers });
   if (res.status === 401) {
-    localStorage.removeItem("sachbite_admin_token");
+    sessionStorage.removeItem("sachbite_admin_token");
     window.location.href = "login.html";
   }
   return res;

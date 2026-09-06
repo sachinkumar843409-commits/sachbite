@@ -136,7 +136,7 @@ document.getElementById("savePasswordBtn").addEventListener("click", async () =>
 });
 
 document.getElementById("saveSecurityBtn").addEventListener("click", async () => {
-  const token = localStorage.getItem("sachbite_admin_token");
+  const token = sessionStorage.getItem("sachbite_admin_token");
   const question = document.getElementById("securityQuestion").value.trim();
   const answer = document.getElementById("securityAnswer").value.trim();
   const currentPassword = document.getElementById("securityCurrentPassword").value;

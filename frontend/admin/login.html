@@ -124,7 +124,7 @@
         return;
       }
 
-      localStorage.setItem("sachbite_admin_token", data.token);
+      sessionStorage.setItem("sachbite_admin_token", data.token);
       window.location.href = "overview.html";
     } catch (e) {
       alert("Server se connect nahi ho paya. Server chal raha hai check karein.");

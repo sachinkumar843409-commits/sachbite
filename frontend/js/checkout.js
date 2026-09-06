@@ -165,6 +165,15 @@ document.getElementById("placeOrderBtn").addEventListener("click", async () => {
   const address = document.getElementById("custAddress").value.trim();
   const payment = getSelectedPayment();
 
+  // Bina login kiye order place nahi ho sakta — customer ko login modal dikha dein
+  const currentUser = JSON.parse(localStorage.getItem("sachbite_user") || "null");
+  if (!currentUser) {
+    showToast("Login zaroori hai", "Order place karne ke liye pehle Login/Signup karein.", "error");
+    if (typeof resetAuthModal === "function") resetAuthModal();
+    document.getElementById("authModal")?.classList.add("show");
+    return;
+  }
+
   if (cart.length === 0) {
     showToast("Cart khali hai", "Pehle kuch order karein.", "error");
     return;
@@ -192,6 +201,10 @@ document.getElementById("placeOrderBtn").addEventListener("click", async () => {
     }
     if (!upiReference) {
       showToast("UTR number zaroori hai", "Payment karne ke baad UPI transaction/reference ID bharein.", "error");
+      return;
+    }
+    if (!/^\d{12}$/.test(upiReference)) {
+      showToast("Please fill correct UTR", "UTR number sahi 12-digit ka hona chahiye — apne payment app/SMS me check karke dobara bharein.", "error");
       return;
     }
     await finalizeOrder(customer, cart, null, upiReference);

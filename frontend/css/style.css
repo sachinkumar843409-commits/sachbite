@@ -753,3 +753,151 @@ footer {
   #sbToastContainer { left: 12px; right: 12px; top: 12px; }
   .sb-toast { max-width: none; min-width: 0; width: 100%; }
 }
+
+/* ---------- Live Order Tracking (track-order.html) ---------- */
+.track-order-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+  animation: sbFadeIn 0.4s ease;
+}
+
+.track-order-card .oid {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 15px;
+}
+
+/* Progress timeline with connecting line + animated fill */
+.track-status {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin: 28px 4px 8px;
+}
+
+.track-status::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.track-status::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 0;
+  height: 3px;
+  background: var(--green);
+  z-index: 1;
+  width: var(--progress-pct, 0%);
+  transition: width 0.6s ease;
+}
+
+.track-step {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-gray);
+  font-weight: 600;
+}
+
+.track-step::before {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 3px solid var(--border);
+  margin: 0 auto 6px;
+  transition: all 0.3s ease;
+}
+
+.track-step.done {
+  color: var(--green);
+}
+
+.track-step.done::before {
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 0 4px var(--green-bg);
+}
+
+.track-step.current::before {
+  animation: sbPulseRing 1.4s infinite;
+}
+
+/* Live map box */
+.live-map-box {
+  height: 260px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 16px;
+  border: 1px solid var(--border);
+}
+
+.emoji-marker {
+  font-size: 22px;
+  text-align: center;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+}
+
+/* Live ETA badge with pulsing bike + live countdown */
+.live-eta {
+  margin-top: 12px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-eta .eta-bike {
+  font-size: 20px;
+  display: inline-block;
+  animation: sbBikeBounce 1s infinite ease-in-out;
+}
+
+.live-eta.arrived {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.live-eta .eta-timer {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255,255,255,0.6);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+@keyframes sbBikeBounce {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+@keyframes sbPulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(255, 122, 26, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(255, 122, 26, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 122, 26, 0); }
+}
+
+@keyframes sbFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
