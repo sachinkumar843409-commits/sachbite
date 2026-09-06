@@ -67,6 +67,8 @@ function renderOrderCard(order) {
         <div class="row"><span class="k">📞</span> Phone: ${escapeHtml(order.customer.phone)}</div>
         <div class="row"><span class="k">📍</span> Address: ${escapeHtml(order.customer.address)}</div>
         <div class="row"><span class="k">💳</span> Payment: <span class="pay">${escapeHtml(order.customer.payment)}</span></div>
+        ${order.deliveryPartnerName ? `<div class="row"><span class="k">🛵</span> Delivery Partner: ${escapeHtml(order.deliveryPartnerName)}</div>` : ""}
+        ${order.rating ? `<div class="row"><span class="k">⭐</span> Rating: ${"★".repeat(order.rating)}${"☆".repeat(5 - order.rating)}${order.review ? ` — "${escapeHtml(order.review)}"` : ""}</div>` : ""}
         ${order.paymentStatus ? `<div class="row"><span class="k">✅</span> Status: <span class="pay">${order.paymentStatus}</span></div>` : ""}
         ${order.upiReference ? `<div class="row"><span class="k">🔢</span> UTR/Ref ID: <span class="pay">${escapeHtml(order.upiReference)}</span></div>` : ""}
         ${order.paymentStatus === "Awaiting Verification (Direct UPI)" ? `
@@ -92,13 +94,65 @@ function renderOrderCard(order) {
   </div>`;
 }
 
+let knownOrderIds = null; // pehli baar null rakhte hain taaki page-load par purane orders ke liye beep na baje
+
+function playNewOrderSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.2].forEach((delay) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.2, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.3);
+    });
+  } catch (e) {}
+}
+
 async function loadOrders() {
   const container = document.getElementById("ordersContainer");
   const res = await fetch(`${API}/orders`);
-  const orders = await res.json();
+  let orders = await res.json();
+
+  // Naya order aane par beep + browser notification (page pehli baar load hote waqt nahi)
+  const currentIds = new Set(orders.map((o) => o.id));
+  if (knownOrderIds !== null) {
+    const newOnes = orders.filter((o) => !knownOrderIds.has(o.id));
+    if (newOnes.length > 0) {
+      playNewOrderSound();
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("🔔 Naya Order Aaya!", { body: `${newOnes[0].customer.name} — ₹${newOnes[0].grandTotal}` });
+      }
+    }
+  }
+  knownOrderIds = currentIds;
+
+  // Search + date filter apply karein
+  const searchVal = (document.getElementById("orderSearchInput")?.value || "").trim().toLowerCase();
+  const dateFilter = document.getElementById("orderDateFilter")?.value || "all";
+
+  if (searchVal) {
+    orders = orders.filter(
+      (o) => o.id.toLowerCase().includes(searchVal) || o.customer.name.toLowerCase().includes(searchVal) || o.customer.phone.includes(searchVal)
+    );
+  }
+  if (dateFilter !== "all") {
+    const now = new Date();
+    orders = orders.filter((o) => {
+      const d = new Date(o.date);
+      if (dateFilter === "today") return d.toDateString() === now.toDateString();
+      if (dateFilter === "week") return now - d <= 7 * 24 * 60 * 60 * 1000;
+      return true;
+    });
+  }
 
   if (orders.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="big">📭</div><p>Koi order nahi hai abhi.</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="big">📭</div><p>Koi order nahi mila.</p></div>`;
     return;
   }
 
@@ -106,10 +160,15 @@ async function loadOrders() {
 }
 
 async function updateStatus(id, status) {
+  let deliveryPartnerName;
+  if (status === "Out for Delivery") {
+    deliveryPartnerName = prompt("Delivery partner ka naam daalein (customer ko dikhega):", "");
+    if (deliveryPartnerName === null) return; // admin ne cancel kiya
+  }
   await adminFetch(`${API}/orders/${id}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, deliveryPartnerName }),
   });
   loadOrders();
 }
@@ -142,3 +201,12 @@ document.getElementById("clearAllBtn").addEventListener("click", async () => {
 
 loadOrders();
 loadStats();
+
+// Har 8 second me naye orders check karte hain (sound alert ke liye)
+setInterval(loadOrders, 8000);
+if ("Notification" in window && Notification.permission === "default") {
+  Notification.requestPermission();
+}
+
+document.getElementById("orderSearchInput")?.addEventListener("input", loadOrders);
+document.getElementById("orderDateFilter")?.addEventListener("change", loadOrders);

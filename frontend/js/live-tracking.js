@@ -53,14 +53,20 @@ async function refreshLiveDeliveries() {
       const p = d.progress;
       if (!p) return "";
       return `
-      <div class="delivery-card" onclick="focusDelivery(${d.location.lat}, ${d.location.lng})">
-        <div class="oid">${escapeHtml(d.id)}</div>
-        <div class="cname">${escapeHtml(d.customerName)}</div>
-        <div class="addr">📍 ${escapeHtml(d.customerAddress)}</div>
-        <div class="progress-track"><div class="progress-fill" style="width:${p.progressPercent}%"></div></div>
-        <div class="delivery-meta">
-          <span>${p.arrived ? "✅ Pahunch gaya" : `⏱ ETA: ${p.etaMinutes} min`}</span>
-          <span>${p.distanceRemainingKm} km baaki</span>
+      <div class="delivery-card" id="card-${d.id}">
+        <div class="dc-top" onclick="focusDelivery(${d.location.lat}, ${d.location.lng})" style="cursor:pointer;">
+          <div class="oid">${escapeHtml(d.id)}</div>
+          <div class="cname">${escapeHtml(d.customerName)}</div>
+          <div class="addr">📍 ${escapeHtml(d.customerAddress)}</div>
+          <div class="progress-track"><div class="progress-fill" style="width:${p.progressPercent}%"></div></div>
+          <div class="delivery-meta">
+            <span>${p.arrived ? "✅ Pahunch gaya" : `⏱ ETA: ${p.etaMinutes} min`}</span>
+            <span>${p.distanceRemainingKm} km baaki</span>
+          </div>
+        </div>
+        <div class="dc-actions">
+          <a href="tel:${escapeHtml(d.customerPhone || "")}" class="dc-btn dc-call" onclick="event.stopPropagation()">📞 Call Customer</a>
+          <button class="dc-btn dc-delivered" onclick="event.stopPropagation(); markDelivered('${d.id}')">✅ Delivered</button>
         </div>
       </div>`;
     })
@@ -120,10 +126,31 @@ function focusDelivery(lat, lng) {
   if (map) map.setView([lat, lng], 15);
 }
 
+// Ek click me order ko "Delivered" mark kar do — admin ko dashboard par jaakar
+// dhoondhne ki zaroorat nahi, live tracking se hi seedha ho jata hai
+async function markDelivered(orderId) {
+  if (!confirm(`Order ${orderId} ko "Delivered" mark karein?`)) return;
+  await adminFetch(`${API}/orders/${orderId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "Delivered" }),
+  });
+  refreshLiveDeliveries();
+}
+
+function updateLastRefreshedLabel() {
+  const el = document.getElementById("lastRefreshed");
+  if (el) el.textContent = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
 // Style for emoji markers
 const style = document.createElement("style");
 style.textContent = `.emoji-marker { font-size: 24px; text-align: center; }`;
 document.head.appendChild(style);
 
 refreshLiveDeliveries();
-setInterval(refreshLiveDeliveries, 5000);
+updateLastRefreshedLabel();
+setInterval(() => {
+  refreshLiveDeliveries();
+  updateLastRefreshedLabel();
+}, 5000);

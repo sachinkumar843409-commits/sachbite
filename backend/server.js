@@ -552,9 +552,26 @@ app.patch("/api/orders/:id/reject-payment", requireAdmin, async (req, res) => {
 
 
 // Update order status
+// Customer apna order khud cancel kar sake — sirf tab tak jab tak "Out for Delivery"
+// nahi hua (uske baad cancel karna theek nahi, khaana ban chuka/nikal chuka hota hai)
+app.patch("/api/orders/:id/cancel", requireCustomerToken, (req, res) => {
+  const db = readDB();
+  const order = db.orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.customer.phone !== req.customerPhone) {
+    return res.status(403).json({ error: "Yeh aapka order nahi hai." });
+  }
+  if (["Out for Delivery", "Delivered", "Cancelled"].includes(order.status)) {
+    return res.status(400).json({ error: "Yeh order ab cancel nahi ho sakta." });
+  }
+  order.status = "Cancelled";
+  writeDB(db);
+  res.json(order);
+});
+
 app.patch("/api/orders/:id/status", requireAdmin, (req, res) => {
   const db = readDB();
-  const { status } = req.body;
+  const { status, deliveryPartnerName } = req.body;
   const validStatuses = ["Order Confirmed", "Preparing", "Out for Delivery", "Delivered"];
 
   if (!validStatuses.includes(status)) {
@@ -565,9 +582,31 @@ app.patch("/api/orders/:id/status", requireAdmin, (req, res) => {
   if (!order) return res.status(404).json({ error: "Order not found" });
 
   order.status = status;
-  if (status === "Out for Delivery" && !order.outForDeliveryAt) {
-    order.outForDeliveryAt = new Date().toISOString();
+  if (status === "Out for Delivery") {
+    if (!order.outForDeliveryAt) order.outForDeliveryAt = new Date().toISOString();
+    if (deliveryPartnerName) order.deliveryPartnerName = deliveryPartnerName;
   }
+  writeDB(db);
+  res.json(order);
+});
+
+// Customer apne delivered order ko rating + review de sake (ek hi baar)
+app.post("/api/orders/:id/rating", requireCustomerToken, (req, res) => {
+  const { rating, review } = req.body;
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ error: "Rating 1 se 5 ke beech honi chahiye." });
+  }
+  const db = readDB();
+  const order = db.orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.customer.phone !== req.customerPhone) {
+    return res.status(403).json({ error: "Yeh aapka order nahi hai." });
+  }
+  if (order.status !== "Delivered") {
+    return res.status(400).json({ error: "Sirf delivered order ko rate kiya ja sakta hai." });
+  }
+  order.rating = rating;
+  order.review = (review || "").slice(0, 300);
   writeDB(db);
   res.json(order);
 });
@@ -635,7 +674,9 @@ app.get("/api/deliveries/live", (req, res) => {
     .map((o) => ({
       id: o.id,
       customerName: o.customer.name,
+      customerPhone: o.customer.phone,
       customerAddress: o.customer.address,
+      grandTotal: o.grandTotal,
       location: o.location,
       progress: computeDeliveryProgress(o, db.settings.restaurantLocation),
     }))
@@ -699,7 +740,27 @@ app.get("/api/customers", (req, res) => {
 });
 
 // Order history for a specific customer (by phone)
-app.get("/api/customers/:phone/orders", (req, res) => {
+// Customer apna hi order-history dekh sake — kisi aur ka phone daal kar unka address/orders
+// na dekh paaye, isliye login token check karte hain aur token us phone se match hona chahiye
+function requireCustomerToken(req, res, next) {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const phone = token && customerTokens[token];
+  if (!phone) return res.status(403).json({ error: "Login zaroori hai." });
+  req.customerPhone = phone;
+  next();
+}
+
+function requireCustomer(req, res, next) {
+  requireCustomerToken(req, res, () => {
+    if (req.customerPhone !== req.params.phone) {
+      return res.status(403).json({ error: "Login zaroori hai apna order dekhne ke liye." });
+    }
+    next();
+  });
+}
+
+app.get("/api/customers/:phone/orders", requireCustomer, (req, res) => {
   const db = readDB();
   const orders = db.orders
     .filter((o) => o.customer.phone === req.params.phone)
@@ -898,13 +959,25 @@ app.get("/api/analytics", (req, res) => {
 let otpStore = {}; // phone -> { otp, name, expiresAt }
 let customerTokens = {}; // token -> phone
 
+// Har phone number par max 3 OTP request per 10 minute — spam/SMS-abuse rokne ke liye
+const otpRequestLog = {}; // phone -> [timestamps]
+const OTP_MAX_REQUESTS = 3;
+const OTP_REQUEST_WINDOW_MS = 10 * 60 * 1000;
+
 app.post("/api/auth/send-otp", async (req, res) => {
   const { name, phone } = req.body;
   if (!name || !phone) return res.status(400).json({ error: "Name aur phone number dono zaroori hain" });
   if (!/^[0-9]{10}$/.test(phone)) return res.status(400).json({ error: "Sahi 10-digit phone number bharein" });
 
+  const now = Date.now();
+  otpRequestLog[phone] = (otpRequestLog[phone] || []).filter((t) => now - t < OTP_REQUEST_WINDOW_MS);
+  if (otpRequestLog[phone].length >= OTP_MAX_REQUESTS) {
+    return res.status(429).json({ error: "Bahut zyada OTP request ho gaye. 10 minute baad dobara try karein." });
+  }
+  otpRequestLog[phone].push(now);
+
   const otp = String(Math.floor(1000 + Math.random() * 9000));
-  otpStore[phone] = { otp, name, expiresAt: Date.now() + 5 * 60 * 1000 };
+  otpStore[phone] = { otp, name, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 };
 
   // Naya customer hai ya pehle se account hai — frontend isse sahi popup message dikhayega
   const db = readDB();
@@ -931,8 +1004,15 @@ app.post("/api/auth/verify-otp", (req, res) => {
     delete otpStore[phone];
     return res.status(400).json({ error: "OTP expire ho gaya, dobara bhejwayein" });
   }
+
+  // Max 5 galat attempts — usse zyada par OTP hi invalidate kar do (brute-force se bachne ke liye)
   if (!otp || String(otp).trim() !== record.otp) {
-    return res.status(401).json({ error: "Galat OTP, dobara check karein" });
+    record.attempts = (record.attempts || 0) + 1;
+    if (record.attempts >= 5) {
+      delete otpStore[phone];
+      return res.status(429).json({ error: "Bahut zyada galat attempts. Naya OTP dobara request karein." });
+    }
+    return res.status(401).json({ error: `Galat OTP. ${5 - record.attempts} attempts baaki hain.` });
   }
 
   delete otpStore[phone];

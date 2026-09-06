@@ -124,6 +124,7 @@ async function verifyOtp() {
 
     localStorage.setItem("sachbite_user", JSON.stringify(data.user));
     localStorage.setItem("sachbite_token", data.token);
+    window.dispatchEvent(new CustomEvent("sachbite:login"));
 
     document.getElementById("authModal").classList.remove("show");
     resetAuthModal();

@@ -75,9 +75,9 @@ const TRANSLATIONS = {
 
   // ---------- Track Order page ----------
   track_heading: { en: "📦 Track Your Order", hi: "📦 अपना ऑर्डर ट्रैक करें" },
-  track_desc: { en: "Enter the phone number used for the order:", hi: "जिस फोन नंबर से ऑर्डर किया था वो डालें:" },
+  track_desc: { en: "All your orders (newest first) will show here.", hi: "यहां आपके सारे ऑर्डर (नए से पुराने) दिखेंगे।" },
   phone_placeholder: { en: "Phone number", hi: "फ़ोन नंबर" },
-  track_btn: { en: "Track", hi: "ट्रैक करें" },
+  track_btn: { en: "🔄 Refresh", hi: "🔄 रीफ्रेश करें" },
 
   // ---------- Restaurant detail page ----------
   menu_heading: { en: "Menu", hi: "मेन्यू" },

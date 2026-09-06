@@ -886,6 +886,79 @@ footer {
   border-radius: 8px;
 }
 
+.track-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.track-action-btn {
+  flex: 1;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  transition: 0.15s;
+}
+
+.track-action-btn:hover {
+  background: var(--primary-light);
+}
+
+.track-action-danger {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.track-action-danger:hover {
+  background: #fee2e2;
+}
+
+.rating-box {
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.rating-box.rated {
+  background: var(--green-bg);
+  color: var(--green);
+  font-size: 20px;
+}
+
+.rating-review {
+  font-size: 13px;
+  color: var(--text-dark);
+  font-style: italic;
+  margin-top: 6px;
+}
+
+.star-picker {
+  font-size: 28px;
+  letter-spacing: 4px;
+  cursor: pointer;
+  color: #f5b301;
+}
+
+.rating-box textarea {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  resize: none;
+  font-family: inherit;
+}
+
 @keyframes sbBikeBounce {
   0%, 100% { transform: translateX(0); }
   50% { transform: translateX(4px); }

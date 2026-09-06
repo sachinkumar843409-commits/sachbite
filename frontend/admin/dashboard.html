@@ -39,6 +39,15 @@
       </div>
     </div>
 
+    <div class="order-filters" style="display:flex; gap:10px; margin: 16px 0; flex-wrap:wrap;">
+      <input type="text" id="orderSearchInput" placeholder="🔍 Order ID, naam ya phone se search karein..." style="flex:1; min-width:200px; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:13px;" />
+      <select id="orderDateFilter" style="padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:13px;">
+        <option value="all">Sabhi Orders</option>
+        <option value="today">Aaj Ke</option>
+        <option value="week">Is Hafte Ke</option>
+      </select>
+    </div>
+
     <div id="ordersContainer"></div>
   </div>
 </main>
