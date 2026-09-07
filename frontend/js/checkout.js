@@ -291,12 +291,14 @@ function resetPlaceOrderBtn() {
 
 // ---------- Final step: SachBite order create karo ----------
 async function finalizeOrder(customer, cart, paymentReference, upiReference) {
+  const instructions = document.getElementById("custInstructions")?.value.trim() || "";
   const body = {
     customer,
     items: cart,
     location: capturedLocation,
     paymentReference,
     upiReference,
+    instructions,
   };
 
   try {

@@ -2,10 +2,21 @@ const API = "/api";
 let siteSettings = {};
 
 // ---------- Load categories ----------
+let bestsellerNames = new Set();
+
+async function loadBestsellers() {
+  try {
+    const res = await fetch(`${API}/analytics`);
+    const data = await res.json();
+    bestsellerNames = new Set((data.topItems || []).slice(0, 3).map((i) => i.name));
+  } catch (e) {}
+}
+
 async function loadMenu() {
   const row = document.getElementById("categoryRow");
   if (!row) return;
   try {
+    await loadBestsellers();
     const res = await fetch(`${API}/menu`);
     const menu = await res.json();
 
@@ -14,6 +25,7 @@ async function loadMenu() {
       .map(
         (item) => `
       <div class="category-card" onclick="addToCart('${item.name}', ${item.price})">
+        ${bestsellerNames.has(item.name) ? `<div class="bestseller-badge">🔥 Bestseller</div>` : ""}
         <img src="${categoryImageUrl(item.name, 200, 200, null, item.image)}" alt="${item.name}" loading="lazy" />
         <div class="name">${item.name}</div>
         <div class="price">From ₹${item.price}</div>

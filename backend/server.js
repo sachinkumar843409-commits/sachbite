@@ -463,7 +463,7 @@ app.get("/api/orders/stats", (req, res) => {
 // Place a new order (from checkout page)
 app.post("/api/orders", (req, res) => {
   const db = readDB();
-  const { customer, items, location, paymentReference, upiReference } = req.body;
+  const { customer, items, location, paymentReference, upiReference, instructions } = req.body;
 
   if (!customer || !items || items.length === 0) {
     return res.status(400).json({ error: "Customer details and items are required" });
@@ -481,9 +481,6 @@ app.post("/api/orders", (req, res) => {
   let paymentStatus = "Pending";
   if (paymentReference) paymentStatus = "Paid";
   else if (customer.payment === "Cash on Delivery") paymentStatus = "Pending (COD)";
-  // UTR ab customer se nahi mangte — payment SMS webhook automatically match karke
-  // verify kar dega. Jab tak match na ho, order "Awaiting Verification" me rehta hai
-  // aur admin dashboard se bhi manually verify kiya ja sakta hai (backup ke roop me).
   else if (customer.payment === "UPI (Direct)") paymentStatus = "Awaiting Verification (Direct UPI)";
 
   const newOrder = {
@@ -496,6 +493,7 @@ app.post("/api/orders", (req, res) => {
     grandTotal: itemTotal + delivery,
     status: "Order Confirmed",
     location: location && location.lat && location.lng ? location : null,
+    instructions: (instructions || "").slice(0, 200),
     estimatedDeliveryMinutes: 25,
     outForDeliveryAt: null,
     paymentStatus,

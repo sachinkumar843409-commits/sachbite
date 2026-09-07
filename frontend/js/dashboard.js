@@ -66,6 +66,7 @@ function renderOrderCard(order) {
         <div class="row"><span class="k">👤</span> Name: ${escapeHtml(order.customer.name)}</div>
         <div class="row"><span class="k">📞</span> Phone: ${escapeHtml(order.customer.phone)}</div>
         <div class="row"><span class="k">📍</span> Address: ${escapeHtml(order.customer.address)}</div>
+        ${order.instructions ? `<div class="row" style="background:#fff7ed; padding:6px 10px; border-radius:8px;"><span class="k">📝</span> Note: <em>${escapeHtml(order.instructions)}</em></div>` : ""}
         <div class="row"><span class="k">💳</span> Payment: <span class="pay">${escapeHtml(order.customer.payment)}</span></div>
         ${order.deliveryPartnerName ? `<div class="row"><span class="k">🛵</span> Delivery Partner: ${escapeHtml(order.deliveryPartnerName)}</div>` : ""}
         ${order.rating ? `<div class="row"><span class="k">⭐</span> Rating: ${"★".repeat(order.rating)}${"☆".repeat(5 - order.rating)}${order.review ? ` — "${escapeHtml(order.review)}"` : ""}</div>` : ""}

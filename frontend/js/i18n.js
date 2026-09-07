@@ -93,6 +93,8 @@ const TRANSLATIONS = {
   placeholder_fullname: { en: "Your full name", hi: "आपका पूरा नाम" },
   label_address: { en: "Address", hi: "पता" },
   placeholder_address: { en: "Delivery address", hi: "डिलीवरी का पता" },
+  label_instructions: { en: "Special Instructions (optional)", hi: "विशेष निर्देश (वैकल्पिक)" },
+  placeholder_instructions: { en: "e.g. less spicy, don't ring bell", hi: "जैसे: कम मिर्ची, बेल न बजाएं" },
   use_location: { en: "📍 Use My Current Location (for delivery tracking)", hi: "📍 मेरा वर्तमान स्थान इस्तेमाल करें (डिलीवरी ट्रैकिंग के लिए)" },
   location_captured: { en: "✅ Location captured! Delivery boy will deliver here.", hi: "✅ स्थान सेव हो गया! डिलीवरी बॉय यहीं डिलीवर करेगा।" },
   payment_method: { en: "💳 Payment Method", hi: "💳 भुगतान का तरीका" },
