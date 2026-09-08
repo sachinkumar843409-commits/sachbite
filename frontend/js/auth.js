@@ -49,11 +49,13 @@ function showAuthError(msg) {
 async function sendOtp() {
   const name = document.getElementById("authName").value.trim();
   const phone = document.getElementById("authPhone").value.trim();
+  const email = document.getElementById("authEmail").value.trim();
 
   document.getElementById("authError").style.display = "none";
 
-  if (!name || !phone) return showAuthError("Name aur Phone Number dono bharna zaroori hai.");
+  if (!name || !phone || !email) return showAuthError("Name, Phone aur Email teeno bharna zaroori hai.");
   if (!/^[0-9]{10}$/.test(phone)) return showAuthError("Sahi 10-digit phone number bharein.");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError("Sahi email address bharein.");
 
   const btn = document.getElementById("authSendOtpBtn");
   btn.disabled = true;
@@ -63,7 +65,7 @@ async function sendOtp() {
     const res = await fetch("/api/auth/send-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, phone }),
+      body: JSON.stringify({ name, phone, email }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "OTP bhejne me dikkat hui.");
@@ -71,7 +73,8 @@ async function sendOtp() {
     pendingAuthPhone = phone;
     pendingAuthName = name;
 
-    document.getElementById("authOtpSentTo").textContent = `+91 ${phone}`;
+    document.getElementById("authOtpSentTo").textContent =
+      data.channel === "email" ? email : `+91 ${phone}`;
 
     // Naye customer ko "Sign In" aur purane customer ko "Login" wala friendly message dikhayein
     const welcomeNote = document.getElementById("authWelcomeNote");

@@ -18,7 +18,7 @@ try {
     KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
   };
 }
-const { sendRestaurantOrderNotifications } = require("./notify");
+const { sendRestaurantOrderNotifications, sendOtpEmail } = require("./notify");
 const { initStore, readDB, writeDB } = require("./mongo-store");
 
 // ---------- CUSTOMER SMS NOTIFICATIONS (SMS Gateway for Android) ----------
@@ -110,18 +110,6 @@ const razorpay = new Razorpay({
   key_id: razorpayKeys.KEY_ID || "rzp_test_placeholder",
   key_secret: razorpayKeys.KEY_SECRET || "placeholder_secret",
 });
-
-// ---------- SMS diagnostic (startup pe hi Render logs me confirm karne ke liye
-// ki OTP ke liye kaunse credentials mile hain) ----------
-{
-  const mask = (s) => (s && s.length > 4 ? `${s.slice(0, 2)}...${s.slice(-2)} (length: ${s.length})` : s ? `(length: ${s.length})` : "MISSING");
-  console.log("🔍 FAST2SMS_API_KEY diagnostic:", mask(process.env.FAST2SMS_API_KEY));
-  console.log("🔍 SMS_GATEWAY_USERNAME diagnostic:", mask(process.env.SMS_GATEWAY_USERNAME));
-  console.log("🔍 SMS_GATEWAY_PASSWORD diagnostic:", mask(process.env.SMS_GATEWAY_PASSWORD));
-  if (!process.env.FAST2SMS_API_KEY && !(process.env.SMS_GATEWAY_USERNAME && process.env.SMS_GATEWAY_PASSWORD)) {
-    console.warn("⚠️  Koi SMS provider configured nahi hai — OTP demo mode me hi chalega (demoOtp response me aayega).");
-  }
-}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1011,9 +999,10 @@ const OTP_MAX_REQUESTS = 3;
 const OTP_REQUEST_WINDOW_MS = 10 * 60 * 1000;
 
 app.post("/api/auth/send-otp", async (req, res) => {
-  const { name, phone } = req.body;
-  if (!name || !phone) return res.status(400).json({ error: "Name aur phone number dono zaroori hain" });
+  const { name, phone, email } = req.body;
+  if (!name || !phone || !email) return res.status(400).json({ error: "Name, phone aur email teeno zaroori hain" });
   if (!/^[0-9]{10}$/.test(phone)) return res.status(400).json({ error: "Sahi 10-digit phone number bharein" });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Sahi email address bharein" });
 
   const now = Date.now();
   otpRequestLog[phone] = (otpRequestLog[phone] || []).filter((t) => now - t < OTP_REQUEST_WINDOW_MS);
@@ -1023,22 +1012,29 @@ app.post("/api/auth/send-otp", async (req, res) => {
   otpRequestLog[phone].push(now);
 
   const otp = String(Math.floor(1000 + Math.random() * 9000));
-  otpStore[phone] = { otp, name, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 };
+  otpStore[phone] = { otp, name, email, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 };
 
   // Naya customer hai ya pehle se account hai — frontend isse sahi popup message dikhayega
   const db = readDB();
   const isNewUser = !(db.accounts || []).some((a) => a.phone === phone);
 
-  console.log(`[OTP] ${phone} ke liye OTP generate hua: ${otp}`);
+  console.log(`[OTP] ${phone} (${email}) ke liye OTP generate hua: ${otp}`);
+
+  // Email pehli priority (bilkul free, koi phone-app risk nahi). Email fail ho jaye ya
+  // SMTP set na ho, to SMS (Fast2SMS/SMS Gateway) fallback try hota hai. Kuch bhi
+  // configure na ho to testing ke liye OTP response me bhi bhej dete hain.
+  const emailSent = await sendOtpEmail(email, otp);
+  if (emailSent) {
+    return res.json({ success: true, isNewUser, channel: "email" });
+  }
 
   const smsConfigured = !!(process.env.FAST2SMS_API_KEY || (process.env.SMS_GATEWAY_USERNAME && process.env.SMS_GATEWAY_PASSWORD));
   if (smsConfigured) {
     await sendOtpSms(phone, otp);
-    res.json({ success: true, isNewUser });
-  } else {
-    // Koi bhi SMS service abhi setup nahi hai — testing ke liye OTP response me bhi bhej dete hain
-    res.json({ success: true, isNewUser, demoOtp: otp });
+    return res.json({ success: true, isNewUser, channel: "sms" });
   }
+
+  res.json({ success: true, isNewUser, demoOtp: otp });
 });
 
 app.post("/api/auth/verify-otp", (req, res) => {
@@ -1067,8 +1063,11 @@ app.post("/api/auth/verify-otp", (req, res) => {
   db.accounts = db.accounts || [];
   let account = db.accounts.find((a) => a.phone === phone);
   if (!account) {
-    account = { id: generateId("U"), name: record.name, phone, createdAt: new Date().toISOString() };
+    account = { id: generateId("U"), name: record.name, phone, email: record.email, createdAt: new Date().toISOString() };
     db.accounts.push(account);
+    writeDB(db);
+  } else if (record.email && account.email !== record.email) {
+    account.email = record.email; // email update ho gaya ho to naya save kar dete hain
     writeDB(db);
   }
 

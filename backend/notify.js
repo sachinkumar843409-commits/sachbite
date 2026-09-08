@@ -122,4 +122,28 @@ Please food ko jaldi se jaldi taiyar karke rakhein, delivery partner jald hi pic
   }
 }
 
-module.exports = { sendRestaurantOrderNotifications };
+/**
+ * Customer ko OTP email se bhejta hai (SMS ki jagah — bilkul free, koi phone app nahi chahiye).
+ * Agar SMTP configure nahi hai to silently false return karta hai (crash nahi karta).
+ */
+async function sendOtpEmail(email, otp) {
+  const t = getTransporter();
+  if (!t) {
+    console.log("ℹ️  SMTP configure nahi hai — OTP email nahi bhej paaye.");
+    return false;
+  }
+  try {
+    await t.sendMail({
+      from: `"SachBite" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `SachBite Login OTP: ${otp}`,
+      text: `Namaste,\n\nAapka SachBite login OTP hai: ${otp}\n\nYeh 5 minute me expire ho jayega. Kisi ke saath share na karein.\n\n— SachBite Team`,
+    });
+    return true;
+  } catch (err) {
+    console.error("OTP email bhejne me error:", err.message);
+    return false;
+  }
+}
+
+module.exports = { sendRestaurantOrderNotifications, sendOtpEmail };

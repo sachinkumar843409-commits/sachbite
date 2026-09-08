@@ -60,6 +60,10 @@ function renderCustomerHeader(activePage) {
               <label data-i18n="label_phone">Phone Number</label>
               <input type="text" id="authPhone" data-i18n-placeholder="placeholder_phone" placeholder="10-digit phone number" maxlength="10" />
             </div>
+            <div class="form-group">
+              <label data-i18n="label_email">Email</label>
+              <input type="email" id="authEmail" data-i18n-placeholder="placeholder_email" placeholder="you@example.com" />
+            </div>
             <div class="modal-actions">
               <button class="btn-cancel" id="authCancelBtn" data-i18n="cancel">Cancel</button>
               <button class="btn-save" id="authSendOtpBtn" data-i18n="send_otp">Send OTP</button>

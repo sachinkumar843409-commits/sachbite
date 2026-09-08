@@ -56,6 +56,8 @@ const TRANSLATIONS = {
   placeholder_name: { en: "Your name", hi: "आपका नाम" },
   label_phone: { en: "Phone Number", hi: "फ़ोन नंबर" },
   placeholder_phone: { en: "10-digit phone number", hi: "10 अंकों का फ़ोन नंबर" },
+  label_email: { en: "Email", hi: "ईमेल" },
+  placeholder_email: { en: "you@example.com", hi: "aapka@email.com" },
   cancel: { en: "Cancel", hi: "रद्द करें" },
   send_otp: { en: "Send OTP", hi: "OTP भेजें" },
   label_otp: { en: "Enter OTP", hi: "OTP डालें" },
