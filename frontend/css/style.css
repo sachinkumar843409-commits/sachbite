@@ -246,9 +246,6 @@ nav.main-nav a:hover {
   50% { transform: translateY(-18px) rotate(6deg); }
 }
 
-@media (max-width: 768px) {
-  .hero-food-decor { display: none !important; }
-}
 .hero-left {
   flex: 1;
   min-width: 320px;
@@ -618,10 +615,6 @@ footer {
   text-decoration: none;
   word-break: break-all;
 }
-@media (max-width: 800px) {
-  .contact-grid { grid-template-columns: 1fr; }
-}
-
 /* ---------- Modal (Login/Signup etc.) ---------- */
 .modal-overlay {
   display: none;
@@ -669,14 +662,6 @@ footer {
   font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
-}
-
-@media (max-width: 900px) {
-  nav.main-nav { display: none; }
-  .category-row { grid-template-columns: repeat(3, 1fr); }
-  .restaurant-row { grid-template-columns: 1fr; }
-  .hero-inner { flex-direction: column; }
-  .hero-left h1 { font-size: 32px; }
 }
 
 /* ---------- Toast Notification (cart add, etc.) ---------- */
@@ -992,56 +977,3 @@ footer {
 /* ---------- MOBILE RESPONSIVE FIXES (customer-facing pages) ---------- */
 body { overflow-x: hidden; }
 
-@media (max-width: 600px) {
-  .container { padding: 0 16px; }
-
-  /* Header: chhoti screen par location pill hide karke sirf zaroori buttons dikhayein */
-  .topbar-inner { padding: 12px 16px; gap: 8px; flex-wrap: wrap; }
-  .logo { font-size: 20px; }
-  .logo small { font-size: 9px; }
-  .location-pill { display: none; }
-  #langToggleBtn { padding: 6px 10px !important; font-size: 12px !important; }
-  #loginBtn { padding: 8px 12px; font-size: 12px; }
-  .cart-icon { width: 36px; height: 36px; }
-
-  /* Hero section */
-  .hero-inner { flex-direction: column; padding: 30px 0; }
-  .hero-left, .hero-right { min-width: 0; width: 100%; }
-  .hero-left h1 { font-size: 26px; }
-  .hero-left p { font-size: 14px; }
-  .search-bar { max-width: 100%; padding: 4px 4px 4px 16px; flex-wrap: nowrap; }
-  .search-bar input { font-size: 13px; min-width: 0; }
-  .rating-card { padding: 10px 12px; font-size: 12px; }
-  .offer-card { padding: 12px 14px !important; }
-  /* Rating/offer cards hero image ke bahar (negative position) hoti hain jo mobile
-     par .hero ke overflow:hidden se cut ho jaati thi — ab image ke andar rakhte hain */
-  .rating-card { top: 10px !important; left: 10px !important; gap: 6px; }
-  .rating-card .num { font-size: 15px; }
-  .rating-card small { font-size: 9px; }
-  .offer-card { bottom: 10px !important; right: 10px !important; }
-  .offer-card .big { font-size: 13px; }
-
-  /* Sections */
-  .section { padding: 30px 0 !important; }
-  .section-head h2 { font-size: 20px; }
-  .category-row { grid-template-columns: repeat(2, 1fr) !important; }
-
-  /* Promo banner */
-  .promo-banner { padding: 24px 20px; flex-direction: column; text-align: center; }
-  .promo-banner h2 { font-size: 20px; }
-  .promo-banner img { width: 140px; margin: 0 auto; }
-
-  /* Contact cards */
-  .contact-grid { gap: 12px; }
-  .contact-card { padding: 14px !important; }
-
-  /* Restaurants / filter / track search bars */
-  .filter-search, .track-search { max-width: 100%; }
-
-  /* Checkout page */
-  .checkout-wrap { padding: 0 14px; margin: 20px auto; }
-  .checkout-card { padding: 18px; }
-
-  /* Modal */
-  .modal-box { padding: 20px; width: 100%; }
-}
