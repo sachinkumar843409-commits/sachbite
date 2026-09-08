@@ -42,6 +42,11 @@ function getTransporter() {
     port: Number(SMTP_PORT) || 587,
     secure: Number(SMTP_PORT) === 465, // 465 = SSL, 587 = TLS
     auth: { user: SMTP_USER, pass: SMTP_PASS },
+    // Agar Gmail se connect hone mein atak jaaye (jo cloud server se kabhi hota hai),
+    // to 10 second me hi fail ho jaaye — taaki user "Sending..." pe hamesha atka na rahe
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
   });
   return transporter;
 }
