@@ -65,6 +65,35 @@ async function sendCustomerSms(phoneNumber, message) {
   }
 }
 
+// ---------- OTP bhejne ke liye Fast2SMS (koi app install nahi karni, koi phone
+// involve nahi hota — seedha Fast2SMS ke server se SMS jaata hai). "otp" route
+// TRAI ki DLT registration ke bina bhi kaam karta hai (Fast2SMS ka pre-approved
+// generic OTP template use hota hai: "Your OTP: XXXX") — sirf FAST2SMS_API_KEY
+// chahiye Render me set karna. Agar yeh set nahi hai to SMS Gateway app (upar
+// wala) fallback ke roop me try hota hai.
+async function sendOtpSms(phoneNumber, otp) {
+  const apiKey = process.env.FAST2SMS_API_KEY;
+  const tenDigit = phoneNumber.toString().replace(/\D/g, "").slice(-10);
+
+  if (apiKey) {
+    try {
+      const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&route=otp&variables_values=${otp}&numbers=${tenDigit}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (!data.return) {
+        console.error("Fast2SMS OTP error:", JSON.stringify(data));
+      }
+      return;
+    } catch (err) {
+      console.error("Fast2SMS OTP bhejne me error:", err.message);
+      return;
+    }
+  }
+
+  // Fast2SMS configured nahi hai — SMS Gateway app (agar setup hai) se try karein
+  await sendCustomerSms(phoneNumber, `SachBite: Aapka OTP hai ${otp}. Yeh 5 minute me expire ho jayega. Kisi ke saath share na karein.`);
+}
+
 if (!razorpayKeys.KEY_ID || !razorpayKeys.KEY_SECRET) {
   console.warn(
     "⚠️  Razorpay keys nahi mili! RAZORPAY_KEY_ID aur RAZORPAY_KEY_SECRET environment variables set karein (Render > Environment tab), warna payment kaam nahi karega."
@@ -510,6 +539,13 @@ app.post("/api/orders", (req, res) => {
   sendRestaurantOrderNotifications(newOrder, db.restaurants).catch((err) =>
     console.error("Restaurant notification error:", err.message)
   );
+
+  // Customer ko turant "Order Confirmed" SMS chala jata hai (background me,
+  // response ko rokta nahi hai)
+  sendCustomerSms(
+    customer.phone,
+    `SachBite: Aapka order #${newOrder.id} confirm ho gaya hai! Total: ₹${newOrder.grandTotal}. Dhanyawad!`
+  ).catch(() => {});
 });
 
 // Admin: Direct UPI payment ko manually "Verified" mark karna (bank/UPI app me
@@ -983,12 +1019,12 @@ app.post("/api/auth/send-otp", async (req, res) => {
 
   console.log(`[OTP] ${phone} ke liye OTP generate hua: ${otp}`);
 
-  const smsConfigured = !!(process.env.SMS_GATEWAY_USERNAME && process.env.SMS_GATEWAY_PASSWORD);
+  const smsConfigured = !!(process.env.FAST2SMS_API_KEY || (process.env.SMS_GATEWAY_USERNAME && process.env.SMS_GATEWAY_PASSWORD));
   if (smsConfigured) {
-    await sendCustomerSms(phone, `SachBite: Aapka OTP hai ${otp}. Yeh 5 minute me expire ho jayega. Kisi ke saath share na karein.`);
+    await sendOtpSms(phone, otp);
     res.json({ success: true, isNewUser });
   } else {
-    // SMS gateway abhi setup nahi hai — testing ke liye OTP response me bhi bhej dete hain
+    // Koi bhi SMS service abhi setup nahi hai — testing ke liye OTP response me bhi bhej dete hain
     res.json({ success: true, isNewUser, demoOtp: otp });
   }
 });
