@@ -111,6 +111,18 @@ const razorpay = new Razorpay({
   key_secret: razorpayKeys.KEY_SECRET || "placeholder_secret",
 });
 
+// ---------- SMS diagnostic (startup pe hi Render logs me confirm karne ke liye
+// ki OTP ke liye kaunse credentials mile hain) ----------
+{
+  const mask = (s) => (s && s.length > 4 ? `${s.slice(0, 2)}...${s.slice(-2)} (length: ${s.length})` : s ? `(length: ${s.length})` : "MISSING");
+  console.log("🔍 FAST2SMS_API_KEY diagnostic:", mask(process.env.FAST2SMS_API_KEY));
+  console.log("🔍 SMS_GATEWAY_USERNAME diagnostic:", mask(process.env.SMS_GATEWAY_USERNAME));
+  console.log("🔍 SMS_GATEWAY_PASSWORD diagnostic:", mask(process.env.SMS_GATEWAY_PASSWORD));
+  if (!process.env.FAST2SMS_API_KEY && !(process.env.SMS_GATEWAY_USERNAME && process.env.SMS_GATEWAY_PASSWORD)) {
+    console.warn("⚠️  Koi SMS provider configured nahi hai — OTP demo mode me hi chalega (demoOtp response me aayega).");
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, "db.json");
