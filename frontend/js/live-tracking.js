@@ -9,7 +9,7 @@ const restaurantIcon = L.divIcon({ html: `<div class="map-pin map-pin-restaurant
 
 function initMap(centerLat, centerLng) {
   map = L.map("liveMap", { zoomControl: false }).setView([centerLat, centerLng], 13);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_32zj_1_9a591426f9de87992aa518d0", {
     attribution: "© OpenStreetMap, © CARTO",
     maxZoom: 19,
   }).addTo(map);
