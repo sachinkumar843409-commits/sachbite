@@ -22,7 +22,7 @@ function renderAuthUI() {
     btn.classList.remove("btn-primary");
     btn.classList.add("user-pill");
   } else {
-    btn.textContent = "Login / Signup";
+    btn.textContent = typeof t === "function" ? t("login_signup") : "Login / Signup";
     btn.classList.add("btn-primary");
     btn.classList.remove("user-pill");
   }

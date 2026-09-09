@@ -27,6 +27,42 @@
 
 const nodemailer = require("nodemailer");
 
+// ---------- Brevo (HTTP API) — Render Free tier SMTP ports (25/465/587) block
+// karta hai (September 2025 se), isliye Gmail SMTP se seedha connect nahi ho sakta.
+// Brevo ek HTTPS API hai (port 443, jo block nahi hota), isliye yeh reliably kaam
+// karta hai. Free: 300 email/din, hamesha free. BREVO_API_KEY set hone par isse
+// priority di jaati hai; nahi to purana SMTP tarika fallback ke roop me try hota hai.
+async function sendEmailViaBrevo(toEmail, subject, textContent) {
+  const apiKey = process.env.BREVO_API_KEY;
+  const senderEmail = process.env.BREVO_SENDER_EMAIL;
+  if (!apiKey || !senderEmail) return false;
+
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": apiKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        sender: { name: "SachBite", email: senderEmail },
+        to: [{ email: toEmail }],
+        subject,
+        textContent,
+      }),
+    });
+    if (!response.ok) {
+      console.error("Brevo email error:", response.status, await response.text());
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Brevo email bhejne me error:", err.message);
+    return false;
+  }
+}
+
 let transporter = null;
 
 function getTransporter() {
@@ -71,31 +107,52 @@ function groupItemsByRestaurant(items) {
  * @param {object} order - newly created order object
  * @param {array} restaurants - db.restaurants (taaki contactEmail/contactPhone mil sake)
  */
+// SMS Gateway app (sms-gate.app) se koi bhi number par SMS bhejta hai — restaurant
+// ko naye order ki SMS notification bhejne ke liye use hota hai. Agar credentials
+// set nahi hain to silently skip ho jata hai (crash nahi karta).
+async function sendSmsViaGateway(phoneNumber, message) {
+  const username = process.env.SMS_GATEWAY_USERNAME;
+  const password = process.env.SMS_GATEWAY_PASSWORD;
+  if (!username || !password || !phoneNumber) return false;
+
+  let formattedPhone = phoneNumber.toString().replace(/\D/g, "");
+  if (formattedPhone.length === 10) formattedPhone = "91" + formattedPhone;
+  formattedPhone = "+" + formattedPhone;
+
+  try {
+    const auth = Buffer.from(`${username}:${password}`).toString("base64");
+    const response = await fetch("https://api.sms-gate.app/3rdparty/v1/messages", {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ textMessage: { text: message }, phoneNumbers: [formattedPhone] }),
+    });
+    if (!response.ok) {
+      console.error("Restaurant SMS error:", response.status, await response.text());
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Restaurant SMS bhejne me error:", err.message);
+    return false;
+  }
+}
+
 async function sendRestaurantOrderNotifications(order, restaurants) {
   const t = getTransporter();
-  if (!t) {
-    console.log("ℹ️  SMTP configure nahi hai — restaurant email notification skip ho gaya. (SMTP_HOST/SMTP_USER/SMTP_PASS set karein.)");
-    return;
-  }
-
   const groups = groupItemsByRestaurant(order.items || []);
 
   for (const [restaurantName, items] of Object.entries(groups)) {
     if (restaurantName === "__unassigned__") continue; // koi restaurant tag nahi, skip
 
     const restaurant = restaurants.find((r) => r.name === restaurantName);
-    if (!restaurant || !restaurant.contactEmail) continue; // is restaurant ka email set hi nahi hai
+    if (!restaurant) continue;
 
     const itemsList = items
       .map((i) => `  • ${i.name} x${i.qty} — ₹${i.price * i.qty}`)
       .join("\n");
     const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
 
-    const mailOptions = {
-      from: `"SachBite Orders" <${process.env.SMTP_USER}>`,
-      to: restaurant.contactEmail,
-      subject: `🔔 Naya Order Aaya Hai! (${order.id}) — ${restaurantName}`,
-      text: `Namaste ${restaurantName},
+    const bodyText = `Namaste ${restaurantName},
 
 Aapke restaurant ke liye ek naya order aaya hai. Kripya turant taiyar karna shuru karein.
 
@@ -115,14 +172,36 @@ Customer:
 
 Please food ko jaldi se jaldi taiyar karke rakhein, delivery partner jald hi pickup ke liye aayega.
 
-— SachBite Team`,
-    };
+— SachBite Team`;
 
-    try {
-      await t.sendMail(mailOptions);
-      console.log(`✅ Order notification email bheja gaya: ${restaurantName} <${restaurant.contactEmail}>`);
-    } catch (err) {
-      console.error(`❌ ${restaurantName} ko email bhejne me error:`, err.message);
+    // Email (agar contactEmail set hai) — Brevo pehle try karta hai (Render free tier
+    // SMTP ports block karta hai), warna purana SMTP fallback
+    if (restaurant.contactEmail) {
+      const emailSent = await sendEmailViaBrevo(restaurant.contactEmail, `🔔 Naya Order Aaya Hai! (${order.id}) — ${restaurantName}`, bodyText);
+      if (emailSent) {
+        console.log(`✅ Order email bheja gaya (Brevo): ${restaurantName} <${restaurant.contactEmail}>`);
+      } else if (t) {
+        try {
+          await t.sendMail({
+            from: `"SachBite Orders" <${process.env.SMTP_USER}>`,
+            to: restaurant.contactEmail,
+            subject: `🔔 Naya Order Aaya Hai! (${order.id}) — ${restaurantName}`,
+            text: bodyText,
+          });
+          console.log(`✅ Order email bheja gaya (SMTP): ${restaurantName} <${restaurant.contactEmail}>`);
+        } catch (err) {
+          console.error(`❌ ${restaurantName} ko email bhejne me error:`, err.message);
+        }
+      }
+    }
+
+    // SMS (agar contactPhone set hai) — SMS Gateway app se
+    if (restaurant.contactPhone) {
+      const smsMessage = `SachBite: Naya order #${order.id}! ${items.length} item(s), Subtotal ₹${subtotal}. Turant taiyar karna shuru karein.`;
+      const smsSent = await sendSmsViaGateway(restaurant.contactPhone, smsMessage);
+      if (smsSent) {
+        console.log(`✅ Order SMS bheja gaya: ${restaurantName} <${restaurant.contactPhone}>`);
+      }
     }
   }
 }

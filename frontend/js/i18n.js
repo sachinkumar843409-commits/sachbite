@@ -128,6 +128,7 @@ function setLang(lang) {
   localStorage.setItem(LANG_KEY, lang);
   applyTranslations();
   updateLangToggleUI();
+  if (typeof renderAuthUI === "function") renderAuthUI();
 }
 
 // JS se dynamic text banate waqt yeh function use karein: t("key")

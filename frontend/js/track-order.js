@@ -240,8 +240,9 @@ function checkStatusChanges(orders) {
 }
 
 let statusPollInterval = null;
-const homeIcon = L.divIcon({ html: "🏠", className: "emoji-marker", iconSize: [24, 24] });
-const restaurantIcon = L.divIcon({ html: "🏪", className: "emoji-marker", iconSize: [24, 24] });
+const homeIcon = L.divIcon({ html: `<div class="map-pin map-pin-home">🏠</div>`, className: "", iconSize: [36, 36], iconAnchor: [18, 36] });
+const restaurantIcon = L.divIcon({ html: `<div class="map-pin map-pin-restaurant">🏪</div>`, className: "", iconSize: [36, 36], iconAnchor: [18, 36] });
+const bikeIcon = L.divIcon({ html: `<div class="map-pin map-pin-bike">🛵</div>`, className: "", iconSize: [34, 34], iconAnchor: [17, 17] });
 
 async function setupLiveMap(orderId) {
   const res = await fetch(`${API}/orders/${orderId}/delivery-progress`);
@@ -251,10 +252,12 @@ async function setupLiveMap(orderId) {
   const mapDiv = document.getElementById(`map-${orderId}`);
   if (!mapDiv) return;
 
-  const map = L.map(mapDiv).setView([data.progress.currentLat, data.progress.currentLng], 14);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors",
+  const map = L.map(mapDiv, { zoomControl: false, attributionControl: false });
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+    attribution: "© OpenStreetMap, © CARTO",
+    maxZoom: 19,
   }).addTo(map);
+  L.control.zoom({ position: "bottomright" }).addTo(map);
 
   L.marker([data.restaurantLocation.lat, data.restaurantLocation.lng], { icon: restaurantIcon })
     .addTo(map)
@@ -267,13 +270,23 @@ async function setupLiveMap(orderId) {
     .addTo(map)
     .bindPopup("🛵 Delivery Boy");
 
-  L.polyline(
-    [
-      [data.restaurantLocation.lat, data.restaurantLocation.lng],
-      [data.customerLocation.lat, data.customerLocation.lng],
-    ],
-    { color: "#ff7a1a", dashArray: "6 6", weight: 2 }
-  ).addTo(map);
+  // Route line — halki "casing" line ke peeche, upar chalti-firti dashed line (jaise
+  // navigation apps me dikhta hai) taaki route saaf aur zinda dikhe
+  const routeCoords = [
+    [data.restaurantLocation.lat, data.restaurantLocation.lng],
+    [data.customerLocation.lat, data.customerLocation.lng],
+  ];
+  L.polyline(routeCoords, { color: "#ffffff", weight: 7, opacity: 0.9 }).addTo(map);
+  const routeLine = L.polyline(routeCoords, {
+    color: "#ff7a1a",
+    weight: 4,
+    opacity: 0.95,
+    dashArray: "1 12",
+    lineCap: "round",
+    className: "route-line-animated",
+  }).addTo(map);
+
+  map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
 
   liveMaps[orderId] = { map, bikeMarker };
   updateETAText(orderId, data.progress);

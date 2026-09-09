@@ -28,7 +28,7 @@ function renderCustomerHeader(activePage) {
       <div class="topbar-right">
         <div class="location-pill"><span class="pin">📍</span> Kanti, Muzaffarpur <span>▾</span></div>
         <button class="btn" id="langToggleBtn" style="border:1.5px solid var(--primary); background:#fff; color:var(--primary); border-radius:20px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">हिं</button>
-        <button class="btn btn-primary" id="loginBtn" data-i18n="login_signup">Login / Signup</button>
+        <button class="btn btn-primary" id="loginBtn">Login / Signup</button>
         <a href="checkout.html" class="cart-icon">
           🛒
           <span class="cart-badge" id="cartCount">0</span>

@@ -3,28 +3,17 @@ let map, restaurantMarker;
 const deliveryMarkers = {}; // orderId -> marker
 const deliveryLines = {}; // orderId -> polyline
 
-const bikeIcon = L.divIcon({
-  html: "🛵",
-  className: "emoji-marker",
-  iconSize: [30, 30],
-});
-const homeIcon = L.divIcon({
-  html: "🏠",
-  className: "emoji-marker",
-  iconSize: [26, 26],
-});
-const restaurantIcon = L.divIcon({
-  html: "🏪",
-  className: "emoji-marker",
-  iconSize: [28, 28],
-});
+const bikeIcon = L.divIcon({ html: `<div class="map-pin map-pin-bike">🛵</div>`, className: "", iconSize: [34, 34], iconAnchor: [17, 17] });
+const homeIcon = L.divIcon({ html: `<div class="map-pin map-pin-home">🏠</div>`, className: "", iconSize: [32, 32], iconAnchor: [16, 32] });
+const restaurantIcon = L.divIcon({ html: `<div class="map-pin map-pin-restaurant">🏪</div>`, className: "", iconSize: [34, 34], iconAnchor: [17, 34] });
 
 function initMap(centerLat, centerLng) {
-  map = L.map("liveMap").setView([centerLat, centerLng], 13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors",
+  map = L.map("liveMap", { zoomControl: false }).setView([centerLat, centerLng], 13);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+    attribution: "© OpenStreetMap, © CARTO",
     maxZoom: 19,
   }).addTo(map);
+  L.control.zoom({ position: "bottomright" }).addTo(map);
 }
 
 async function refreshLiveDeliveries() {
@@ -87,15 +76,21 @@ async function refreshLiveDeliveries() {
         .bindPopup(`${escapeHtml(d.id)} — ${escapeHtml(d.customerName)}`);
     }
 
-    if (!map.getLayer && deliveryLines[d.id]) map.removeLayer(deliveryLines[d.id]);
     if (deliveryLines[d.id]) map.removeLayer(deliveryLines[d.id]);
-    deliveryLines[d.id] = L.polyline(
-      [
-        [data.restaurantLocation.lat, data.restaurantLocation.lng],
-        [d.location.lat, d.location.lng],
-      ],
-      { color: "#ff7a1a", dashArray: "6 6", weight: 2 }
-    ).addTo(map);
+    if (deliveryLines[d.id + "_casing"]) map.removeLayer(deliveryLines[d.id + "_casing"]);
+    const routeCoords = [
+      [data.restaurantLocation.lat, data.restaurantLocation.lng],
+      [d.location.lat, d.location.lng],
+    ];
+    deliveryLines[d.id + "_casing"] = L.polyline(routeCoords, { color: "#ffffff", weight: 6, opacity: 0.9 }).addTo(map);
+    deliveryLines[d.id] = L.polyline(routeCoords, {
+      color: "#ff7a1a",
+      weight: 3.5,
+      opacity: 0.95,
+      dashArray: "1 12",
+      lineCap: "round",
+      className: "route-line-animated",
+    }).addTo(map);
 
     if (!map._homeMarkers) map._homeMarkers = {};
     if (!map._homeMarkers[d.id]) {
@@ -113,6 +108,10 @@ async function refreshLiveDeliveries() {
       if (deliveryLines[id]) {
         map.removeLayer(deliveryLines[id]);
         delete deliveryLines[id];
+      }
+      if (deliveryLines[id + "_casing"]) {
+        map.removeLayer(deliveryLines[id + "_casing"]);
+        delete deliveryLines[id + "_casing"];
       }
       if (map._homeMarkers && map._homeMarkers[id]) {
         map.removeLayer(map._homeMarkers[id]);

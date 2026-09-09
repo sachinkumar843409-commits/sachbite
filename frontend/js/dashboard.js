@@ -58,6 +58,7 @@ function renderOrderCard(order) {
         <div class="value">Rs ${order.grandTotal}</div>
       </div>
       <span class="status-badge ${statusClass(order.status)}">${order.status}</span>
+      <button class="btn-edit-menu" style="padding:8px 12px; font-size:12px;" onclick="printOrder('${order.id}')">🖨️ Print</button>
     </div>
 
     <div class="order-grid">
@@ -67,6 +68,12 @@ function renderOrderCard(order) {
         <div class="row"><span class="k">📞</span> Phone: ${escapeHtml(order.customer.phone)}</div>
         <div class="row"><span class="k">📍</span> Address: ${escapeHtml(order.customer.address)}</div>
         ${order.instructions ? `<div class="row" style="background:#fff7ed; padding:6px 10px; border-radius:8px;"><span class="k">📝</span> Note: <em>${escapeHtml(order.instructions)}</em></div>` : ""}
+        ${order.refundNeeded ? `
+          <div class="row" style="background:#fef2f2; padding:8px 10px; border-radius:8px; border:1.5px solid #dc2626;">
+            <span class="k">💰</span> <strong style="color:#dc2626;">Refund Pending!</strong> Order cancel hua tha lekin payment already aa gaya tha.
+            <button class="btn-edit-menu" style="margin-top:6px; width:100%;" onclick="markRefunded('${order.id}')">✅ Refund Kar Diya — Mark Karein</button>
+          </div>
+        ` : ""}
         <div class="row"><span class="k">💳</span> Payment: <span class="pay">${escapeHtml(order.customer.payment)}</span></div>
         ${order.deliveryPartnerName ? `<div class="row"><span class="k">🛵</span> Delivery Partner: ${escapeHtml(order.deliveryPartnerName)}</div>` : ""}
         ${order.rating ? `<div class="row"><span class="k">⭐</span> Rating: ${"★".repeat(order.rating)}${"☆".repeat(5 - order.rating)}${order.review ? ` — "${escapeHtml(order.review)}"` : ""}</div>` : ""}
@@ -115,10 +122,13 @@ function playNewOrderSound() {
   } catch (e) {}
 }
 
+let allOrdersCache = [];
+
 async function loadOrders() {
   const container = document.getElementById("ordersContainer");
   const res = await fetch(`${API}/orders`);
   let orders = await res.json();
+  allOrdersCache = orders;
 
   // Naya order aane par beep + browser notification (page pehli baar load hote waqt nahi)
   const currentIds = new Set(orders.map((o) => o.id));
@@ -191,6 +201,58 @@ async function rejectPayment(id) {
   if (!confirm("Kya UTR galat hai/match nahi hua? Customer ko SMS chala jayega dobara sahi UTR bhejne ke liye.")) return;
   await adminFetch(`${API}/orders/${id}/reject-payment`, { method: "PATCH" });
   loadOrders();
+}
+
+async function markRefunded(id) {
+  if (!confirm("Confirm karein ki aapne is customer ko manually UPI/bank se refund kar diya hai?")) return;
+  await adminFetch(`${API}/orders/${id}/mark-refunded`, { method: "PATCH" });
+  loadOrders();
+}
+
+// Order slip print karne ke liye — kitchen/staff ke liye kagaz par nikalna
+function printOrder(id) {
+  const order = allOrdersCache.find((o) => o.id === id);
+  if (!order) return;
+
+  const itemsHtml = order.items
+    .map((i) => `<tr><td>${escapeHtml(i.name)}</td><td style="text-align:center;">x${i.qty}</td><td style="text-align:right;">₹${i.price * i.qty}</td></tr>`)
+    .join("");
+
+  const win = window.open("", "_blank");
+  win.document.write(`
+    <html>
+    <head>
+      <title>Order ${order.id}</title>
+      <style>
+        body { font-family: monospace; padding: 20px; max-width: 380px; }
+        h2 { text-align: center; margin-bottom: 4px; }
+        .center { text-align: center; }
+        hr { border: none; border-top: 1px dashed #000; margin: 10px 0; }
+        table { width: 100%; font-size: 13px; }
+        .total { font-weight: bold; font-size: 15px; }
+      </style>
+    </head>
+    <body onload="window.print()">
+      <h2>🛵 SachBite</h2>
+      <div class="center">Order Slip</div>
+      <hr />
+      <div><strong>Order ID:</strong> ${order.id}</div>
+      <div><strong>Time:</strong> ${new Date(order.date).toLocaleString("en-IN")}</div>
+      <div><strong>Customer:</strong> ${escapeHtml(order.customer.name)}</div>
+      <div><strong>Phone:</strong> ${escapeHtml(order.customer.phone)}</div>
+      <div><strong>Address:</strong> ${escapeHtml(order.customer.address)}</div>
+      ${order.instructions ? `<div><strong>Note:</strong> ${escapeHtml(order.instructions)}</div>` : ""}
+      <hr />
+      <table>${itemsHtml}</table>
+      <hr />
+      <div class="total">Total: ₹${order.grandTotal}</div>
+      <div><strong>Payment:</strong> ${escapeHtml(order.customer.payment)}</div>
+      <hr />
+      <div class="center">Dhanyawad! 🙏</div>
+    </body>
+    </html>
+  `);
+  win.document.close();
 }
 
 document.getElementById("clearAllBtn").addEventListener("click", async () => {

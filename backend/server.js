@@ -18,7 +18,7 @@ try {
     KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
   };
 }
-const { sendRestaurantOrderNotifications } = require("./notify");
+const { sendRestaurantOrderNotifications, sendOtpEmail } = require("./notify");
 const { initStore, readDB, writeDB } = require("./mongo-store");
 
 // ---------- CUSTOMER SMS NOTIFICATIONS (SMS Gateway for Android) ----------
@@ -111,18 +111,6 @@ const razorpay = new Razorpay({
   key_secret: razorpayKeys.KEY_SECRET || "placeholder_secret",
 });
 
-// ---------- SMS diagnostic (startup pe hi Render logs me confirm karne ke liye
-// ki OTP ke liye kaunse credentials mile hain) ----------
-{
-  const mask = (s) => (s && s.length > 4 ? `${s.slice(0, 2)}...${s.slice(-2)} (length: ${s.length})` : s ? `(length: ${s.length})` : "MISSING");
-  console.log("🔍 FAST2SMS_API_KEY diagnostic:", mask(process.env.FAST2SMS_API_KEY));
-  console.log("🔍 SMS_GATEWAY_USERNAME diagnostic:", mask(process.env.SMS_GATEWAY_USERNAME));
-  console.log("🔍 SMS_GATEWAY_PASSWORD diagnostic:", mask(process.env.SMS_GATEWAY_PASSWORD));
-  if (!process.env.FAST2SMS_API_KEY && !(process.env.SMS_GATEWAY_USERNAME && process.env.SMS_GATEWAY_PASSWORD)) {
-    console.warn("⚠️  Koi SMS provider configured nahi hai — OTP demo mode me hi chalega (demoOtp response me aayega).");
-  }
-}
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, "db.json");
@@ -144,13 +132,9 @@ function requireAdmin(req, res, next) {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
   const now = Date.now();
+  const issuedAt = token && adminSessions.get(token);
 
-  if (
-    token &&
-    currentAdminSession &&
-    token === currentAdminSession.token &&
-    now - currentAdminSession.issuedAt < SESSION_DURATION_MS
-  ) {
+  if (issuedAt && now - issuedAt < SESSION_DURATION_MS) {
     return next();
   }
   return res.status(401).json({ error: "Admin login zaroori hai." });
@@ -611,6 +595,22 @@ app.patch("/api/orders/:id/cancel", requireCustomerToken, (req, res) => {
     return res.status(400).json({ error: "Yeh order ab cancel nahi ho sakta." });
   }
   order.status = "Cancelled";
+  // Agar payment already aa chuka tha (UPI verified ya card paid), to admin ko refund
+  // karna yaad rahe isliye flag laga dete hain — warna paisa bina refund ke reh sakta hai
+  if (order.paymentStatus && order.paymentStatus.startsWith("Paid")) {
+    order.refundNeeded = true;
+  }
+  writeDB(db);
+  res.json(order);
+});
+
+// Admin: refund manually kar dene ke baad, is order ka "refund pending" flag clear kar dein
+app.patch("/api/orders/:id/mark-refunded", requireAdmin, (req, res) => {
+  const db = readDB();
+  const order = db.orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  order.refundNeeded = false;
+  order.refundedAt = new Date().toISOString();
   writeDB(db);
   res.json(order);
 });
@@ -1011,9 +1011,10 @@ const OTP_MAX_REQUESTS = 3;
 const OTP_REQUEST_WINDOW_MS = 10 * 60 * 1000;
 
 app.post("/api/auth/send-otp", async (req, res) => {
-  const { name, phone } = req.body;
-  if (!name || !phone) return res.status(400).json({ error: "Name aur phone number dono zaroori hain" });
+  const { name, phone, email } = req.body;
+  if (!name || !phone || !email) return res.status(400).json({ error: "Name, phone aur email teeno zaroori hain" });
   if (!/^[0-9]{10}$/.test(phone)) return res.status(400).json({ error: "Sahi 10-digit phone number bharein" });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Sahi email address bharein" });
 
   const now = Date.now();
   otpRequestLog[phone] = (otpRequestLog[phone] || []).filter((t) => now - t < OTP_REQUEST_WINDOW_MS);
@@ -1023,22 +1024,29 @@ app.post("/api/auth/send-otp", async (req, res) => {
   otpRequestLog[phone].push(now);
 
   const otp = String(Math.floor(1000 + Math.random() * 9000));
-  otpStore[phone] = { otp, name, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 };
+  otpStore[phone] = { otp, name, email, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 };
 
   // Naya customer hai ya pehle se account hai — frontend isse sahi popup message dikhayega
   const db = readDB();
   const isNewUser = !(db.accounts || []).some((a) => a.phone === phone);
 
-  console.log(`[OTP] ${phone} ke liye OTP generate hua: ${otp}`);
+  console.log(`[OTP] ${phone} (${email}) ke liye OTP generate hua: ${otp}`);
+
+  // Email pehli priority (bilkul free, koi phone-app risk nahi). Email fail ho jaye ya
+  // SMTP set na ho, to SMS (Fast2SMS/SMS Gateway) fallback try hota hai. Kuch bhi
+  // configure na ho to testing ke liye OTP response me bhi bhej dete hain.
+  const emailSent = await sendOtpEmail(email, otp);
+  if (emailSent) {
+    return res.json({ success: true, isNewUser, channel: "email" });
+  }
 
   const smsConfigured = !!(process.env.FAST2SMS_API_KEY || (process.env.SMS_GATEWAY_USERNAME && process.env.SMS_GATEWAY_PASSWORD));
   if (smsConfigured) {
     await sendOtpSms(phone, otp);
-    res.json({ success: true, isNewUser });
-  } else {
-    // Koi bhi SMS service abhi setup nahi hai — testing ke liye OTP response me bhi bhej dete hain
-    res.json({ success: true, isNewUser, demoOtp: otp });
+    return res.json({ success: true, isNewUser, channel: "sms" });
   }
+
+  res.json({ success: true, isNewUser, demoOtp: otp });
 });
 
 app.post("/api/auth/verify-otp", (req, res) => {
@@ -1067,8 +1075,11 @@ app.post("/api/auth/verify-otp", (req, res) => {
   db.accounts = db.accounts || [];
   let account = db.accounts.find((a) => a.phone === phone);
   if (!account) {
-    account = { id: generateId("U"), name: record.name, phone, createdAt: new Date().toISOString() };
+    account = { id: generateId("U"), name: record.name, phone, email: record.email, createdAt: new Date().toISOString() };
     db.accounts.push(account);
+    writeDB(db);
+  } else if (record.email && account.email !== record.email) {
+    account.email = record.email; // email update ho gaya ho to naya save kar dete hain
     writeDB(db);
   }
 
@@ -1093,8 +1104,19 @@ const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 const SESSION_DURATION_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-let currentAdminSession = null; // { token, issuedAt }
+// Multiple admin/staff ek saath login kar sakein — isliye ek single session ki jagah
+// ek Map use karte hain (token -> issuedAt). Purane expired tokens periodically clean ho jaate hain.
+let adminSessions = new Map(); // token -> issuedAt
 let loginAttempts = { count: 0, lockUntil: 0 };
+
+// Purane expire ho chuke sessions Map se hata dete hain (memory leak na ho, server
+// hamesha chalta rehta hai to warna purane tokens hamesha memory me reh jayenge)
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, issuedAt] of adminSessions.entries()) {
+    if (now - issuedAt >= SESSION_DURATION_MS) adminSessions.delete(token);
+  }
+}, 60 * 60 * 1000);
 
 // Agar db.json me purani plain-text password hai to use ek baar hash kar do (migration)
 function migratePlainPasswordIfNeeded() {
@@ -1139,31 +1161,28 @@ app.post("/api/admin/login", (req, res) => {
 
   // Successful login
   loginAttempts = { count: 0, lockUntil: 0 };
-  currentAdminSession = {
-    token: crypto.randomBytes(24).toString("hex"),
-    issuedAt: now,
-  };
-  res.json({ success: true, token: currentAdminSession.token });
+  const newToken = crypto.randomBytes(24).toString("hex");
+  adminSessions.set(newToken, now);
+  res.json({ success: true, token: newToken });
 });
 
 app.post("/api/admin/verify", (req, res) => {
   const { token } = req.body;
   const now = Date.now();
+  const issuedAt = adminSessions.get(token);
 
-  if (
-    currentAdminSession &&
-    token === currentAdminSession.token &&
-    now - currentAdminSession.issuedAt < SESSION_DURATION_MS
-  ) {
+  if (issuedAt && now - issuedAt < SESSION_DURATION_MS) {
     return res.json({ valid: true });
   }
 
-  currentAdminSession = null;
+  adminSessions.delete(token);
   res.status(401).json({ valid: false });
 });
 
 app.post("/api/admin/logout", (req, res) => {
-  currentAdminSession = null;
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : req.body.token;
+  adminSessions.delete(token);
   res.json({ success: true });
 });
 
