@@ -1,5 +1,6 @@
-node_modules/
-razorpay-config.js
-uploads/*
-!uploads/.gitkeep
-package-lock.json
+﻿node_modules/
+backend/db.json
+backend/razorpay-config.js
+.env
+.env.local
+*.log
