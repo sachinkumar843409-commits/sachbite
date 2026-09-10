@@ -175,3 +175,76 @@ document.getElementById("saveSecurityBtn").addEventListener("click", async () =>
 });
 
 loadSettings();
+
+// ---------- Staff Accounts ----------
+async function loadStaff() {
+  const res = await adminFetch(`${API}/admin/staff`);
+  const staff = await res.json();
+  const listEl = document.getElementById("staffList");
+
+  if (staff.length === 0) {
+    listEl.innerHTML = `<p style="color:var(--text-gray); font-size:13px;">Abhi koi staff account nahi hai.</p>`;
+    return;
+  }
+
+  listEl.innerHTML = staff
+    .map(
+      (s) => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg); border-radius:10px; margin-bottom:8px;">
+      <div>
+        <strong>${s.name}</strong>
+        <span style="color:var(--text-gray); font-size:12px;"> — username: ${s.username}</span>
+      </div>
+      <button class="btn-del-menu" onclick="deleteStaff('${s.id}')">🗑️ Remove</button>
+    </div>`
+    )
+    .join("");
+}
+
+async function deleteStaff(id) {
+  if (!confirm("Kya aap is staff ka account hatana chahte hain? Wo login nahi kar payega.")) return;
+  await adminFetch(`${API}/admin/staff/${id}`, { method: "DELETE" });
+  loadStaff();
+}
+
+document.getElementById("addStaffBtn").addEventListener("click", async () => {
+  const name = document.getElementById("staffName").value.trim();
+  const username = document.getElementById("staffUsername").value.trim();
+  const password = document.getElementById("staffPassword").value;
+  const successMsg = document.getElementById("staffSuccess");
+  const errorMsg = document.getElementById("staffError");
+  successMsg.style.display = "none";
+  errorMsg.style.display = "none";
+
+  if (!name || !username || !password) {
+    errorMsg.textContent = "Naam, username aur password teeno bharna zaroori hai.";
+    errorMsg.style.display = "block";
+    return;
+  }
+  if (password.length < 6) {
+    errorMsg.textContent = "Password kam se kam 6 characters ka hona chahiye.";
+    errorMsg.style.display = "block";
+    return;
+  }
+
+  const res = await adminFetch(`${API}/admin/staff`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, username, password }),
+  });
+  const data = await res.json();
+
+  if (res.ok) {
+    successMsg.style.display = "block";
+    document.getElementById("staffName").value = "";
+    document.getElementById("staffUsername").value = "";
+    document.getElementById("staffPassword").value = "";
+    setTimeout(() => (successMsg.style.display = "none"), 2500);
+    loadStaff();
+  } else {
+    errorMsg.textContent = "❌ " + (data.error || "Kuch galat ho gaya.");
+    errorMsg.style.display = "block";
+  }
+});
+
+loadStaff();

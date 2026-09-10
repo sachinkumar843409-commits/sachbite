@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="../icons/icon-192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Offers - SachBite</title>
 <link rel="stylesheet" href="../css/dashboard.css" />
 <style>
@@ -63,6 +64,14 @@
     <div class="form-group">
       <label>Discount Label</label>
       <input type="text" id="offerDiscount" placeholder="e.g. 30% OFF" />
+    </div>
+    <div class="form-group">
+      <label>Coupon Code (optional — customer isse checkout par apply karega)</label>
+      <input type="text" id="offerCode" placeholder="e.g. SAVE30" style="text-transform:uppercase;" />
+    </div>
+    <div class="form-group">
+      <label>Discount % (jo coupon apply karne par milega)</label>
+      <input type="number" id="offerDiscountPercent" placeholder="e.g. 30" min="1" max="90" />
     </div>
     <div class="form-group">
       <label>Valid From</label>

@@ -253,7 +253,7 @@ async function setupLiveMap(orderId) {
   if (!mapDiv) return;
 
   const map = L.map(mapDiv, { zoomControl: false, attributionControl: false });
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_32zj_1_9a591426f9de87992aa518d0", {
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
     attribution: "© OpenStreetMap, © CARTO",
     maxZoom: 19,
   }).addTo(map);

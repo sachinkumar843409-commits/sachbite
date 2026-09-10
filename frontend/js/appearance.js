@@ -278,14 +278,60 @@ fmDropzone.addEventListener("drop", (e) => {
   if (file) uploadFile(file);
 });
 
+// Image ko browser me hi resize/compress karte hain upload se pehle — isse MongoDB
+// (jo 512MB free tier hai) jaldi nahi bharta, aur upload/loading bhi fast hota hai.
+// Max 1200px width/height rakhte hain, JPEG quality 80% — dikhne mein farak nahi
+// padta lekin size bahut kam ho jata hai.
+function compressImage(file, maxDim = 1200, quality = 0.8) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return resolve(file); // fallback: original file
+            resolve(new File([blob], file.name, { type: "image/jpeg" }));
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => resolve(file); // fallback agar compress fail ho jaaye
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 async function uploadFile(file) {
   if (!file.type.startsWith("image/")) {
     alert("Sirf image files upload ki ja sakti hain.");
     return;
   }
-  if (file.size > 3 * 1024 * 1024) {
-    alert("Image 3MB se badi nahi honi chahiye.");
+  if (file.size > 8 * 1024 * 1024) {
+    alert("Image 8MB se badi nahi honi chahiye.");
     return;
+  }
+
+  // SVG ko compress nahi karte (vector format hai, canvas se resize karna sahi nahi)
+  if (file.type !== "image/svg+xml") {
+    file = await compressImage(file);
   }
 
   fmUploadStatus.style.display = "block";

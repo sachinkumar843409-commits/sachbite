@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/png" href="icons/icon-192.png" />
+<meta name="viewport" content="width=800" />
+<title>Page Not Found - SachBite</title>
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .notfound-wrap {
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .notfound-wrap .emoji { font-size: 70px; margin-bottom: 10px; }
+  .notfound-wrap h1 { font-size: 28px; margin-bottom: 8px; }
+  .notfound-wrap p { color: var(--text-gray); margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<header class="topbar" id="headerRoot"></header>
+
+<div class="notfound-wrap">
+  <div class="emoji">🍔❓</div>
+  <h1>404 — Yeh Page Nahi Mila</h1>
+  <p>Lagta hai aap kisi galat raste par aa gaye. Chaliye aapko wapas ghar le jaate hain.</p>
+  <a href="index.html" class="btn btn-primary">🏠 Home Page Par Jaayein</a>
+</div>
+
+<footer>© 2026 SachBite. Food delivered with love ❤️</footer>
+
+<script src="js/i18n.js"></script>
+<script src="js/images.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main-cart.js"></script>
+<script src="js/customer-layout.js"></script>
+<script>renderCustomerHeader("");</script>
+<script src="js/site-settings.js"></script>
+</body>
+</html>

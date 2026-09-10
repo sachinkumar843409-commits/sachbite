@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="../icons/icon-192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Settings - SachBite</title>
 <link rel="stylesheet" href="../css/dashboard.css" />
 <style>
@@ -168,6 +169,32 @@
         <div class="success-msg" id="securitySuccess">✅ Security question saved!</div>
         <div class="error-msg" id="securityError"></div>
       </div>
+    </div>
+
+    <!-- ===== Staff Accounts ===== -->
+    <div class="settings-card">
+      <h3>👥 Staff Accounts</h3>
+      <p style="color:var(--text-gray); font-size:13px; margin-bottom:16px;">
+        Apne staff members ko alag login dein taaki sab shared password use na karein. Har staff apne khud ke username/password se login kar sakega.
+      </p>
+
+      <div id="staffList" style="margin-bottom:20px;"></div>
+
+      <div class="form-group">
+        <label>Staff Ka Naam</label>
+        <input type="text" id="staffName" placeholder="e.g. Ramesh Kumar" />
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="staffUsername" placeholder="e.g. ramesh" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="staffPassword" placeholder="Kam se kam 6 characters" />
+      </div>
+      <button class="btn-save-settings" id="addStaffBtn">+ Staff Add Karein</button>
+      <div class="success-msg" id="staffSuccess">✅ Staff account ban gaya!</div>
+      <div class="error-msg" id="staffError"></div>
     </div>
   </div>
 </main>

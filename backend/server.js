@@ -132,9 +132,9 @@ function requireAdmin(req, res, next) {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
   const now = Date.now();
-  const issuedAt = token && adminSessions.get(token);
+  const session = token && adminSessions.get(token);
 
-  if (issuedAt && now - issuedAt < SESSION_DURATION_MS) {
+  if (session && now - session.issuedAt < SESSION_DURATION_MS) {
     return next();
   }
   return res.status(401).json({ error: "Admin login zaroori hai." });
@@ -488,7 +488,7 @@ app.get("/api/orders/stats", (req, res) => {
 // Place a new order (from checkout page)
 app.post("/api/orders", (req, res) => {
   const db = readDB();
-  const { customer, items, location, paymentReference, upiReference, instructions } = req.body;
+  const { customer, items, location, paymentReference, upiReference, instructions, couponCode } = req.body;
 
   if (!customer || !items || items.length === 0) {
     return res.status(400).json({ error: "Customer details and items are required" });
@@ -503,6 +503,21 @@ app.post("/api/orders", (req, res) => {
   const itemTotal = trusted.total;
   const delivery = 0; // FREE delivery, matches design
 
+  // Coupon discount — server khud se dobara validate + calculate karta hai (client
+  // ke bheje discount amount par kabhi trust nahi karte, security ke liye)
+  let couponDiscount = 0;
+  let appliedCouponCode = null;
+  if (couponCode) {
+    const today = new Date().toISOString().slice(0, 10);
+    const offer = db.offers.find(
+      (o) => o.code && o.code === couponCode.trim().toUpperCase() && o.discountPercent
+    );
+    if (offer && (!offer.validFrom || today >= offer.validFrom) && (!offer.validUntil || today <= offer.validUntil)) {
+      couponDiscount = Math.round((itemTotal * offer.discountPercent) / 100);
+      appliedCouponCode = offer.code;
+    }
+  }
+
   let paymentStatus = "Pending";
   if (paymentReference) paymentStatus = "Paid";
   else if (customer.payment === "Cash on Delivery") paymentStatus = "Pending (COD)";
@@ -515,7 +530,9 @@ app.post("/api/orders", (req, res) => {
     items: trusted.items,
     itemTotal,
     delivery,
-    grandTotal: itemTotal + delivery,
+    couponCode: appliedCouponCode,
+    couponDiscount,
+    grandTotal: Math.max(0, itemTotal + delivery - couponDiscount),
     status: "Order Confirmed",
     location: location && location.lat && location.lng ? location : null,
     instructions: (instructions || "").slice(0, 200),
@@ -822,7 +839,7 @@ app.get("/api/offers", (req, res) => {
 
 app.post("/api/offers", requireAdmin, (req, res) => {
   const db = readDB();
-  const { title, discount, validFrom, validUntil, image } = req.body;
+  const { title, discount, validFrom, validUntil, image, code, discountPercent } = req.body;
   if (!title || !discount || !validUntil) {
     return res.status(400).json({ error: "Title, discount aur validUntil zaroori hain" });
   }
@@ -833,6 +850,8 @@ app.post("/api/offers", requireAdmin, (req, res) => {
     validFrom: validFrom || new Date().toISOString().slice(0, 10),
     validUntil,
     image: image || null,
+    code: code ? code.trim().toUpperCase() : null,
+    discountPercent: discountPercent ? Number(discountPercent) : null,
   };
   db.offers.push(newOffer);
   writeDB(db);
@@ -844,15 +863,41 @@ app.put("/api/offers/:id", requireAdmin, (req, res) => {
   const offer = db.offers.find((o) => o.id === req.params.id);
   if (!offer) return res.status(404).json({ error: "Offer not found" });
 
-  const { title, discount, validFrom, validUntil, image } = req.body;
+  const { title, discount, validFrom, validUntil, image, code, discountPercent } = req.body;
   if (title !== undefined) offer.title = title;
   if (discount !== undefined) offer.discount = discount;
   if (validFrom !== undefined) offer.validFrom = validFrom;
   if (validUntil !== undefined) offer.validUntil = validUntil;
   if (image !== undefined) offer.image = image;
+  if (code !== undefined) offer.code = code ? code.trim().toUpperCase() : null;
+  if (discountPercent !== undefined) offer.discountPercent = discountPercent ? Number(discountPercent) : null;
 
   writeDB(db);
   res.json(offer);
+});
+
+// Checkout par customer coupon code daale to yahan validate hota hai — discount
+// amount SERVER khud calculate karta hai (client se trust nahi karte security ke liye)
+app.post("/api/coupons/validate", (req, res) => {
+  const { code, itemTotal } = req.body;
+  if (!code) return res.status(400).json({ error: "Coupon code daalein" });
+
+  const db = readDB();
+  const today = new Date().toISOString().slice(0, 10);
+  const offer = db.offers.find(
+    (o) => o.code && o.code === code.trim().toUpperCase() && o.discountPercent
+  );
+
+  if (!offer) return res.status(404).json({ error: "Yeh coupon code valid nahi hai" });
+  if (offer.validFrom && today < offer.validFrom) {
+    return res.status(400).json({ error: "Yeh coupon abhi active nahi hua hai" });
+  }
+  if (offer.validUntil && today > offer.validUntil) {
+    return res.status(400).json({ error: "Yeh coupon expire ho gaya hai" });
+  }
+
+  const discountAmount = Math.round((Number(itemTotal) * offer.discountPercent) / 100);
+  res.json({ valid: true, discountPercent: offer.discountPercent, discountAmount, title: offer.title });
 });
 
 app.delete("/api/offers/:id", requireAdmin, (req, res) => {
@@ -1113,8 +1158,8 @@ let loginAttempts = { count: 0, lockUntil: 0 };
 // hamesha chalta rehta hai to warna purane tokens hamesha memory me reh jayenge)
 setInterval(() => {
   const now = Date.now();
-  for (const [token, issuedAt] of adminSessions.entries()) {
-    if (now - issuedAt >= SESSION_DURATION_MS) adminSessions.delete(token);
+  for (const [token, session] of adminSessions.entries()) {
+    if (now - session.issuedAt >= SESSION_DURATION_MS) adminSessions.delete(token);
   }
 }, 60 * 60 * 1000);
 
@@ -1130,6 +1175,8 @@ function migratePlainPasswordIfNeeded() {
 }
 migratePlainPasswordIfNeeded();
 
+// adminSessions ab { token -> { issuedAt, name } } store karta hai, taaki pata rahe
+// kaun (Owner ya kaunsa staff) login hai
 app.post("/api/admin/login", (req, res) => {
   const now = Date.now();
 
@@ -1141,12 +1188,24 @@ app.post("/api/admin/login", (req, res) => {
   }
 
   const db = readDB();
-  const { password } = req.body;
-  const hash = db.settings.adminPasswordHash;
+  const { username, password } = req.body;
+  let loggedInName = null;
 
-  const isValid = password && hash && bcrypt.compareSync(password, hash);
+  if (username && username.trim()) {
+    // Staff login — apne alag username+password se
+    const staff = (db.staffAccounts || []).find((s) => s.username.toLowerCase() === username.trim().toLowerCase());
+    if (staff && password && bcrypt.compareSync(password, staff.passwordHash)) {
+      loggedInName = staff.name;
+    }
+  } else {
+    // Owner login — original shared password se (backward compatible, username khali)
+    const hash = db.settings.adminPasswordHash;
+    if (password && hash && bcrypt.compareSync(password, hash)) {
+      loggedInName = "Owner";
+    }
+  }
 
-  if (!isValid) {
+  if (!loggedInName) {
     loginAttempts.count += 1;
     if (loginAttempts.count >= MAX_LOGIN_ATTEMPTS) {
       loginAttempts.lockUntil = now + LOCKOUT_DURATION_MS;
@@ -1156,27 +1215,63 @@ app.post("/api/admin/login", (req, res) => {
       });
     }
     const remaining = MAX_LOGIN_ATTEMPTS - loginAttempts.count;
-    return res.status(401).json({ error: `Galat password. ${remaining} attempts baaki hain.` });
+    return res.status(401).json({ error: `Galat username/password. ${remaining} attempts baaki hain.` });
   }
 
   // Successful login
   loginAttempts = { count: 0, lockUntil: 0 };
   const newToken = crypto.randomBytes(24).toString("hex");
-  adminSessions.set(newToken, now);
-  res.json({ success: true, token: newToken });
+  adminSessions.set(newToken, { issuedAt: now, name: loggedInName });
+  res.json({ success: true, token: newToken, name: loggedInName });
 });
 
 app.post("/api/admin/verify", (req, res) => {
   const { token } = req.body;
   const now = Date.now();
-  const issuedAt = adminSessions.get(token);
+  const session = adminSessions.get(token);
 
-  if (issuedAt && now - issuedAt < SESSION_DURATION_MS) {
-    return res.json({ valid: true });
+  if (session && now - session.issuedAt < SESSION_DURATION_MS) {
+    return res.json({ valid: true, name: session.name });
   }
 
   adminSessions.delete(token);
   res.status(401).json({ valid: false });
+});
+
+// Staff accounts manage karna — sirf logged-in admin/staff hi naye staff add/remove kar sakte hain
+app.get("/api/admin/staff", requireAdmin, (req, res) => {
+  const db = readDB();
+  const staff = (db.staffAccounts || []).map((s) => ({ id: s.id, name: s.name, username: s.username }));
+  res.json(staff);
+});
+
+app.post("/api/admin/staff", requireAdmin, (req, res) => {
+  const db = readDB();
+  const { name, username, password } = req.body;
+  if (!name || !username || !password) {
+    return res.status(400).json({ error: "Naam, username aur password teeno zaroori hain" });
+  }
+  db.staffAccounts = db.staffAccounts || [];
+  if (db.staffAccounts.some((s) => s.username.toLowerCase() === username.trim().toLowerCase())) {
+    return res.status(400).json({ error: "Yeh username already use ho raha hai" });
+  }
+  const newStaff = {
+    id: generateId("STAFF"),
+    name: name.trim(),
+    username: username.trim(),
+    passwordHash: bcrypt.hashSync(password, 10),
+    createdAt: new Date().toISOString(),
+  };
+  db.staffAccounts.push(newStaff);
+  writeDB(db);
+  res.status(201).json({ id: newStaff.id, name: newStaff.name, username: newStaff.username });
+});
+
+app.delete("/api/admin/staff/:id", requireAdmin, (req, res) => {
+  const db = readDB();
+  db.staffAccounts = (db.staffAccounts || []).filter((s) => s.id !== req.params.id);
+  writeDB(db);
+  res.json({ success: true });
 });
 
 app.post("/api/admin/logout", (req, res) => {
@@ -1241,6 +1336,15 @@ app.post("/api/admin/security-question", (req, res) => {
   db.settings.adminSecurityAnswerHash = bcrypt.hashSync(answer.trim().toLowerCase(), 10);
   writeDB(db);
   res.json({ success: true });
+});
+
+// 404 handler — koi bhi galat URL par branded 404 page dikhayein (sirf non-API
+// routes ke liye; API routes apni khud ki JSON error dete hain upar hi)
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ error: "Not found" });
+  }
+  res.status(404).sendFile(path.join(__dirname, "..", "frontend", "404.html"));
 });
 
 // Global error handler — koi bhi error (jaise "request too large") HTML page ki jagah

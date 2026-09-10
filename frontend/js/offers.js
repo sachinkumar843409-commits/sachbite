@@ -28,6 +28,7 @@ function renderOffers() {
           <div>
             <div class="offer-discount">${o.discount}</div>
             <div class="offer-title">${o.title}</div>
+            ${o.code ? `<div style="font-size:12px; color:var(--primary); font-weight:700; margin-top:2px;">🏷️ Code: ${o.code} (${o.discountPercent}% off)</div>` : ""}
             <div class="offer-dates">📅 ${o.validFrom} to ${o.validUntil}</div>
           </div>
         </div>
@@ -55,6 +56,8 @@ function openAddModal() {
   document.getElementById("offerId").value = "";
   document.getElementById("offerTitle").value = "";
   document.getElementById("offerDiscount").value = "";
+  document.getElementById("offerCode").value = "";
+  document.getElementById("offerDiscountPercent").value = "";
   document.getElementById("offerFrom").value = new Date().toISOString().slice(0, 10);
   document.getElementById("offerUntil").value = "";
   modal.classList.add("show");
@@ -66,6 +69,8 @@ function openEditModal(id) {
   document.getElementById("offerId").value = offer.id;
   document.getElementById("offerTitle").value = offer.title;
   document.getElementById("offerDiscount").value = offer.discount;
+  document.getElementById("offerCode").value = offer.code || "";
+  document.getElementById("offerDiscountPercent").value = offer.discountPercent || "";
   document.getElementById("offerFrom").value = offer.validFrom;
   document.getElementById("offerUntil").value = offer.validUntil;
   modal.classList.add("show");
@@ -78,6 +83,8 @@ document.getElementById("saveOfferBtn").addEventListener("click", async () => {
   const id = document.getElementById("offerId").value;
   const title = document.getElementById("offerTitle").value.trim();
   const discount = document.getElementById("offerDiscount").value.trim();
+  const code = document.getElementById("offerCode").value.trim();
+  const discountPercent = document.getElementById("offerDiscountPercent").value;
   const validFrom = document.getElementById("offerFrom").value;
   const validUntil = document.getElementById("offerUntil").value;
 
@@ -86,17 +93,19 @@ document.getElementById("saveOfferBtn").addEventListener("click", async () => {
     return;
   }
 
+  const body = { title, discount, validFrom, validUntil, code, discountPercent };
+
   if (id) {
     await adminFetch(`${API}/offers/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, discount, validFrom, validUntil }),
+      body: JSON.stringify(body),
     });
   } else {
     await adminFetch(`${API}/offers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, discount, validFrom, validUntil }),
+      body: JSON.stringify(body),
     });
   }
 

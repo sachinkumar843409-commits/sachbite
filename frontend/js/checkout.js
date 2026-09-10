@@ -13,6 +13,8 @@ fetch(`${API}/settings`)
   })
   .catch(() => {});
 
+let appliedCoupon = null; // { code, discountAmount }
+
 function renderCart() {
   const cart = getCart();
   const box = document.getElementById("cartItems");
@@ -38,8 +40,58 @@ function renderCart() {
 
   const itemTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   document.getElementById("itemTotal").textContent = `₹${itemTotal}`;
-  document.getElementById("grandTotal").textContent = `₹${itemTotal}`;
+
+  const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const grand = Math.max(0, itemTotal - discount);
+  document.getElementById("grandTotal").textContent = `₹${grand}`;
+
+  const discountLine = document.getElementById("couponDiscountLine");
+  if (discount > 0) {
+    discountLine.style.display = "flex";
+    document.getElementById("couponDiscountAmount").textContent = `-₹${discount}`;
+  } else {
+    discountLine.style.display = "none";
+  }
 }
+
+async function applyCoupon() {
+  const code = document.getElementById("couponInput").value.trim();
+  const msgEl = document.getElementById("couponMessage");
+  if (!code) return;
+
+  const cart = getCart();
+  const itemTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+  try {
+    const res = await fetch(`${API}/coupons/validate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, itemTotal }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      appliedCoupon = null;
+      msgEl.style.display = "block";
+      msgEl.style.color = "#dc2626";
+      msgEl.textContent = data.error || "Coupon apply nahi ho paya.";
+    } else {
+      appliedCoupon = { code: code.toUpperCase(), discountAmount: data.discountAmount };
+      msgEl.style.display = "block";
+      msgEl.style.color = "var(--green)";
+      msgEl.textContent = `✅ "${data.title}" apply ho gaya! ₹${data.discountAmount} discount mila.`;
+    }
+  } catch (e) {
+    msgEl.style.display = "block";
+    msgEl.style.color = "#dc2626";
+    msgEl.textContent = "Kuch galat ho gaya, dobara try karein.";
+  }
+  renderCart();
+  if (typeof updateUpiDirectDetails === "function" && getSelectedPayment() === "UPI (Direct)") {
+    updateUpiDirectDetails();
+  }
+}
+
+document.getElementById("applyCouponBtn")?.addEventListener("click", applyCoupon);
 
 // Cart page par qty +/- karne ke liye — qty 0 tak jaaye to item cart se hat jayega
 function changeCartQty(index, delta) {
@@ -132,7 +184,9 @@ function toggleUpiDirectBox() {
 
 function updateUpiDirectDetails() {
   const cart = getCart();
-  const amount = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const itemTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const amount = Math.max(0, itemTotal - discount);
   document.getElementById("upiAmountDisplay").textContent = `₹${amount}`;
 
   if (!businessUpiId) {
@@ -299,6 +353,7 @@ async function finalizeOrder(customer, cart, paymentReference, upiReference) {
     paymentReference,
     upiReference,
     instructions,
+    couponCode: appliedCoupon ? appliedCoupon.code : undefined,
   };
 
   try {
