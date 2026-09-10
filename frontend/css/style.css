@@ -1023,3 +1023,11 @@ footer {
 /* ---------- MOBILE RESPONSIVE FIXES (customer-facing pages) ---------- */
 body { overflow-x: hidden; }
 
+.sb-loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-gray);
+  font-size: 14px;
+}
+

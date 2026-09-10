@@ -17,17 +17,17 @@ function renderRestaurants(list) {
     <div class="restaurant-card">
       <a href="restaurant.html?name=${encodeURIComponent(r.name)}">
         <div class="restaurant-img">
-          <img src="${restaurantImageUrl(r.name, 500, 340, i + 1, r.image)}" alt="${r.name}" loading="lazy" />
+          <img src="${restaurantImageUrl(r.name, 500, 340, i + 1, r.image)}" alt="${escapeHtml(r.name)}" loading="lazy" />
           <div class="heart">🤍</div>
         </div>
         <div class="restaurant-body">
-          <h3>${r.name}</h3>
-          <div class="tags">${r.tags}</div>
+          <h3>${escapeHtml(r.name)}</h3>
+          <div class="tags">${escapeHtml(r.tags)}</div>
           <div class="restaurant-meta">
-            <span class="stars">⭐ ${r.rating} (${r.reviews})</span>
-            <span>⏱ ${r.time}</span>
+            <span class="stars">⭐ ${r.rating} (${escapeHtml(r.reviews)})</span>
+            <span>⏱ ${escapeHtml(r.time)}</span>
           </div>
-          ${r.badge ? `<span class="badge-green">${r.badge}</span>` : ""}
+          ${r.badge ? `<span class="badge-green">${escapeHtml(r.badge)}</span>` : ""}
         </div>
       </a>
     </div>`
@@ -36,6 +36,7 @@ function renderRestaurants(list) {
 }
 
 async function loadRestaurants() {
+  document.getElementById("allRestaurantsRow").innerHTML = `<div class="sb-loading">⏳ Restaurants load ho rahe hain...</div>`;
   const res = await fetch(`${API}/restaurants`);
   allRestaurants = await res.json();
 

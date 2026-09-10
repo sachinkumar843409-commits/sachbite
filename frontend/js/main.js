@@ -15,6 +15,7 @@ async function loadBestsellers() {
 async function loadMenu() {
   const row = document.getElementById("categoryRow");
   if (!row) return;
+  row.innerHTML = `<div class="sb-loading">⏳ Menu load ho raha hai...</div>`;
   try {
     await loadBestsellers();
     const res = await fetch(`${API}/menu`);
@@ -24,10 +25,10 @@ async function loadMenu() {
       .filter((item) => item.available !== false)
       .map(
         (item) => `
-      <div class="category-card" onclick="addToCart('${item.name}', ${item.price})">
+      <div class="category-card" onclick="addToCart('${escapeJs(item.name)}', ${item.price})">
         ${bestsellerNames.has(item.name) ? `<div class="bestseller-badge">🔥 Bestseller</div>` : ""}
-        <img src="${categoryImageUrl(item.name, 200, 200, null, item.image)}" alt="${item.name}" loading="lazy" />
-        <div class="name">${item.name}</div>
+        <img src="${categoryImageUrl(item.name, 200, 200, null, item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" />
+        <div class="name">${escapeHtml(item.name)}</div>
         <div class="price">From ₹${item.price}</div>
       </div>`
       )

@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <link rel="icon" type="image/png" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
     <meta name="viewport" content="width=800" />
 <title>Track Order - SachBite</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
@@ -25,10 +26,13 @@
       <button class="btn btn-primary" id="trackBtn" data-i18n="track_btn">🔄 Refresh</button>
     </div>
     <div id="trackResults"></div>
+    <div style="text-align:center; margin-top:30px;">
+      <a href="#" id="deleteAccountLink" style="font-size:12px; color:var(--text-gray); text-decoration:underline;">Apna Account Delete Karein</a>
+    </div>
   </div>
 </section>
 
-<footer>© 2026 SachBite. <span data-i18n="footer_text">Food delivered with love ❤️</span> — <span id="footerLocation">Kanti, Muzaffarpur</span></footer>
+<footer>© 2026 SachBite. <span data-i18n="footer_text">Food delivered with love ❤️</span> — <span id="footerLocation">Kanti, Muzaffarpur</span> · <a href="terms.html" style="color:inherit;">Terms & Privacy</a></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="js/i18n.js"></script>

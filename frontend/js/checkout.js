@@ -26,7 +26,7 @@ function renderCart() {
       .map(
         (item, index) => `
       <div class="cart-item-row">
-        <span>${item.name}</span>
+        <span>${escapeHtml(item.name)}</span>
         <div class="qty-btns" style="display:flex; align-items:center; gap:8px;">
           <button type="button" onclick="changeCartQty(${index}, -1)">−</button>
           <span style="min-width:18px; text-align:center; font-weight:700;">${item.qty}</span>

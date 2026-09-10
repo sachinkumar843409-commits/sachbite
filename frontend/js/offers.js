@@ -1,6 +1,12 @@
 const API = "/api";
 let currentOffers = [];
 
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str == null ? "" : String(str);
+  return div.innerHTML;
+}
+
 function isExpired(validUntil) {
   return new Date(validUntil) < new Date(new Date().toDateString());
 }
@@ -24,11 +30,11 @@ function renderOffers() {
       return `
       <div class="offer-card-admin">
         <div style="display:flex; align-items:center;">
-          ${o.image ? `<img src="${o.image}" alt="${o.title}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;margin-right:14px;" />` : ""}
+          ${o.image ? `<img src="${o.image}" alt="${escapeHtml(o.title)}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;margin-right:14px;" />` : ""}
           <div>
-            <div class="offer-discount">${o.discount}</div>
-            <div class="offer-title">${o.title}</div>
-            ${o.code ? `<div style="font-size:12px; color:var(--primary); font-weight:700; margin-top:2px;">🏷️ Code: ${o.code} (${o.discountPercent}% off)</div>` : ""}
+            <div class="offer-discount">${escapeHtml(o.discount)}</div>
+            <div class="offer-title">${escapeHtml(o.title)}</div>
+            ${o.code ? `<div style="font-size:12px; color:var(--primary); font-weight:700; margin-top:2px;">🏷️ Code: ${escapeHtml(o.code)} (${o.discountPercent}% off)</div>` : ""}
             <div class="offer-dates">📅 ${o.validFrom} to ${o.validUntil}</div>
           </div>
         </div>

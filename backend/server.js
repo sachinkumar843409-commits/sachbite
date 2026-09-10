@@ -119,7 +119,17 @@ const UPLOADS_DIR = path.join(__dirname, "uploads");
 // Uploads folder na ho to bana do
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-app.use(cors());
+// CORS: agar ALLOWED_ORIGIN set hai (jaise apna custom domain), to sirf usi se
+// requests allow hongi. Nahi set hai to sab jagah se allow hota hai (abhi ke
+// Render URL ke liye backward-compatible) — domain mil jaaye to ise set kar dein.
+const allowedOrigin = process.env.ALLOWED_ORIGIN;
+app.use(
+  cors(
+    allowedOrigin
+      ? { origin: allowedOrigin }
+      : {}
+  )
+);
 // Default JSON body limit sirf 100KB hoti hai — lekin humare images ab base64 format
 // me JSON ke through bhejte hain (hero banner, menu item photos), jo isse kahin zyada
 // bade hote hain. Isliye limit badhakar 8mb kar di, taaki image upload/apply crash na ho.
@@ -486,6 +496,11 @@ app.get("/api/orders/stats", (req, res) => {
 });
 
 // Place a new order (from checkout page)
+// Ek phone number se max 10 orders per hour — spam/fake orders rokne ke liye
+const orderRequestLog = {}; // phone -> [timestamps]
+const ORDER_MAX_REQUESTS = 10;
+const ORDER_REQUEST_WINDOW_MS = 60 * 60 * 1000;
+
 app.post("/api/orders", (req, res) => {
   const db = readDB();
   const { customer, items, location, paymentReference, upiReference, instructions, couponCode } = req.body;
@@ -493,6 +508,14 @@ app.post("/api/orders", (req, res) => {
   if (!customer || !items || items.length === 0) {
     return res.status(400).json({ error: "Customer details and items are required" });
   }
+
+  const now = Date.now();
+  const phone = customer.phone || "unknown";
+  orderRequestLog[phone] = (orderRequestLog[phone] || []).filter((t) => now - t < ORDER_REQUEST_WINDOW_MS);
+  if (orderRequestLog[phone].length >= ORDER_MAX_REQUESTS) {
+    return res.status(429).json({ error: "Bahut zyada orders ho gaye. Kuch der baad dobara try karein." });
+  }
+  orderRequestLog[phone].push(now);
 
   // Security: client ke bheje hue prices trust nahi karte — DB menu se sahi price nikalte hain
   const trusted = getTrustedItems(items, db.menu);
@@ -621,6 +644,14 @@ app.patch("/api/orders/:id/cancel", requireCustomerToken, (req, res) => {
   res.json(order);
 });
 
+// Customer apna account delete kar sake (data privacy request) — account record
+// hata dete hain, lekin purane orders business records ke liye rakhe rahte hain
+app.delete("/api/customers/account", requireCustomerToken, (req, res) => {
+  const db = readDB();
+  db.accounts = (db.accounts || []).filter((a) => a.phone !== req.customerPhone);
+  writeDB(db);
+  res.json({ success: true });
+});
 // Admin: refund manually kar dene ke baad, is order ka "refund pending" flag clear kar dein
 app.patch("/api/orders/:id/mark-refunded", requireAdmin, (req, res) => {
   const db = readDB();

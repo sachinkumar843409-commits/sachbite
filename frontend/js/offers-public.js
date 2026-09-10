@@ -19,12 +19,13 @@ async function loadPublicOffers() {
     .map(
       (o) => `
     <div class="offer-public-card">
-      ${o.image ? `<img src="${o.image}" alt="${o.title}" loading="lazy" style="width:64px;height:64px;object-fit:cover;border-radius:12px;margin-right:14px;" />` : ""}
+      ${o.image ? `<img src="${o.image}" alt="${escapeHtml(o.title)}" loading="lazy" style="width:64px;height:64px;object-fit:cover;border-radius:12px;margin-right:14px;" />` : ""}
       <div>
-        <div class="offer-public-title">${o.title}</div>
-        <div class="offer-public-dates">📅 Valid until ${o.validUntil}</div>
+        <div class="offer-public-title">${escapeHtml(o.title)}</div>
+        <div class="offer-public-dates">📅 Valid until ${escapeHtml(o.validUntil)}</div>
+        ${o.code ? `<div style="font-size:12px; color:var(--primary); font-weight:700; margin-top:2px;">🏷️ Code: ${escapeHtml(o.code)}</div>` : ""}
       </div>
-      <div class="offer-public-discount">${o.discount}</div>
+      <div class="offer-public-discount">${escapeHtml(o.discount)}</div>
     </div>`
     )
     .join("");

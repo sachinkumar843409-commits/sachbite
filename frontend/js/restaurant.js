@@ -45,13 +45,13 @@ async function loadRestaurantPage() {
       (item, i) => `
     <div class="menu-item-row">
       <div class="left">
-        <img src="${categoryImageUrl(item.name, 120, 120, i + 1, item.image)}" alt="${item.name}" loading="lazy" />
+        <img src="${categoryImageUrl(item.name, 120, 120, i + 1, item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" />
         <div>
-          <div class="name">${item.name}</div>
+          <div class="name">${escapeHtml(item.name)}</div>
           <div class="price">₹${item.price}</div>
         </div>
       </div>
-      <button class="btn btn-primary" onclick="addToCart('${item.name}', ${item.price}, '${restaurant.name.replace(/'/g, "\\'")}')">+ Add</button>
+      <button class="btn btn-primary" onclick="addToCart('${escapeJs(item.name)}', ${item.price}, '${escapeJs(restaurant.name)}')">+ Add</button>
     </div>`
     )
     .join("");

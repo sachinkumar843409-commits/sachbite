@@ -174,6 +174,25 @@ function initLanguageToggle() {
   updateLangToggleUI();
 }
 
+// ---------- Shared security helpers (XSS-safe rendering) ----------
+// Kisi bhi user/admin-entered text (item name, restaurant name, etc.) ko HTML me
+// dikhane se pehle iska use karein — warna koi bhi naam me malicious code daal kar
+// sabhi customers ke browser me chala sakta hai (Stored XSS).
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str == null ? "" : String(str);
+  return div.innerHTML;
+}
+
+// onclick="..." jaise inline JS string attributes ke andar text daalte waqt iska
+// use karein (escapeHtml se alag — yeh quotes/backslash escape karta hai, HTML tags nahi)
+function escapeJs(str) {
+  return String(str == null ? "" : str)
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"');
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   applyTranslations();
   initLanguageToggle();

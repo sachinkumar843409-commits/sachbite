@@ -218,11 +218,16 @@ function reorderItems(items) {
 
 // ---------- Status-change notification (jab tak tab khula hai) ----------
 let previousStatuses = {};
-let notifyPermissionAsked = false;
 
 function checkStatusChanges(orders) {
-  if (!notifyPermissionAsked && "Notification" in window && Notification.permission === "default") {
-    notifyPermissionAsked = true;
+  // localStorage se check karte hain — taaki har page-visit par dobara na poochhe,
+  // sirf ek hi baar (jab tak customer khud permission grant/deny na kare)
+  if (
+    !localStorage.getItem("sachbite_notif_asked") &&
+    "Notification" in window &&
+    Notification.permission === "default"
+  ) {
+    localStorage.setItem("sachbite_notif_asked", "true");
     Notification.requestPermission();
   }
   orders.forEach((o) => {
@@ -368,3 +373,31 @@ setInterval(async () => {
     if (changed) trackByPhone();
   } catch (e) {}
 }, 20000);
+
+document.getElementById("deleteAccountLink")?.addEventListener("click", async (e) => {
+  e.preventDefault();
+  const token = localStorage.getItem("sachbite_token");
+  if (!token) {
+    alert("Pehle login karein.");
+    return;
+  }
+  if (!confirm("Kya aap sach me apna account delete karna chahte hain? Yeh action wapas nahi ho sakta. (Aapke purane orders business records ke liye rakhe rahenge.)")) {
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/customers/account`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      localStorage.removeItem("sachbite_user");
+      localStorage.removeItem("sachbite_token");
+      alert("Aapka account delete ho gaya hai.");
+      window.location.href = "index.html";
+    } else {
+      alert("Kuch galat ho gaya, dobara try karein.");
+    }
+  } catch (err) {
+    alert("Server se connect nahi ho paya.");
+  }
+});
