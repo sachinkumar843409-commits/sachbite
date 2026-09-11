@@ -1,6 +1,7 @@
 :root {
   --primary: #ff7a1a;
   --primary-dark: #e85d04;
+  --primary-text: #c94f00; /* WCAG-safe darker orange for text (--primary is only 2.6:1 contrast) */
   --primary-light: #fff1e6;
   --text-dark: #1e1e1e;
   --text-gray: #6b7280;
@@ -69,7 +70,7 @@ img { max-width: 100%; display: block; }
 .side-nav a:hover { background: #f7f7f7; }
 .side-nav a.active {
   background: var(--primary-light);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 
 .promo-box {
@@ -85,7 +86,7 @@ img { max-width: 100%; display: block; }
 .promo-box p { font-size: 12px; opacity: 0.9; margin-bottom: 12px; }
 .promo-box button {
   background: #fff;
-  color: var(--primary);
+  color: var(--primary-text);
   border: none;
   border-radius: 20px;
   padding: 8px 16px;
@@ -112,7 +113,7 @@ img { max-width: 100%; display: block; }
   height: 38px;
   border-radius: 50%;
   background: var(--primary-light);
-  color: var(--primary);
+  color: var(--primary-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -380,7 +381,7 @@ img { max-width: 100%; display: block; }
 .status-opt.current {
   border-color: var(--primary);
   background: var(--primary-light);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .status-opt.current .circle {
   border-color: var(--primary);

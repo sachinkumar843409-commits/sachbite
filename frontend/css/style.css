@@ -1,6 +1,7 @@
 :root {
   --primary: #ff7a1a;
   --primary-dark: #e85d04;
+  --primary-text: #c94f00; /* darker orange, sirf TEXT ke liye — WCAG AA contrast (4.5:1+) pass karta hai white background par. --primary khud text ke liye bahut halka hai (2.6:1), isliye buttons/icons/backgrounds ke liye hi use karein */
   --primary-light: #fff1e6;
   --text-dark: #1e1e1e;
   --text-gray: #6b7280;
@@ -63,12 +64,12 @@ img {
 .btn-outline {
   background: #fff;
   border: 1.5px solid var(--primary);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 
 .btn-white {
   background: #fff;
-  color: var(--primary);
+  color: var(--primary-text);
 }
 
 /* ---------- Header ---------- */
@@ -98,7 +99,7 @@ header.topbar {
   line-height: 1.2;
 }
 .logo span {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .logo small {
   display: block;
@@ -118,7 +119,7 @@ nav.main-nav {
 }
 nav.main-nav a.active,
 nav.main-nav a:hover {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 
 .topbar-right {
@@ -140,7 +141,7 @@ nav.main-nav a:hover {
   white-space: nowrap;
 }
 .location-pill span.pin {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 
 .cart-icon {
@@ -251,7 +252,7 @@ nav.main-nav a:hover {
   min-width: 320px;
 }
 .hero-tag {
-  color: var(--primary);
+  color: var(--primary-text);
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 1px;
@@ -264,7 +265,7 @@ nav.main-nav a:hover {
   margin-bottom: 18px;
 }
 .hero-left h1 span {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .hero-left p {
   color: var(--text-gray);
@@ -357,7 +358,7 @@ nav.main-nav a:hover {
   padding: 14px 20px;
 }
 .offer-card .tag {
-  color: var(--primary);
+  color: var(--primary-text);
   font-weight: 700;
   font-size: 12px;
   margin-bottom: 4px;
@@ -398,7 +399,7 @@ nav.main-nav a:hover {
   border-radius: 2px;
 }
 .view-all {
-  color: var(--primary);
+  color: var(--primary-text);
   font-weight: 700;
   font-size: 14px;
 }
@@ -448,7 +449,7 @@ nav.main-nav a:hover {
   font-size: 15px;
 }
 .category-card .price {
-  color: var(--primary);
+  color: var(--primary-text);
   font-size: 13px;
   font-weight: 600;
 }
@@ -595,7 +596,7 @@ footer {
   height: 46px;
   border-radius: 12px;
   background: var(--primary-light);
-  color: var(--primary);
+  color: var(--primary-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -765,7 +766,7 @@ footer {
 
 .track-order-card .oid {
   font-weight: 700;
-  color: var(--primary);
+  color: var(--primary-text);
   font-size: 15px;
 }
 
@@ -943,7 +944,7 @@ footer {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1.5px solid var(--primary);
-  color: var(--primary);
+  color: var(--primary-text);
   font-weight: 700;
   font-size: 13px;
   background: #fff;

@@ -130,6 +130,39 @@ app.use(
       : {}
   )
 );
+
+// ---------- Security Headers ----------
+// Bina kisi naye npm package ke (helmet install nahi karna pada) — manually zaroori
+// headers set karte hain. CSP me 'unsafe-inline' rakha hai kyunki poori site inline
+// onclick="" handlers aur inline style="" attributes use karti hai — agar hata dein
+// to har button/styling tut jayega. Yeh future me refactor karke aur strict kiya ja
+// sakta hai, lekin abhi functionality todhna sahi nahi hai.
+app.use((req, res, next) => {
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  // Sirf woh browser features allow karte hain jo SachBite actually use karta hai
+  // (geolocation delivery-location ke liye, payment Razorpay ke liye)
+  res.setHeader("Permissions-Policy", "geolocation=(self), payment=(self), camera=(), microphone=(), usb=()");
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://checkout.razorpay.com https://api.razorpay.com",
+      "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+      "img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://*.razorpay.com",
+      "font-src 'self' data: https://cdnjs.cloudflare.com",
+      "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com",
+      "frame-src https://api.razorpay.com https://checkout.razorpay.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "frame-ancestors 'self'",
+    ].join("; ")
+  );
+  next();
+});
+
 // Default JSON body limit sirf 100KB hoti hai — lekin humare images ab base64 format
 // me JSON ke through bhejte hain (hero banner, menu item photos), jo isse kahin zyada
 // bade hote hain. Isliye limit badhakar 8mb kar di, taaki image upload/apply crash na ho.
@@ -485,6 +518,39 @@ app.get("/api/orders", (req, res) => {
     (a, b) => new Date(b.date) - new Date(a.date)
   );
   res.json(sorted);
+});
+
+// Admin: sabhi orders CSV format me download karein (accounting/tax filing ke liye)
+app.get("/api/orders/export.csv", requireAdmin, (req, res) => {
+  const db = readDB();
+  const sorted = [...db.orders].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const escapeCsv = (val) => {
+    const s = String(val == null ? "" : val);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const header = ["Order ID", "Date", "Customer Name", "Phone", "Address", "Items", "Item Total", "Coupon Discount", "Grand Total", "Payment Method", "Payment Status", "Order Status"];
+  const rows = sorted.map((o) => [
+    o.id,
+    new Date(o.date).toLocaleString("en-IN"),
+    o.customer.name,
+    o.customer.phone,
+    o.customer.address,
+    o.items.map((i) => `${i.name} x${i.qty}`).join("; "),
+    o.itemTotal,
+    o.couponDiscount || 0,
+    o.grandTotal,
+    o.customer.payment,
+    o.paymentStatus,
+    o.status,
+  ]);
+
+  const csv = [header, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\n");
+
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="sachbite-orders-${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.send(csv);
 });
 
 // Get order stats (Total Orders, Total Sales)

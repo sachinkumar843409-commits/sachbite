@@ -10,6 +10,26 @@
 <meta property="og:title" content="SachBite - Food delivered with love" />
 <meta property="og:description" content="Apna favourite khana order karein — fast delivery, live tracking, aur best restaurants." />
 <meta property="og:type" content="website" />
+<meta property="og:image" content="images/og-image.png" />
+<link rel="canonical" href="https://sachbite.onrender.com/index.html" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "name": "SachBite",
+  "description": "SachBite se apna favourite khana order karein — fast delivery, live tracking, aur best restaurants Muzaffarpur, Bihar mein.",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Kanti, Muzaffarpur",
+    "addressRegion": "Bihar",
+    "addressCountry": "IN"
+  },
+  "telephone": "+91-93040-96306",
+  "servesCuisine": "Indian",
+  "priceRange": "₹₹",
+  "url": "https://sachbite.onrender.com/index.html"
+}
+</script>
 <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -42,6 +62,7 @@
   </div>
 </header>
 
+<main>
 <section class="hero" id="heroSection">
   <div class="hero-bg" id="heroBg"></div>
   <div class="hero-overlay"></div>
@@ -63,7 +84,7 @@
       <p data-i18n="hero_desc">Discover delicious food from restaurants near you and get it delivered straight to your door.</p>
 
       <div class="search-bar">
-        <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder" placeholder="Search for pizza, burger, momos..." />
+        <input type="text" id="searchInput" aria-label="Search for food or restaurants" data-i18n-placeholder="search_placeholder" placeholder="Search for pizza, burger, momos..." />
         <button class="btn btn-primary" id="searchBtn" data-i18n="search_btn">Search</button>
       </div>
 
@@ -157,6 +178,7 @@
     </div>
   </div>
 </section>
+</main>
 
 <footer>
   © 2026 SachBite. <span data-i18n="footer_text">Food delivered with love ❤️</span> — <span id="footerLocation">Kanti, Muzaffarpur</span> · <a href="terms.html" style="color:inherit;">Terms &amp; Privacy</a>

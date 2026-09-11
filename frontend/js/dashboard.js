@@ -273,3 +273,20 @@ if ("Notification" in window && Notification.permission === "default") {
 
 document.getElementById("orderSearchInput")?.addEventListener("input", loadOrders);
 document.getElementById("orderDateFilter")?.addEventListener("change", loadOrders);
+
+document.getElementById("exportCsvBtn")?.addEventListener("click", async () => {
+  const res = await adminFetch(`${API}/orders/export.csv`);
+  if (!res.ok) {
+    alert("Export nahi ho paya, dobara try karein.");
+    return;
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `sachbite-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
