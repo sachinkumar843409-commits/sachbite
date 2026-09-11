@@ -33,8 +33,17 @@ let collection = null; // MongoDB collection reference (null = file-mode fallbac
 let mongoAvailable = false;
 
 function readLocalFile() {
-  const raw = fs.readFileSync(DB_PATH, "utf-8");
-  return JSON.parse(raw);
+  try {
+    const raw = fs.readFileSync(DB_PATH, "utf-8");
+    return JSON.parse(raw);
+  } catch (err) {
+    // Agar db.json kisi wajah se na mile (jaise Render deploy ke beech timing issue),
+    // to server crash hone ki jagah ek khaali-lekin-valid structure de dete hain.
+    // MongoDB configured hai to yeh sirf ek temporary safety net hai, real data
+    // Mongo se hi aayega jaise hi initStore() poora ho jayega.
+    console.error("⚠️  db.json nahi mil paayi (" + err.message + ") — khaali structure use kar rahe hain.");
+    return { orders: [], menu: [], restaurants: [], offers: [], settings: {}, uploads: [], accounts: [] };
+  }
 }
 
 function writeLocalFile(data) {

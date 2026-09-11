@@ -1270,7 +1270,6 @@ function migratePlainPasswordIfNeeded() {
     console.log("[Security] Admin password ab securely hashed karke store ki gayi hai.");
   }
 }
-migratePlainPasswordIfNeeded();
 
 // adminSessions ab { token -> { issuedAt, name } } store karta hai, taaki pata rahe
 // kaun (Owner ya kaunsa staff) login hai
@@ -1456,7 +1455,14 @@ app.use((err, req, res, next) => {
 
 // Server start karne se pehle data store (MongoDB ya local file) load karna zaroori hai,
 // warna readDB() ko khaali/purana data mil sakta hai.
+// Server start karne se pehle data store (MongoDB ya local file) load karna zaroori hai,
+// warna readDB() ko khaali/purana data mil sakta hai.
 initStore().then(() => {
+  // MongoDB/local data poori tarah load hone ke BAAD hi yeh migration chalayein —
+  // pehle yeh top-level par turant chal jaata tha, jo kabhi-kabhi (MongoDB load hone
+  // se pehle) local db.json file na milne par crash kar deta tha.
+  migratePlainPasswordIfNeeded();
+
   app.listen(PORT, () => {
     console.log(`\n🛵 SachBite server chal raha hai: http://localhost:${PORT}`);
     console.log(`   Home page:      http://localhost:${PORT}/index.html`);
