@@ -20,8 +20,8 @@ const TRANSLATIONS = {
   hero_title_1: { en: "Delicious food from SachBite,", hi: "SachBite से स्वादिष्ट खाना," },
   hero_title_2: { en: "just a bite away.", hi: "बस एक बाइट दूर." },
   hero_desc: {
-    en: "Discover delicious food from restaurants near you and get it delivered straight to your door.",
-    hi: "अपने आस-पास के रेस्टोरेंट से स्वादिष्ट खाना खोजें और सीधे अपने घर तक डिलीवर करवाएं।",
+    en: "SachBite is a local food ordering and delivery service in Kanti, Muzaffarpur, Bihar — browse nearby restaurants, order online, and track your delivery live on a map.",
+    hi: "SachBite कांटी, मुजफ्फरपुर, बिहार की एक लोकल फूड ऑर्डरिंग और डिलीवरी सेवा है — पास के रेस्टोरेंट देखें, ऑनलाइन ऑर्डर करें, और अपनी डिलीवरी को लाइव मैप पर ट्रैक करें।",
   },
   search_placeholder: { en: "Search for pizza, burger, momos...", hi: "पिज़्ज़ा, बर्गर, मोमोज खोजें..." },
   search_btn: { en: "Search", hi: "खोजें" },
