@@ -1,0 +1,22 @@
+# SachBite
+
+> SachBite is a local online food ordering and delivery platform serving Kanti, Muzaffarpur, Bihar, India. Customers browse menus from local restaurants, place an order, pay via UPI/card/Cash on Delivery, and track delivery live on a map.
+
+## Key facts
+- Service area: Kanti, Muzaffarpur, Bihar, India (delivery radius ~10 km)
+- Minimum order: ₹99
+- Delivery fee: ₹30 (free on orders of ₹300 or more)
+- Typical delivery time: 30–40 minutes
+- Payment methods: UPI, Credit/Debit Card, Cash on Delivery
+- Contact: sachinkumar843409@gmail.com · +91 93040 96306
+
+## Pages
+- [Home](https://sachbite.onrender.com/): Browse restaurants, offers, and place an order
+- [Restaurants](https://sachbite.onrender.com/restaurants.html): Full restaurant listing
+- [Offers](https://sachbite.onrender.com/offers.html): Current discounts and coupon codes
+- [Track Order](https://sachbite.onrender.com/track-order.html): Live order tracking
+- [Terms & Privacy](https://sachbite.onrender.com/terms.html): Terms of service and privacy policy
+
+## Usage boundaries
+- Order placement, payment, and account actions require visiting the site directly — this file is informational only and does not accept orders.
+- Admin and API paths (/admin/, /api/) are not for indexing or citation.
