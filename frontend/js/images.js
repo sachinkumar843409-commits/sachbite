@@ -31,11 +31,12 @@ const RESTAURANT_IMAGE_KEYWORDS = {
   "Burger Point": "burger,fastfood",
 };
 
-function foodImageUrl(keyword, width, height, lockSeed) {
-  const w = width || 400;
-  const h = height || 300;
-  const lock = lockSeed ? `?lock=${lockSeed}` : "";
-  return `https://loremflickr.com/${w}/${h}/${encodeURIComponent(keyword)}${lock}`;
+// Fallback jab admin ne apni photo upload nahi ki ho aur specific Unsplash photo bhi
+// available na ho — pehle loremflickr.com (external, slow, random-generate) use hota
+// tha jo LCP/Speed Index ko dheema kar raha tha. Ab ek local, turant-load-hone-wali
+// generic image use karte hain (koi network call nahi lagti).
+function foodImageUrl() {
+  return "images/food-placeholder.jpg";
 }
 
 // uploadedUrl: agar admin ne Appearance panel se apni photo upload ki hai, wahi sabse pehle use hogi.

@@ -92,7 +92,7 @@ async function loadHeroAndBanner() {
     } else {
       heroBg.style.backgroundImage = "";
       heroSection.classList.remove("hero-photo-mode");
-      if (heroImg) heroImg.src = foodImageUrl("pizza,food", 700, 500, 101);
+      if (heroImg) heroImg.src = "images/hero-fallback.jpg";
     }
 
     heroBg.classList.remove("hero-anim-zoom", "hero-anim-pan", "hero-anim-fade");
@@ -124,7 +124,7 @@ async function loadHeroAndBanner() {
   }
 
   const bannerImg = document.getElementById("bannerImg");
-  if (bannerImg) bannerImg.src = siteSettings.bannerImage || foodImageUrl("burger,food", 400, 260, 102);
+  if (bannerImg) bannerImg.src = siteSettings.bannerImage || "images/banner-fallback.jpg";
 }
 
 // ---------- Search ----------
