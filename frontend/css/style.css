@@ -1,7 +1,9 @@
 :root {
   --primary: #ff7a1a;
   --primary-dark: #e85d04;
-  --primary-text: #c94f00; /* darker orange, sirf TEXT ke liye — WCAG AA contrast (4.5:1+) pass karta hai white background par. --primary khud text ke liye bahut halka hai (2.6:1), isliye buttons/icons/backgrounds ke liye hi use karein */
+  --primary-text: #b85812; /* darker orange, sirf TEXT ke liye — WCAG AA contrast (4.5:1+) pass karta hai white AND #fafafa (--bg) dono par. --primary khud text ke liye bahut halka hai (2.6:1), isliye buttons/icons/backgrounds ke liye hi use karein */
+  --primary-btn: #bc5a13; /* solid-button background jab upar WHITE text ho — plain --primary (#ff7a1a) ke sath white text sirf 2.6:1 deta tha, yeh 4.5:1+ deta hai */
+  --primary-btn-dark: #a85011; /* hover state for --primary-btn buttons, same white-text contrast rule */
   --green-text: #15803d; /* darker green, TEXT ke liye — --green (3.3:1) fail karta tha WCAG AA */
   --star-color: #a06c17; /* darker gold/amber, star-rating text ke liye — #f5a623 sirf 2.03:1 tha, yeh 4.51:1 deta hai */
   --primary-light: #fff1e6;
@@ -56,11 +58,11 @@ img {
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: var(--primary-btn);
   color: #fff;
 }
 .btn-primary:hover {
-  background: var(--primary-dark);
+  background: var(--primary-btn-dark);
 }
 
 .btn-outline {
@@ -665,7 +667,7 @@ footer {
 }
 .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
 .modal-actions button { flex: 1; padding: 11px; border-radius: 10px; font-weight: 700; cursor: pointer; }
-.btn-save { background: var(--primary); color: #fff; border: none; }
+.btn-save { background: var(--primary-btn); color: #fff; border: none; }
 .btn-cancel { background: #fff; border: 1.5px solid var(--border); }
 
 /* ---------- User menu (after login) ---------- */

@@ -17,7 +17,7 @@ const TRANSLATIONS = {
 
   // ---------- Hero Section ----------
   hero_tag: { en: "🔥 FRESH FOOD • FAST DELIVERY", hi: "🔥 ताज़ा खाना • तेज़ डिलीवरी" },
-  hero_title_1: { en: "Delicious food,", hi: "स्वादिष्ट खाना," },
+  hero_title_1: { en: "Delicious food from SachBite,", hi: "SachBite से स्वादिष्ट खाना," },
   hero_title_2: { en: "just a bite away.", hi: "बस एक बाइट दूर." },
   hero_desc: {
     en: "Discover delicious food from restaurants near you and get it delivered straight to your door.",

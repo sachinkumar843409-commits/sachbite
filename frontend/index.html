@@ -19,16 +19,14 @@
   "@graph": [
     {
       "@type": "WebSite",
+      "@id": "https://sachbite.onrender.com/#website",
       "name": "SachBite",
       "url": "https://sachbite.onrender.com/",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://sachbite.onrender.com/restaurants.html?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
+      "publisher": { "@id": "https://sachbite.onrender.com/#business" }
     },
     {
       "@type": "LocalBusiness",
+      "@id": "https://sachbite.onrender.com/#business",
       "name": "SachBite",
       "description": "SachBite is an online food ordering and delivery platform serving Kanti, Muzaffarpur, Bihar.",
       "address": {
@@ -38,7 +36,9 @@
         "addressCountry": "IN"
       },
       "telephone": "+91-93040-96306",
-      "url": "https://sachbite.onrender.com/"
+      "url": "https://sachbite.onrender.com/",
+      "mainEntityOfPage": "https://sachbite.onrender.com/",
+      "isPartOf": { "@id": "https://sachbite.onrender.com/#website" }
     }
   ]
 }
@@ -67,7 +67,7 @@
 
     <div class="topbar-right">
       <div class="location-pill"><span class="pin">📍</span> Kanti, Muzaffarpur <span>▾</span></div>
-      <button class="btn" id="langToggleBtn" style="border:1.5px solid var(--primary); background:#fff; color:var(--primary); border-radius:20px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">हिं</button>
+      <button class="btn" id="langToggleBtn" style="border:1.5px solid var(--primary); background:#fff; color:var(--primary-text); border-radius:20px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">हिं</button>
       <button class="btn btn-primary" id="loginBtn">Login / Signup</button>
       <a href="checkout.html" class="cart-icon">
         🛒
@@ -95,7 +95,7 @@
   <div class="container hero-inner">
     <div class="hero-left">
       <div class="hero-tag" data-i18n="hero_tag">🔥 FRESH FOOD • FAST DELIVERY</div>
-      <h1><span data-i18n="hero_title_1">Delicious food,</span><br /><span data-i18n="hero_title_2">just a bite away.</span></h1>
+      <h1><span data-i18n="hero_title_1">Delicious food from SachBite,</span><br /><span data-i18n="hero_title_2">just a bite away.</span></h1>
       <p data-i18n="hero_desc">Discover delicious food from restaurants near you and get it delivered straight to your door.</p>
 
       <div class="search-bar">

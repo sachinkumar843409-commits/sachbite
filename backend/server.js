@@ -183,6 +183,10 @@ function requireAdmin(req, res, next) {
   return res.status(401).json({ error: "Admin login zaroori hai." });
 }
 
+// Canonical redirect: /index.html -> / (keeps the served URL aligned with
+// the <link rel="canonical"> tag in frontend/index.html)
+app.get("/index.html", (req, res) => res.redirect(301, "/"));
+
 // Serve the frontend (index.html, dashboard.html, css, js)
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
