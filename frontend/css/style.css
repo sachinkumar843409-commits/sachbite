@@ -589,6 +589,14 @@ footer {
   line-height: 1.7;
   max-width: 800px;
 }
+.about-box h3 {
+  font-size: 16.5px;
+  color: var(--text-dark);
+  margin: 22px 0 6px;
+}
+.about-box h3:first-child {
+  margin-top: 0;
+}
 
 /* ---------- Contact section ---------- */
 .contact-grid {
