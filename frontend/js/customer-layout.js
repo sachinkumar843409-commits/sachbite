@@ -24,7 +24,8 @@ function renderCustomerHeader(activePage) {
         Sach<span>Bite</span> 🛵
         <small data-i18n="tagline">Food delivered with love ❤️</small>
       </a>
-      <nav class="main-nav">${navHTML}</nav>
+      <nav class="main-nav" id="mainNav">${navHTML}</nav>
+      <button class="mobile-nav-toggle" id="mobileNavToggle" aria-expanded="false" aria-controls="mainNav" aria-label="Menu kholein">☰</button>
       <div class="topbar-right">
         <div class="location-pill"><span class="pin">📍</span> Kanti, Muzaffarpur <span>▾</span></div>
         <button class="btn" id="langToggleBtn" style="border:1.5px solid var(--primary); background:#fff; color:var(--primary); border-radius:20px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">हिं</button>
@@ -42,6 +43,7 @@ function renderCustomerHeader(activePage) {
   if (typeof applySiteSettings === "function") applySiteSettings();
   if (typeof applyTranslations === "function") applyTranslations();
   if (typeof initLanguageToggle === "function") initLanguageToggle();
+  if (typeof initMobileNav === "function") initMobileNav();
 
   // Inject the login/signup modal once (shared across pages using this dynamic header)
   if (!document.getElementById("authModal")) {

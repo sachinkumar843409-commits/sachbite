@@ -193,7 +193,51 @@ function escapeJs(str) {
     .replace(/"/g, '\\"');
 }
 
+// ---------- Mobile hamburger nav (customer header) ----------
+// Chhoti screen par nav links hamburger ke peeche chale jaate hain — yahan unhe
+// open/close karne ka logic hai, keyboard (Escape) aur outside-click se close bhi
+// hota hai (accessibility requirement).
+function initMobileNav() {
+  const toggle = document.getElementById("mobileNavToggle");
+  const nav = document.getElementById("mainNav");
+  if (!toggle || !nav) return;
+  if (toggle.dataset.wired) return; // dobara render hone par dobara wire na ho
+  toggle.dataset.wired = "true";
+
+  function closeNav() {
+    nav.classList.remove("open");
+    toggle.setAttribute("aria-expanded", "false");
+  }
+  function openNav() {
+    nav.classList.add("open");
+    toggle.setAttribute("aria-expanded", "true");
+  }
+
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (nav.classList.contains("open")) closeNav();
+    else openNav();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (nav.classList.contains("open") && !nav.contains(e.target) && e.target !== toggle) {
+      closeNav();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && nav.classList.contains("open")) {
+      closeNav();
+      toggle.focus();
+    }
+  });
+
+  // Nav link dabate hi menu band ho jaaye (mobile par better UX)
+  nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeNav));
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   applyTranslations();
   initLanguageToggle();
+  initMobileNav();
 });

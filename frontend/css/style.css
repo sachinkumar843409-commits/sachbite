@@ -2,6 +2,8 @@
   --primary: #ff7a1a;
   --primary-dark: #e85d04;
   --primary-text: #c94f00; /* darker orange, sirf TEXT ke liye — WCAG AA contrast (4.5:1+) pass karta hai white background par. --primary khud text ke liye bahut halka hai (2.6:1), isliye buttons/icons/backgrounds ke liye hi use karein */
+  --green-text: #15803d; /* darker green, TEXT ke liye — --green (3.3:1) fail karta tha WCAG AA */
+  --star-color: #a06c17; /* darker gold/amber, star-rating text ke liye — #f5a623 sirf 2.03:1 tha, yeh 4.51:1 deta hai */
   --primary-light: #fff1e6;
   --text-dark: #1e1e1e;
   --text-gray: #6b7280;
@@ -292,6 +294,16 @@ nav.main-nav a:hover {
   font-size: 14px;
   padding: 10px 0;
 }
+.search-bar input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.search-bar input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .search-bar button {
   white-space: nowrap;
 }
@@ -306,7 +318,7 @@ nav.main-nav a:hover {
 }
 .pill-green {
   background: var(--green-bg);
-  color: var(--green);
+  color: var(--green-text);
   padding: 5px 14px;
   border-radius: 20px;
   font-size: 12px;
@@ -514,11 +526,11 @@ nav.main-nav a:hover {
   margin-bottom: 12px;
 }
 .restaurant-meta .stars {
-  color: #f5a623;
+  color: var(--star-color);
 }
 .badge-green {
   background: var(--green-bg);
-  color: var(--green);
+  color: var(--green-text);
   font-size: 12px;
   font-weight: 700;
   padding: 5px 12px;
@@ -645,6 +657,11 @@ footer {
   font-size: 14px;
   outline: none;
   font-family: inherit;
+}
+.form-group input:focus-visible, .form-group select:focus-visible, .form-group textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+  border-color: var(--primary);
 }
 .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
 .modal-actions button { flex: 1; padding: 11px; border-radius: 10px; font-weight: 700; cursor: pointer; }
@@ -824,7 +841,7 @@ footer {
 }
 
 .track-step.done {
-  color: var(--green);
+  color: var(--green-text);
 }
 
 .track-step.done::before {
@@ -921,7 +938,7 @@ footer {
 
 .live-eta.arrived {
   background: var(--green-bg);
-  color: var(--green);
+  color: var(--green-text);
 }
 
 .live-eta .eta-timer {
@@ -976,7 +993,7 @@ footer {
 
 .rating-box.rated {
   background: var(--green-bg);
-  color: var(--green);
+  color: var(--green-text);
   font-size: 20px;
 }
 
@@ -1022,6 +1039,9 @@ footer {
 }
 
 /* ---------- MOBILE RESPONSIVE FIXES (customer-facing pages) ---------- */
+/* Yeh sirf ek safety-net hai — asli fix neeche breakpoints me hai (nav, hero,
+   rating/offer cards, grids sabko properly reflow kiya gaya hai taaki content
+   khud viewport ke andar fit ho, sirf visually crop na ho). */
 body { overflow-x: hidden; }
 
 .sb-loading {
@@ -1030,5 +1050,99 @@ body { overflow-x: hidden; }
   padding: 40px 20px;
   color: var(--text-gray);
   font-size: 14px;
+}
+
+/* ---------- Mobile hamburger nav toggle ---------- */
+.mobile-nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: var(--text-dark);
+  border-radius: 8px;
+}
+.mobile-nav-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  /* --- Topbar / Nav --- */
+  .topbar-inner { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
+  .logo { font-size: 20px; }
+  .logo small { font-size: 9px; }
+  .mobile-nav-toggle { display: block; order: 2; }
+  .topbar-right { order: 3; gap: 8px; flex-wrap: wrap; }
+  .location-pill { display: none; } /* jagah bachaane ke liye — footer/hero me location already dikhta hai */
+  #langToggleBtn { padding: 6px 10px !important; font-size: 12px !important; }
+  #loginBtn { padding: 8px 12px; font-size: 12px; }
+  .cart-icon { width: 36px; height: 36px; }
+
+  nav.main-nav {
+    display: none;
+    order: 4;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+  nav.main-nav.open { display: flex; }
+  nav.main-nav a {
+    padding: 14px 6px;
+    border-bottom: 1px solid var(--border);
+    white-space: normal;
+  }
+
+  /* --- Hero section: side-by-side se stacked, min-width hataya --- */
+  .hero-inner { flex-direction: column; gap: 24px; }
+  .hero-left, .hero-right { min-width: 0; width: 100%; }
+  .hero-left h1 { font-size: 26px; }
+  .hero-left p { font-size: 14px; max-width: 100%; }
+  .search-bar { max-width: 100%; }
+  .delivering-row { flex-wrap: wrap; font-size: 13px; }
+
+  /* --- Rating/Offer cards: negative offsets hata kar hero image ke andar rakhte hain --- */
+  .rating-card {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .rating-card .num { font-size: 15px; }
+  .rating-card small { font-size: 9px; }
+  .offer-card {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    padding: 8px 12px;
+  }
+  .offer-card .big { font-size: 13px; }
+
+  /* --- Sections / Grids --- */
+  .section { padding: 30px 0; }
+  .section-head h2 { font-size: 20px; }
+  .category-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .restaurant-row { grid-template-columns: 1fr; }
+
+  /* --- Promo banner --- */
+  .promo-banner { flex-direction: column; text-align: center; padding: 24px 20px; gap: 16px; }
+  .promo-banner h2 { font-size: 20px; }
+  .promo-banner img { width: 140px; margin: 0 auto; }
+
+  /* --- Contact cards --- */
+  .contact-grid { grid-template-columns: 1fr; gap: 12px; }
+  .contact-card { padding: 14px !important; }
+
+  /* --- Checkout / other page containers --- */
+  .checkout-wrap { padding: 0 14px; margin: 20px auto; }
+  .checkout-card { padding: 18px; }
+  .modal-box { width: 100%; padding: 20px; }
+  .filter-search, .track-search { max-width: 100%; }
 }
 

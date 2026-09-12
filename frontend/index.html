@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <link rel="icon" type="image/png" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
-    <meta name="viewport" content="width=800" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SachBite - Food delivered with love</title>
 <meta name="description" content="SachBite se apna favourite khana order karein — fast delivery, live tracking, aur best restaurants Muzaffarpur, Bihar mein." />
 <meta property="og:title" content="SachBite - Food delivered with love" />
@@ -15,19 +15,31 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Restaurant",
-  "name": "SachBite",
-  "description": "SachBite se apna favourite khana order karein — fast delivery, live tracking, aur best restaurants Muzaffarpur, Bihar mein.",
-  "address": {
-    "@type": "PostalAddress",
-    "addressLocality": "Kanti, Muzaffarpur",
-    "addressRegion": "Bihar",
-    "addressCountry": "IN"
-  },
-  "telephone": "+91-93040-96306",
-  "servesCuisine": "Indian",
-  "priceRange": "₹₹",
-  "url": "https://sachbite.onrender.com/index.html"
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "SachBite",
+      "url": "https://sachbite.onrender.com/index.html",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://sachbite.onrender.com/restaurants.html?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "LocalBusiness",
+      "name": "SachBite",
+      "description": "SachBite is an online food ordering and delivery platform serving Kanti, Muzaffarpur, Bihar.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Kanti, Muzaffarpur",
+        "addressRegion": "Bihar",
+        "addressCountry": "IN"
+      },
+      "telephone": "+91-93040-96306",
+      "url": "https://sachbite.onrender.com/index.html"
+    }
+  ]
 }
 </script>
 <link rel="stylesheet" href="css/style.css" />
@@ -41,7 +53,7 @@
       <small data-i18n="tagline">Food delivered with love ❤️</small>
     </a>
 
-    <nav class="main-nav">
+    <nav class="main-nav" id="mainNav">
       <a href="index.html" class="active" data-i18n="nav_home">Home</a>
       <a href="restaurants.html" data-i18n="nav_restaurants">Restaurants</a>
       <a href="offers.html" data-i18n="nav_offers">Offers</a>
@@ -49,6 +61,8 @@
       <a href="#about" data-i18n="nav_about">About</a>
       <a href="#contact" data-i18n="nav_contact">Contact</a>
     </nav>
+
+    <button class="mobile-nav-toggle" id="mobileNavToggle" aria-expanded="false" aria-controls="mainNav" aria-label="Menu kholein">☰</button>
 
     <div class="topbar-right">
       <div class="location-pill"><span class="pin">📍</span> Kanti, Muzaffarpur <span>▾</span></div>
@@ -131,6 +145,23 @@
       <a href="restaurants.html" class="btn btn-white" data-i18n="explore_food">Explore Food →</a>
     </div>
     <img id="bannerImg" src="" alt="Burger" />
+  </div>
+</section>
+
+<section class="section container" id="how-it-works">
+  <div class="section-head">
+    <h2>How does SachBite work?</h2>
+  </div>
+  <div class="about-box">
+    <p><strong>What is SachBite?</strong> SachBite is an online food ordering and delivery platform serving Kanti, Muzaffarpur, Bihar. It lets customers browse menus from local restaurants, place an order, and track the delivery live on a map.</p>
+    <p><strong>What food can I order?</strong> The menu shown on SachBite depends on what each listed restaurant currently offers — browse the <a href="restaurants.html">Restaurants</a> page to see available dishes near you.</p>
+    <p><strong>How can I place an order?</strong> Ordering on SachBite takes four steps:</p>
+    <ol>
+      <li>Browse restaurants and add items to your cart.</li>
+      <li>Sign in with a one-time password (OTP) sent to your email or phone.</li>
+      <li>Choose a payment method — UPI, card, or Cash on Delivery.</li>
+      <li>Track your order live from the Track Order page once it's out for delivery.</li>
+    </ol>
   </div>
 </section>
 
