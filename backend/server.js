@@ -467,13 +467,35 @@ app.get("/api/analytics/payment-methods", (req, res) => {
 app.post("/api/payment/create-order", async (req, res) => {
   try {
     const db = readDB();
-    const { items } = req.body;
+    const { items, couponCode } = req.body;
 
     const trusted = getTrustedItems(items, db.menu);
     if (trusted.error) {
       return res.status(400).json({ error: trusted.error });
     }
-    const amount = trusted.total;
+    const itemTotal = trusted.total;
+
+    const minOrderAmount = Number(db.settings.minOrderAmount) || 0;
+    if (itemTotal < minOrderAmount) {
+      return res.status(400).json({ error: `Minimum order amount ₹${minOrderAmount} hai. Kripya aur items add karein.` });
+    }
+
+    const deliveryFee = Number(db.settings.deliveryFee) || 0;
+    const freeDeliveryAbove = db.settings.freeDeliveryAbove != null ? Number(db.settings.freeDeliveryAbove) : Infinity;
+    const delivery = itemTotal >= freeDeliveryAbove ? 0 : deliveryFee;
+
+    let couponDiscount = 0;
+    if (couponCode) {
+      const today = new Date().toISOString().slice(0, 10);
+      const offer = db.offers.find(
+        (o) => o.code && o.code === couponCode.trim().toUpperCase() && o.discountPercent
+      );
+      if (offer && (!offer.validFrom || today >= offer.validFrom) && (!offer.validUntil || today <= offer.validUntil)) {
+        couponDiscount = Math.round((itemTotal * offer.discountPercent) / 100);
+      }
+    }
+
+    const amount = Math.max(0, itemTotal + delivery - couponDiscount);
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: "Valid amount zaroori hai" });
     }
@@ -594,7 +616,15 @@ app.post("/api/orders", (req, res) => {
   }
 
   const itemTotal = trusted.total;
-  const delivery = 0; // FREE delivery, matches design
+
+  const minOrderAmount = Number(db.settings.minOrderAmount) || 0;
+  if (itemTotal < minOrderAmount) {
+    return res.status(400).json({ error: `Minimum order amount ₹${minOrderAmount} hai. Kripya aur items add karein.` });
+  }
+
+  const deliveryFee = Number(db.settings.deliveryFee) || 0;
+  const freeDeliveryAbove = db.settings.freeDeliveryAbove != null ? Number(db.settings.freeDeliveryAbove) : Infinity;
+  const delivery = itemTotal >= freeDeliveryAbove ? 0 : deliveryFee;
 
   // Coupon discount — server khud se dobara validate + calculate karta hai (client
   // ke bheje discount amount par kabhi trust nahi karte, security ke liye)
@@ -1042,6 +1072,11 @@ app.put("/api/settings", requireAdmin, (req, res) => {
     "aboutText",
     "businessUpiId",
     "businessUpiName",
+    "minOrderAmount",
+    "deliveryFee",
+    "freeDeliveryAbove",
+    "deliveryTimeMin",
+    "deliveryTimeMax",
   ];
   allowedFields.forEach((field) => {
     if (req.body[field] !== undefined) db.settings[field] = req.body[field];

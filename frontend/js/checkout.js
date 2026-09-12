@@ -3,13 +3,23 @@ let capturedLocation = null;
 let previewMap = null;
 let businessUpiId = "";
 let businessUpiName = "SachBite";
+let deliveryFee = 0;
+let freeDeliveryAbove = Infinity;
+let minOrderAmount = 0;
 
-// Business UPI details load karo (Admin Settings se aayenge)
+// Business UPI details + delivery/pricing settings load karo (Admin Settings se aayenge)
 fetch(`${API}/settings`)
   .then((r) => r.json())
   .then((s) => {
     businessUpiId = s.businessUpiId || "";
     businessUpiName = s.businessUpiName || "SachBite";
+    deliveryFee = Number(s.deliveryFee) || 0;
+    freeDeliveryAbove = s.freeDeliveryAbove != null ? Number(s.freeDeliveryAbove) : Infinity;
+    minOrderAmount = Number(s.minOrderAmount) || 0;
+    renderCart();
+    if (document.getElementById("upiDirectBox").classList.contains("show")) {
+      updateUpiDirectDetails();
+    }
   })
   .catch(() => {});
 
@@ -42,8 +52,35 @@ function renderCart() {
   document.getElementById("itemTotal").textContent = `₹${itemTotal}`;
 
   const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-  const grand = Math.max(0, itemTotal - discount);
+  const delivery = itemTotal > 0 && itemTotal >= freeDeliveryAbove ? 0 : itemTotal > 0 ? deliveryFee : 0;
+  const grand = Math.max(0, itemTotal + delivery - discount);
+
+  const deliveryEl = document.getElementById("deliveryAmount");
+  const deliveryLineEl = document.getElementById("deliveryLine");
+  if (delivery === 0) {
+    deliveryEl.textContent = itemTotal > 0 ? "FREE" : "₹0";
+    deliveryLineEl.style.color = itemTotal > 0 ? "var(--green)" : "";
+    deliveryLineEl.style.fontWeight = itemTotal > 0 ? "600" : "";
+  } else {
+    deliveryEl.textContent = `₹${delivery}`;
+    deliveryLineEl.style.color = "";
+    deliveryLineEl.style.fontWeight = "";
+  }
+
   document.getElementById("grandTotal").textContent = `₹${grand}`;
+
+  const warningEl = document.getElementById("minOrderWarning");
+  const placeBtn = document.getElementById("placeOrderBtn");
+  if (itemTotal > 0 && itemTotal < minOrderAmount) {
+    warningEl.style.display = "block";
+    warningEl.textContent = `⚠️ Minimum order ₹${minOrderAmount} hai — abhi ₹${minOrderAmount - itemTotal} aur add karein.`;
+    placeBtn.disabled = true;
+    placeBtn.style.opacity = "0.6";
+  } else {
+    warningEl.style.display = "none";
+    placeBtn.disabled = false;
+    placeBtn.style.opacity = "";
+  }
 
   const discountLine = document.getElementById("couponDiscountLine");
   if (discount > 0) {
@@ -186,7 +223,8 @@ function updateUpiDirectDetails() {
   const cart = getCart();
   const itemTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-  const amount = Math.max(0, itemTotal - discount);
+  const delivery = itemTotal > 0 && itemTotal >= freeDeliveryAbove ? 0 : itemTotal > 0 ? deliveryFee : 0;
+  const amount = Math.max(0, itemTotal + delivery - discount);
   document.getElementById("upiAmountDisplay").textContent = `₹${amount}`;
 
   if (!businessUpiId) {
@@ -230,6 +268,11 @@ document.getElementById("placeOrderBtn").addEventListener("click", async () => {
 
   if (cart.length === 0) {
     showToast("Cart khali hai", "Pehle kuch order karein.", "error");
+    return;
+  }
+  const itemTotalCheck = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  if (itemTotalCheck < minOrderAmount) {
+    showToast("Minimum order amount", `Minimum order ₹${minOrderAmount} hai. Kripya aur items add karein.`, "error");
     return;
   }
   if (!name || !phone || !address) {
@@ -277,7 +320,7 @@ async function startRazorpayPayment(customer, cart) {
     const orderRes = await fetch(`${API}/payment/create-order`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: cart }),
+      body: JSON.stringify({ items: cart, couponCode: appliedCoupon ? appliedCoupon.code : undefined }),
     });
 
     if (!orderRes.ok) {

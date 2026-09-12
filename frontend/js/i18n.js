@@ -27,7 +27,8 @@ const TRANSLATIONS = {
   search_btn: { en: "Search", hi: "खोजें" },
   delivering_near: { en: "📍 Delivering near", hi: "📍 यहां डिलीवरी हो रही है" },
   fast_delivery: { en: "Fast Delivery", hi: "तेज़ डिलीवरी" },
-  happy_customers: { en: "Happy Customers", hi: "खुश ग्राहक" },
+  launch_badge_title: { en: "Now Live", hi: "अब लाइव" },
+  launch_badge_location: { en: "in Kanti, Muzaffarpur", hi: "कांटी, मुजफ्फरपुर में" },
   todays_offer: { en: "🔥 TODAY'S OFFER", hi: "🔥 आज का ऑफर" },
 
   // ---------- Sections ----------

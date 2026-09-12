@@ -70,6 +70,35 @@
       </div>
 
       <div class="panel">
+        <h3>🚚 Delivery &amp; Pricing</h3>
+        <div class="form-group">
+          <label>Minimum Order Amount (₹)</label>
+          <input type="number" id="minOrderAmount" />
+        </div>
+        <div class="form-group">
+          <label>Delivery Fee (₹, jab order free-delivery limit se kam ho)</label>
+          <input type="number" id="deliveryFee" />
+        </div>
+        <div class="form-group">
+          <label>Free Delivery Above (₹)</label>
+          <input type="number" id="freeDeliveryAbove" />
+        </div>
+        <div class="row-2">
+          <div class="form-group">
+            <label>Delivery Time — Minimum (minutes)</label>
+            <input type="number" id="deliveryTimeMin" />
+          </div>
+          <div class="form-group">
+            <label>Delivery Time — Maximum (minutes)</label>
+            <input type="number" id="deliveryTimeMax" />
+          </div>
+        </div>
+        <div style="font-size:11.5px; color:var(--text-gray); margin-top:4px; margin-bottom:12px;">Yeh values homepage ke "How does SachBite work?" section mein automatically dikhti hain — save karne ke baad website refresh karke check karein.</div>
+        <button class="btn-save-settings" id="saveDeliveryBtn">Save Changes</button>
+        <div class="success-msg" id="deliverySuccess">✅ Settings saved!</div>
+      </div>
+
+      <div class="panel">
         <h3>ℹ️ About Us (Home page par dikhta hai)</h3>
         <div class="form-group">
           <label>About Text</label>

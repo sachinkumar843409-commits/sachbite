@@ -21,6 +21,11 @@ async function loadSettings() {
   document.getElementById("securityQuestion").value = s.adminSecurityQuestion || "";
   document.getElementById("businessUpiId").value = s.businessUpiId || "";
   document.getElementById("businessUpiName").value = s.businessUpiName || "";
+  document.getElementById("minOrderAmount").value = s.minOrderAmount ?? "";
+  document.getElementById("deliveryFee").value = s.deliveryFee ?? "";
+  document.getElementById("freeDeliveryAbove").value = s.freeDeliveryAbove ?? "";
+  document.getElementById("deliveryTimeMin").value = s.deliveryTimeMin ?? "";
+  document.getElementById("deliveryTimeMax").value = s.deliveryTimeMax ?? "";
 }
 
 document.getElementById("saveUpiBtn").addEventListener("click", async () => {
@@ -100,6 +105,26 @@ document.getElementById("saveInfoBtn").addEventListener("click", async () => {
   });
 
   const msg = document.getElementById("infoSuccess");
+  msg.style.display = "block";
+  setTimeout(() => (msg.style.display = "none"), 2500);
+});
+
+document.getElementById("saveDeliveryBtn").addEventListener("click", async () => {
+  const body = {
+    minOrderAmount: Number(document.getElementById("minOrderAmount").value),
+    deliveryFee: Number(document.getElementById("deliveryFee").value),
+    freeDeliveryAbove: Number(document.getElementById("freeDeliveryAbove").value),
+    deliveryTimeMin: Number(document.getElementById("deliveryTimeMin").value),
+    deliveryTimeMax: Number(document.getElementById("deliveryTimeMax").value),
+  };
+
+  await adminFetch(`${API}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const msg = document.getElementById("deliverySuccess");
   msg.style.display = "block";
   setTimeout(() => (msg.style.display = "none"), 2500);
 });

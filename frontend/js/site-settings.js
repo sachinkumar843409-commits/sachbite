@@ -60,6 +60,21 @@ async function applySiteSettings() {
     phoneEl.href = `tel:${(settings.contactPhone || "").replace(/[^0-9+]/g, "")}`;
   }
   if (hoursEl) hoursEl.textContent = settings.supportHours || "24x7 Support";
+
+  // ---------- Delivery/pricing FAQ text (sirf index.html par) ----------
+  const minOrderEl = document.getElementById("minOrderAmountText");
+  if (minOrderEl && settings.minOrderAmount != null) minOrderEl.textContent = `₹${settings.minOrderAmount}`;
+
+  const deliveryFeeEl = document.getElementById("deliveryFeeText");
+  if (deliveryFeeEl && settings.deliveryFee != null) deliveryFeeEl.textContent = `₹${settings.deliveryFee}`;
+
+  const freeDeliveryEl = document.getElementById("freeDeliveryAboveText");
+  if (freeDeliveryEl && settings.freeDeliveryAbove != null) freeDeliveryEl.textContent = `₹${settings.freeDeliveryAbove}`;
+
+  const deliveryTimeEl = document.getElementById("deliveryTimeText");
+  if (deliveryTimeEl && settings.deliveryTimeMin != null && settings.deliveryTimeMax != null) {
+    deliveryTimeEl.textContent = `${settings.deliveryTimeMin}–${settings.deliveryTimeMax} minutes`;
+  }
 }
 
 applySiteSettings();
