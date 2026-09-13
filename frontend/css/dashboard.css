@@ -1,7 +1,9 @@
 :root {
   --primary: #ff7a1a;
   --primary-dark: #e85d04;
-  --primary-text: #c94f00; /* WCAG-safe darker orange for text (--primary is only 2.6:1 contrast) */
+  --primary-text: #b25511; /* WCAG-safe darker orange for text — passes 4.5:1 on white, #fafafa, and #fff1e6 */
+  --primary-btn: #bc5a13; /* solid-button background when paired with white text — plain --primary only gives 2.6:1 */
+  --primary-btn-dark: #a85011; /* hover/darker state for --primary-btn */
   --primary-light: #fff1e6;
   --text-dark: #1e1e1e;
   --text-gray: #6b7280;
@@ -43,7 +45,7 @@ img { max-width: 100%; display: block; }
   font-weight: 800;
   margin-bottom: 2px;
 }
-.sidebar .logo span { color: var(--primary); }
+.sidebar .logo span { color: var(--primary-text); }
 .sidebar .tagline {
   font-size: 11px;
   color: var(--text-gray);
@@ -158,7 +160,7 @@ img { max-width: 100%; display: block; }
   align-items: center;
   justify-content: center;
 }
-.topbar-left h1 { font-size: 20px; color: var(--primary); }
+.topbar-left h1 { font-size: 20px; color: var(--primary-text); }
 
 .topbar-right { display: flex; align-items: center; gap: 14px; }
 .location-pill {
@@ -189,7 +191,7 @@ img { max-width: 100%; display: block; }
   position: absolute;
   top: -4px;
   right: -4px;
-  background: var(--primary);
+  background: var(--primary-btn);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -201,7 +203,7 @@ img { max-width: 100%; display: block; }
   justify-content: center;
 }
 .btn-clear {
-  background: var(--primary);
+  background: var(--primary-btn);
   color: #fff;
   border: none;
   border-radius: 30px;
@@ -268,12 +270,12 @@ img { max-width: 100%; display: block; }
   flex-wrap: wrap;
   gap: 12px;
 }
-.order-id-label { color: var(--primary); font-size: 12px; font-weight: 700; }
+.order-id-label { color: var(--primary-text); font-size: 12px; font-weight: 700; }
 .order-id { font-size: 19px; font-weight: 800; margin: 2px 0 6px; }
 .order-date { color: var(--text-gray); font-size: 13px; }
 .order-total { text-align: right; }
 .order-total .label { color: var(--text-gray); font-size: 13px; }
-.order-total .value { color: var(--primary); font-size: 24px; font-weight: 800; }
+.order-total .value { color: var(--primary-text); font-size: 24px; font-weight: 800; }
 
 .status-badge {
   padding: 6px 14px;
@@ -374,8 +376,8 @@ img { max-width: 100%; display: block; }
   color: var(--text-dark);
 }
 .status-opt.done .circle {
-  border-color: var(--primary);
-  background: var(--primary);
+  border-color: var(--primary-btn);
+  background: var(--primary-btn);
   color: #fff;
 }
 .status-opt.current {
@@ -384,8 +386,8 @@ img { max-width: 100%; display: block; }
   color: var(--primary-text);
 }
 .status-opt.current .circle {
-  border-color: var(--primary);
-  background: var(--primary);
+  border-color: var(--primary-btn);
+  background: var(--primary-btn);
   color: #fff;
 }
 .status-opt:hover { border-color: var(--primary); }
