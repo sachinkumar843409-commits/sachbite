@@ -1,6 +1,21 @@
 const API = "/api";
 const STATUS_STEPS = ["Order Confirmed", "Preparing", "Out for Delivery", "Delivered"];
 
+// Phase 5 — commission display. Fetched once from the server (not hardcoded twice)
+// so the displayed rate always matches backend/monetization.js.
+let platformCommissionPercent = 8;
+(async () => {
+  try {
+    const res = await adminFetch(`${API}/admin/monetization`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.platformCommissionPercent != null) platformCommissionPercent = data.platformCommissionPercent;
+    }
+  } catch (e) {
+    // Fetch fail hua to default 8% hi use hota rahega — display-only fallback.
+  }
+})();
+
 function statusClass(status) {
   return "status-" + status.replace(/ /g, "-");
 }
@@ -91,6 +106,10 @@ function renderOrderCard(order) {
         <div class="items-divider"></div>
         <div class="total-row"><span>Item Total</span><span>Rs ${order.itemTotal}</span></div>
         <div class="total-row delivery"><span>Delivery</span><span>FREE</span></div>
+        <div class="items-divider"></div>
+        <div class="total-row" style="color:var(--text-gray); font-size:12px;"><span>Order Value</span><span>Rs ${order.itemTotal}</span></div>
+        <div class="total-row" style="color:var(--text-gray); font-size:12px;"><span>SachBite Commission (${platformCommissionPercent}%)</span><span>- Rs ${Math.round((order.itemTotal * platformCommissionPercent) / 100)}</span></div>
+        <div class="total-row" style="font-weight:700;"><span>Restaurant Net</span><span>Rs ${Math.max(0, order.itemTotal - Math.round((order.itemTotal * platformCommissionPercent) / 100))}</span></div>
       </div>
 
       <div class="order-col">

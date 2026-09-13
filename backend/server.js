@@ -20,6 +20,7 @@ try {
 }
 const { sendRestaurantOrderNotifications, sendOtpEmail } = require("./notify");
 const { initStore, readDB, writeDB } = require("./mongo-store");
+const { getCommissionPercent, PLANS, calculateCommission, checkSubscriptionStatus, setRestaurantMonetization } = require("./monetization");
 
 // ---------- CUSTOMER SMS NOTIFICATIONS (SMS Gateway for Android) ----------
 // Apne hi Android phone ko SMS-gateway banate hain (sms-gate.app app se) — bilkul
@@ -151,7 +152,7 @@ app.use((req, res, next) => {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://checkout.razorpay.com https://api.razorpay.com",
       "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
-      "img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://*.razorpay.com",
+      "img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://*.razorpay.com https://images.unsplash.com https://loremflickr.com",
       "font-src 'self' data: https://cdnjs.cloudflare.com",
       "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com",
       "frame-src https://api.razorpay.com https://checkout.razorpay.com",
@@ -358,7 +359,14 @@ app.delete("/api/menu/:id", requireAdmin, (req, res) => {
 // ---------- RESTAURANTS ----------
 app.get("/api/restaurants", (req, res) => {
   const db = readDB();
-  res.json(db.restaurants);
+  // Phase 6: strip private monetization/subscription fields before sending to
+  // customers. Only a safe derived boolean is exposed for a future "Featured"
+  // badge — no restaurant is featured by default, so this is inert today.
+  const publicRestaurants = db.restaurants.map((r) => {
+    const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd, ...publicFields } = r;
+    return { ...publicFields, featured: featuredStatus === "active" };
+  });
+  res.json(publicRestaurants);
 });
 
 // Add a new restaurant (Admin > Restaurants)
@@ -379,6 +387,13 @@ app.post("/api/restaurants", requireAdmin, (req, res) => {
     image: image || null,
     contactPhone: contactPhone || "",
     contactEmail: contactEmail || "",
+    // Monetization fields — server-controlled defaults. Never set from req.body
+    // here; changes only go through the dedicated /api/admin/monetization routes.
+    subscriptionPlan: "free",
+    subscriptionStatus: "active",
+    featuredStatus: "inactive",
+    subscriptionStart: null,
+    subscriptionEnd: null,
   };
   db.restaurants.push(newRestaurant);
   writeDB(db);
@@ -1371,6 +1386,58 @@ app.post("/api/admin/verify", (req, res) => {
 
   adminSessions.delete(token);
   res.status(401).json({ valid: false });
+});
+
+// ============================================================
+// Monetization — Phase 2/3/7 (admin-only)
+// ============================================================
+// The two PUT routes below are manual admin controls, NOT a payment
+// gateway. They let the SachBite owner (only — requireAdmin) record a
+// plan/commission change after handling payment themselves outside the
+// app (e.g. UPI/bank transfer). No online payment is collected here,
+// and restaurants have no login/route that can reach these at all.
+app.get("/api/admin/monetization", requireAdmin, (req, res) => {
+  const db = readDB();
+  const restaurants = db.restaurants.map((r) => ({
+    id: r.id,
+    name: r.name,
+    ...checkSubscriptionStatus(r),
+  }));
+
+  res.json({
+    platformCommissionPercent: getCommissionPercent(db),
+    plans: PLANS,
+    restaurants,
+  });
+});
+
+// Admin: platform-wide commission percent badlein (restaurants isse kabhi nahi badal sakte —
+// yeh route khud requireAdmin se protected hai aur koi bhi client-facing form isse expose nahi karta)
+app.put("/api/admin/monetization/commission", requireAdmin, (req, res) => {
+  const { platformCommissionPercent } = req.body;
+  const value = Number(platformCommissionPercent);
+
+  if (Number.isNaN(value) || value < 0 || value > 100) {
+    return res.status(400).json({ error: "Commission percent 0 se 100 ke beech honi chahiye." });
+  }
+
+  const db = readDB();
+  db.settings.platformCommissionPercent = value;
+  writeDB(db);
+  res.json({ platformCommissionPercent: value });
+});
+
+// Admin: kisi ek restaurant ka plan/status/featured/dates manually set karein
+app.put("/api/admin/monetization/:id", requireAdmin, (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.params.id);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+  const result = setRestaurantMonetization(restaurant, req.body);
+  if (!result.ok) return res.status(400).json({ error: result.error });
+
+  writeDB(db);
+  res.json(result.restaurant);
 });
 
 // Staff accounts manage karna — sirf logged-in admin/staff hi naye staff add/remove kar sakte hain

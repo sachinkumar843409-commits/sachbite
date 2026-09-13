@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/png" href="../icons/icon-192.png" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Monetization - SachBite</title>
+<link rel="stylesheet" href="../css/dashboard.css" />
+<style>
+  .panel { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 20px; }
+  .panel h3 { font-size: 16px; margin-bottom: 6px; }
+  .panel .sub { font-size: 13px; color: var(--text-gray); margin-bottom: 18px; }
+
+  .commission-box {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--primary-light); border-radius: 12px; padding: 18px 22px;
+  }
+  .commission-box .num { font-size: 30px; font-weight: 800; color: var(--primary-text); }
+  .commission-box .label { font-size: 13px; color: var(--text-dark); font-weight: 600; margin-top: 2px; }
+  .commission-note { font-size: 13px; color: var(--text-gray); margin-top: 14px; line-height: 1.6; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .promo-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; display: flex; flex-direction: column; height: 100%; }
+  .promo-card h4 { font-size: 15px; margin-bottom: 4px; }
+  .promo-card .sub { font-size: 13px; color: var(--text-gray); margin-bottom: 14px; }
+  .promo-card ul { list-style: none; margin: 0 0 18px; padding: 0; flex: 1; }
+  .promo-card ul li { font-size: 13px; color: var(--text-dark); padding: 6px 0; padding-left: 22px; position: relative; }
+  .promo-card ul li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+  .promo-price { font-size: 18px; font-weight: 800; color: var(--primary-text); margin-bottom: 14px; }
+
+  .btn-coming-soon {
+    width: 100%; padding: 12px; border-radius: 30px; border: none;
+    background: var(--bg); color: var(--text-gray); font-weight: 700; font-size: 14px;
+    cursor: not-allowed;
+  }
+  .btn-current {
+    width: 100%; padding: 12px; border-radius: 30px; border: 1.5px solid var(--green);
+    background: var(--green-bg); color: var(--green); font-weight: 700; font-size: 14px; cursor: default;
+  }
+
+  .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .plan-card { background: #fff; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; }
+  .plan-card.highlight { border-color: var(--primary); box-shadow: var(--shadow); }
+  .plan-card .plan-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .plan-card .plan-status { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 12px; width: fit-content; }
+  .plan-status.available { background: var(--green-bg); color: var(--green); }
+  .plan-status.coming-soon { background: var(--bg); color: var(--text-gray); }
+  .plan-card .plan-price { font-size: 26px; font-weight: 800; margin-bottom: 2px; }
+  .plan-card .plan-period { font-size: 12px; color: var(--text-gray); margin-bottom: 16px; }
+  .plan-card ul { list-style: none; margin: 0 0 20px; padding: 0; flex: 1; }
+  .plan-card ul li { font-size: 13px; padding: 6px 0; padding-left: 22px; position: relative; }
+  .plan-card ul li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+
+  table.mon-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.mon-table th { text-align: left; padding: 10px 12px; color: var(--text-gray); font-weight: 600; border-bottom: 1px solid var(--border); }
+  table.mon-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  table.mon-table select, table.mon-table input[type="date"] {
+    padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12.5px; width: 100%;
+  }
+  .status-chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .status-chip.active { background: var(--green-bg); color: var(--green); }
+  .status-chip.inactive { background: var(--bg); color: var(--text-gray); }
+  .status-chip.pending { background: #fff8e1; color: #b8860b; }
+
+  .btn-save-mon {
+    padding: 8px 16px; border: 1.5px solid var(--primary); background: #fff; color: var(--primary-text);
+    border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
+  }
+  .btn-save-mon:hover { background: var(--primary-light); }
+  .btn-save-mon:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  @media (max-width: 900px) {
+    .grid-2, .plans-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebarRoot"></aside>
+
+<main class="main">
+  <div class="topbar" id="topbarRoot"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div>
+        <h2>Monetization</h2>
+        <p>Commission, promotional placements, aur subscription plans.</p>
+      </div>
+    </div>
+
+    <!-- A) Commission -->
+    <div class="panel">
+      <h3>Standard Restaurant Commission</h3>
+      <div class="sub">Har successful order par SachBite ka standard commission.</div>
+      <div class="commission-box">
+        <div>
+          <div class="num" id="commissionPercentDisplay">8%</div>
+          <div class="label">per successful order</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="number" id="commissionPercentInput" min="0" max="100" step="0.5" style="width:80px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:14px;" />
+          <button class="btn-save-mon" id="saveCommissionBtn">Save</button>
+        </div>
+      </div>
+      <div id="commissionSaveMsg" style="font-size:12.5px; font-weight:600; margin-top:8px; display:none;"></div>
+      <div class="commission-note">
+        Aapka standard SachBite commission <strong>8%</strong> hi rahega jab tak aap khud yahan se change na karein.
+        Yeh sirf aap (admin) hi change kar sakte hain — <strong>restaurants ke through kabhi editable nahi hai</strong>.
+        Optional paid promotion/subscription (neeche dekhein) is commission ko automatically badhata nahi hai.
+      </div>
+    </div>
+
+    <!-- B + C) Featured Restaurant / Sponsored Offers -->
+    <div class="grid-2">
+      <div class="promo-card">
+        <h4>⭐ Featured Restaurant</h4>
+        <div class="sub">Increase your restaurant's visibility on SachBite.</div>
+        <ul>
+          <li>Featured placement</li>
+          <li>Better visibility</li>
+          <li>Promotional placement</li>
+          <li>Homepage/category visibility when available</li>
+        </ul>
+        <div class="promo-price">Coming Soon</div>
+        <button class="btn-coming-soon" disabled>Coming Soon</button>
+      </div>
+
+      <div class="promo-card">
+        <h4>📣 Sponsored Offers</h4>
+        <div class="sub">Promote special offers and reach more customers.</div>
+        <ul>
+          <li>Sponsored offer placement</li>
+          <li>Wider customer reach</li>
+          <li>Offer performance visibility (planned)</li>
+        </ul>
+        <div class="promo-price">Coming Soon</div>
+        <button class="btn-coming-soon" disabled>Coming Soon</button>
+      </div>
+    </div>
+
+    <!-- Subscription Plans -->
+    <div class="panel">
+      <h3>Restaurant Subscription Plans</h3>
+      <div class="sub">In prices ko proposed product-plan prices ke roop mein treat karein — abhi koi payment activate nahi hai.</div>
+
+      <div class="plans-grid">
+        <div class="plan-card">
+          <div class="plan-name">Free</div>
+          <div class="plan-status available">Available</div>
+          <div class="plan-price">₹0</div>
+          <div class="plan-period">/month</div>
+          <ul>
+            <li>Restaurant listing</li>
+            <li>Menu management</li>
+            <li>Order management</li>
+            <li>Basic restaurant dashboard</li>
+            <li>Basic sales information</li>
+          </ul>
+          <button class="btn-current">Current Plan</button>
+        </div>
+
+        <div class="plan-card highlight">
+          <div class="plan-name">Pro</div>
+          <div class="plan-status coming-soon">Coming Soon</div>
+          <div class="plan-price">₹499</div>
+          <div class="plan-period">/month</div>
+          <ul>
+            <li>Everything in Free</li>
+            <li>Featured restaurant placement</li>
+            <li>Promotional offers</li>
+            <li>Better visibility</li>
+            <li>Advanced sales analytics</li>
+          </ul>
+          <button class="btn-coming-soon" disabled>Coming Soon</button>
+        </div>
+
+        <div class="plan-card">
+          <div class="plan-name">Business</div>
+          <div class="plan-status coming-soon">Coming Soon</div>
+          <div class="plan-price">₹999</div>
+          <div class="plan-period">/month</div>
+          <ul>
+            <li>Everything in Pro</li>
+            <li>Advanced analytics</li>
+            <li>Promotional tools</li>
+            <li>Priority visibility</li>
+            <li>Additional business tools</li>
+          </ul>
+          <button class="btn-coming-soon" disabled>Coming Soon</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 7: Admin visibility into per-restaurant monetization status -->
+    <div class="panel">
+      <h3>Restaurant Monetization Status</h3>
+      <div class="sub">Yahan se aap khud kisi bhi restaurant ka plan/status/featured manually set kar sakte hain (jaise offline payment milne ke baad) — online payment abhi bhi activate nahi hai.</div>
+      <div id="monetizationTableWrap">
+        <p style="color:var(--text-gray); font-size:14px;">Loading...</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../js/admin-guard.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  renderSidebar("monetization.html");
+  renderTopbar("Restaurant Dashboard");
+</script>
+<script src="../js/monetization.js"></script>
+</body>
+</html>

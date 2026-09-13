@@ -63,6 +63,7 @@ async function loadRestaurants() {
         <a href="restaurant.html?name=${encodeURIComponent(r.name)}">
           <div class="restaurant-img">
             <img src="${restaurantImageUrl(r.name, 500, 340, null, r.image)}" alt="" loading="lazy" width="500" height="340" />
+            ${r.featured ? `<div class="bestseller-badge" style="background:linear-gradient(90deg,#ffb703,#fb8500);">⭐ Featured</div>` : ""}
             <div class="heart">🤍</div>
           </div>
           <div class="restaurant-body">

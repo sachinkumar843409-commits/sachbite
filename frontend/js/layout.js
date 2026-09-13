@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { label: "🏷️ Offers", href: "offers.html" },
   { label: "🎨 Appearance", href: "appearance.html" },
   { label: "📊 Analytics", href: "analytics.html" },
+  { label: "💰 Monetization", href: "monetization.html" },
   { label: "⚙️ Settings", href: "settings.html" },
 ];
 
