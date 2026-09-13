@@ -25,14 +25,25 @@ async function loadMenu() {
       .filter((item) => item.available !== false)
       .map(
         (item) => `
-      <div class="category-card" onclick="addToCart('${escapeJs(item.name)}', ${item.price})">
+      <div class="category-card" role="button" tabindex="0" onclick="addToCart('${escapeJs(item.name)}', ${item.price})">
         ${bestsellerNames.has(item.name) ? `<div class="bestseller-badge">🔥 Bestseller</div>` : ""}
-        <img src="${categoryImageUrl(item.name, 200, 200, null, item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" />
+        <img src="${categoryImageUrl(item.name, 200, 200, null, item.image)}" alt="" loading="lazy" width="200" height="200" />
         <div class="name">${escapeHtml(item.name)}</div>
         <div class="price">From ₹${item.price}</div>
       </div>`
       )
       .join("");
+
+    // Keyboard support: Enter/Space activates a focused category card,
+    // matching what a mouse click already does (onclick above).
+    row.querySelectorAll(".category-card").forEach((card) => {
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    });
   } catch (e) {
     row.innerHTML = "<p>Menu load nahi ho paya. Backend chal raha hai check karein.</p>";
   }
@@ -51,7 +62,7 @@ async function loadRestaurants() {
       <div class="restaurant-card">
         <a href="restaurant.html?name=${encodeURIComponent(r.name)}">
           <div class="restaurant-img">
-            <img src="${restaurantImageUrl(r.name, 500, 340, null, r.image)}" alt="${r.name}" loading="lazy" />
+            <img src="${restaurantImageUrl(r.name, 500, 340, null, r.image)}" alt="" loading="lazy" width="500" height="340" />
             <div class="heart">🤍</div>
           </div>
           <div class="restaurant-body">
@@ -92,7 +103,7 @@ async function loadHeroAndBanner() {
     } else {
       heroBg.style.backgroundImage = "";
       heroSection.classList.remove("hero-photo-mode");
-      if (heroImg) heroImg.src = "images/hero-fallback.jpg";
+      if (heroImg) heroImg.src = foodImageUrl("pizza,food", 700, 500, 101);
     }
 
     heroBg.classList.remove("hero-anim-zoom", "hero-anim-pan", "hero-anim-fade");
@@ -124,7 +135,7 @@ async function loadHeroAndBanner() {
   }
 
   const bannerImg = document.getElementById("bannerImg");
-  if (bannerImg) bannerImg.src = siteSettings.bannerImage || "images/banner-fallback.jpg";
+  if (bannerImg) bannerImg.src = siteSettings.bannerImage || foodImageUrl("burger,food", 400, 260, 102);
 }
 
 // ---------- Search ----------

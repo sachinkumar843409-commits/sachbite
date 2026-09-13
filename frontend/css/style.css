@@ -1083,7 +1083,7 @@ body { overflow-x: hidden; }
   /* --- Topbar / Nav --- */
   .topbar-inner { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
   .logo { font-size: 20px; }
-  .logo small { font-size: 9px; }
+  .logo small { font-size: 10px; }
   .mobile-nav-toggle { display: block; order: 2; }
   .topbar-right { order: 3; gap: 8px; flex-wrap: wrap; }
   .location-pill { display: none; } /* jagah bachaane ke liye — footer/hero me location already dikhta hai */
@@ -1125,7 +1125,7 @@ body { overflow-x: hidden; }
     gap: 6px;
   }
   .rating-card .num { font-size: 15px; }
-  .rating-card small { font-size: 9px; }
+  .rating-card small { font-size: 10px; }
   .offer-card {
     position: absolute;
     bottom: 10px;
