@@ -75,6 +75,39 @@ async function applySiteSettings() {
   if (deliveryTimeEl && settings.deliveryTimeMin != null && settings.deliveryTimeMax != null) {
     deliveryTimeEl.textContent = `${settings.deliveryTimeMin}–${settings.deliveryTimeMax} minutes`;
   }
+
+  // ---------- Udyam registration (genuine business trust signal) ----------
+  if (settings.udyamNumber) {
+    const footerLine = document.getElementById("udyamFooterLine");
+    const footerNum = document.getElementById("udyamNumberText");
+    if (footerLine && footerNum) {
+      footerNum.textContent = settings.udyamNumber;
+      footerLine.style.display = "block";
+    }
+
+    const mainLine = document.getElementById("udyamMainLine");
+    const mainNum = document.getElementById("udyamNumberTextMain");
+    if (mainLine && mainNum) {
+      mainNum.textContent = settings.udyamNumber;
+      mainLine.style.display = "block";
+    }
+  }
+
+  if (settings.fssaiNumber) {
+    const fssaiFooterLine = document.getElementById("fssaiFooterLine");
+    const fssaiFooterNum = document.getElementById("fssaiNumberText");
+    if (fssaiFooterLine && fssaiFooterNum) {
+      fssaiFooterNum.textContent = settings.fssaiNumber;
+      fssaiFooterLine.style.display = "block";
+    }
+
+    const fssaiMainLine = document.getElementById("fssaiMainLine");
+    const fssaiMainNum = document.getElementById("fssaiNumberTextMain");
+    if (fssaiMainLine && fssaiMainNum) {
+      fssaiMainNum.textContent = settings.fssaiNumber;
+      fssaiMainLine.style.display = "block";
+    }
+  }
 }
 
 applySiteSettings();

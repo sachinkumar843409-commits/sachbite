@@ -212,6 +212,18 @@ const upload = multer({
   },
 });
 
+// Restaurant menu PDF upload — same base64-in-DB approach (Render disk persistent nahi hai)
+const uploadMenuPdf = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype !== "application/pdf") {
+      return cb(new Error("Sirf PDF file allowed hai."));
+    }
+    cb(null, true);
+  },
+});
+
 // ---------- Helpers ----------
 // readDB() / writeDB() ab mongo-store.js se aa rahe hain — MongoDB Atlas me permanently
 // save karte hain (agar MONGODB_URI set hai), warna purane db.json file wale tareeke
@@ -362,11 +374,30 @@ app.get("/api/restaurants", (req, res) => {
   // Phase 6: strip private monetization/subscription fields before sending to
   // customers. Only a safe derived boolean is exposed for a future "Featured"
   // badge — no restaurant is featured by default, so this is inert today.
+  //
+  // Also strip the heavy base64 menuPdfUrl here — this LIST endpoint powers
+  // restaurant CARDS (homepage, restaurants listing) which never render the
+  // PDF itself. Sending a multi-MB base64 string per restaurant on every card
+  // load was bloating page transfer size significantly. A lightweight
+  // hasMenuPdf boolean is enough for the card UI; the full PDF is only sent
+  // by /api/restaurants/details (used by the single restaurant detail page).
   const publicRestaurants = db.restaurants.map((r) => {
-    const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd, ...publicFields } = r;
-    return { ...publicFields, featured: featuredStatus === "active" };
+    const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd, menuPdfUrl, ...publicFields } = r;
+    return { ...publicFields, featured: featuredStatus === "active", hasMenuPdf: !!menuPdfUrl };
   });
   res.json(publicRestaurants);
+});
+
+// Single restaurant, WITH the full menu PDF (if any) — used by the restaurant
+// detail page instead of fetching the entire list (avoids downloading every
+// other restaurant's PDF just to show one page).
+app.get("/api/restaurants/details", (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.name === req.query.name);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+  const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd, ...publicFields } = restaurant;
+  res.json({ ...publicFields, featured: featuredStatus === "active" });
 });
 
 // Add a new restaurant (Admin > Restaurants)
@@ -379,14 +410,17 @@ app.post("/api/restaurants", requireAdmin, (req, res) => {
     id: generateId("R"),
     name,
     tags: tags || "",
-    rating: rating ? Number(rating) : 4.5,
-    reviews: reviews || "New",
+    rating: rating ? Number(rating) : null,
+    reviews: reviews || null,
     time: time || "25-35 min",
     badge: badge || "",
     icon: icon || "🍽️",
     image: image || null,
     contactPhone: contactPhone || "",
     contactEmail: contactEmail || "",
+    menuPdfUrl: null,
+    menuPdfName: null,
+    menuPdfUploadedAt: null,
     // Monetization fields — server-controlled defaults. Never set from req.body
     // here; changes only go through the dedicated /api/admin/monetization routes.
     subscriptionPlan: "free",
@@ -409,8 +443,8 @@ app.put("/api/restaurants/:id", requireAdmin, (req, res) => {
   const { name, tags, rating, reviews, time, badge, icon, image, contactPhone, contactEmail } = req.body;
   if (name !== undefined) restaurant.name = name;
   if (tags !== undefined) restaurant.tags = tags;
-  if (rating !== undefined) restaurant.rating = Number(rating);
-  if (reviews !== undefined) restaurant.reviews = reviews;
+  if (rating !== undefined) restaurant.rating = rating === "" ? null : Number(rating);
+  if (reviews !== undefined) restaurant.reviews = reviews === "" ? null : reviews;
   if (time !== undefined) restaurant.time = time;
   if (badge !== undefined) restaurant.badge = badge;
   if (icon !== undefined) restaurant.icon = icon;
@@ -420,6 +454,44 @@ app.put("/api/restaurants/:id", requireAdmin, (req, res) => {
 
   writeDB(db);
   res.json(restaurant);
+});
+
+// ---------- Restaurant menu PDF (upload / view / delete) ----------
+// Same base64-in-DB approach as image uploads — Render's disk isn't persistent.
+app.post("/api/restaurants/:id/menu-pdf", requireAdmin, (req, res) => {
+  uploadMenuPdf.single("menuPdf")(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: "Koi PDF file nahi mili" });
+
+    const db = readDB();
+    const restaurant = db.restaurants.find((r) => r.id === req.params.id);
+    if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+    const base64 = req.file.buffer.toString("base64");
+    restaurant.menuPdfUrl = `data:application/pdf;base64,${base64}`;
+    restaurant.menuPdfName = req.file.originalname || "menu.pdf";
+    restaurant.menuPdfUploadedAt = new Date().toISOString();
+
+    writeDB(db);
+    res.status(201).json({
+      menuPdfUrl: restaurant.menuPdfUrl,
+      menuPdfName: restaurant.menuPdfName,
+      menuPdfUploadedAt: restaurant.menuPdfUploadedAt,
+    });
+  });
+});
+
+app.delete("/api/restaurants/:id/menu-pdf", requireAdmin, (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.params.id);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+  restaurant.menuPdfUrl = null;
+  restaurant.menuPdfName = null;
+  restaurant.menuPdfUploadedAt = null;
+
+  writeDB(db);
+  res.json({ success: true });
 });
 
 // Delete a restaurant
@@ -1092,6 +1164,8 @@ app.put("/api/settings", requireAdmin, (req, res) => {
     "freeDeliveryAbove",
     "deliveryTimeMin",
     "deliveryTimeMax",
+    "udyamNumber",
+    "fssaiNumber",
   ];
   allowedFields.forEach((field) => {
     if (req.body[field] !== undefined) db.settings[field] = req.body[field];

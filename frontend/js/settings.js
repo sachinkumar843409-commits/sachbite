@@ -26,6 +26,8 @@ async function loadSettings() {
   document.getElementById("freeDeliveryAbove").value = s.freeDeliveryAbove ?? "";
   document.getElementById("deliveryTimeMin").value = s.deliveryTimeMin ?? "";
   document.getElementById("deliveryTimeMax").value = s.deliveryTimeMax ?? "";
+  document.getElementById("udyamNumber").value = s.udyamNumber || "";
+  document.getElementById("fssaiNumber").value = s.fssaiNumber || "";
 }
 
 document.getElementById("saveUpiBtn").addEventListener("click", async () => {
@@ -125,6 +127,23 @@ document.getElementById("saveDeliveryBtn").addEventListener("click", async () =>
   });
 
   const msg = document.getElementById("deliverySuccess");
+  msg.style.display = "block";
+  setTimeout(() => (msg.style.display = "none"), 2500);
+});
+
+document.getElementById("saveUdyamBtn").addEventListener("click", async () => {
+  const body = {
+    udyamNumber: document.getElementById("udyamNumber").value.trim(),
+    fssaiNumber: document.getElementById("fssaiNumber").value.trim(),
+  };
+
+  await adminFetch(`${API}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const msg = document.getElementById("udyamSuccess");
   msg.style.display = "block";
   setTimeout(() => (msg.style.display = "none"), 2500);
 });

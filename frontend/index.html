@@ -41,6 +41,11 @@
       },
       "telephone": "+91-93040-96306",
       "url": "https://sachbite.onrender.com/",
+      "identifier": {
+        "@type": "PropertyValue",
+        "propertyID": "Udyam Registration Number",
+        "value": "UDYAM-BR-23-0133153"
+      },
       "mainEntityOfPage": "https://sachbite.onrender.com/",
       "isPartOf": { "@id": "https://sachbite.onrender.com/#website" }
     }
@@ -237,6 +242,13 @@
 
     <h3>How long does delivery take?</h3>
     <p>Orders are typically delivered by our delivery partner within <span id="deliveryTimeText">30–40 minutes</span>, depending on your distance from the restaurant.</p>
+
+    <div id="udyamMainLine" style="margin-top:16px; font-size:13px; color:var(--text-gray); display:none;">
+      🏢 SachBite is a registered business — Udyam Registration: <strong id="udyamNumberTextMain"></strong>
+    </div>
+    <div id="fssaiMainLine" style="margin-top:6px; font-size:13px; color:var(--text-gray); display:none;">
+      🍽️ FSSAI Licensed — License No: <strong id="fssaiNumberTextMain"></strong>
+    </div>
   </div>
 </section>
 
@@ -288,6 +300,8 @@
 
 <footer>
   © 2026 SachBite. <span data-i18n="footer_text">Food delivered with love ❤️</span> — <span id="footerLocation">Kanti, Muzaffarpur</span> · <a href="terms.html" style="color:inherit;">Terms &amp; Privacy</a>
+  <div id="udyamFooterLine" style="font-size:11.5px; opacity:0.8; margin-top:6px; display:none;">🏢 Udyam Registered — <span id="udyamNumberText"></span></div>
+  <div id="fssaiFooterLine" style="font-size:11.5px; opacity:0.8; margin-top:4px; display:none;">🍽️ FSSAI Lic. No. — <span id="fssaiNumberText"></span></div>
 </footer>
 
 <!-- Login/Signup Modal -->

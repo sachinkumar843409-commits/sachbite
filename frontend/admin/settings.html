@@ -39,30 +39,30 @@
       <div class="panel">
         <h3>🏪 Restaurant Info</h3>
         <div class="form-group">
-          <label>Restaurant Name</label>
+          <label for="restaurantName">Restaurant Name</label>
           <input type="text" id="restaurantName" />
         </div>
         <div class="form-group">
-          <label>Location (header pill, hero section aur footer me dikhti hai)</label>
+          <label for="address">Location (header pill, hero section aur footer me dikhti hai)</label>
           <input type="text" id="address" />
           <div style="font-size:11.5px; color:var(--text-gray); margin-top:4px;">Chhota area/city naam yahan bharein — jaise "Kanti, Muzaffarpur". Save karne ke baad website refresh karke check karein.</div>
         </div>
         <div class="row-2">
           <div class="form-group">
-            <label>Opening Time</label>
+            <label for="openTime">Opening Time</label>
             <input type="time" id="openTime" />
           </div>
           <div class="form-group">
-            <label>Closing Time</label>
+            <label for="closeTime">Closing Time</label>
             <input type="time" id="closeTime" />
           </div>
         </div>
         <div class="form-group">
-          <label>Delivery Radius (km)</label>
+          <label for="deliveryRadiusKm">Delivery Radius (km)</label>
           <input type="number" id="deliveryRadiusKm" />
         </div>
         <div class="form-group">
-          <label>Admin Name</label>
+          <label for="adminName">Admin Name</label>
           <input type="text" id="adminName" />
         </div>
         <button class="btn-save-settings" id="saveInfoBtn">Save Changes</button>
@@ -72,24 +72,24 @@
       <div class="panel">
         <h3>🚚 Delivery &amp; Pricing</h3>
         <div class="form-group">
-          <label>Minimum Order Amount (₹)</label>
+          <label for="minOrderAmount">Minimum Order Amount (₹)</label>
           <input type="number" id="minOrderAmount" />
         </div>
         <div class="form-group">
-          <label>Delivery Fee (₹, jab order free-delivery limit se kam ho)</label>
+          <label for="deliveryFee">Delivery Fee (₹, jab order free-delivery limit se kam ho)</label>
           <input type="number" id="deliveryFee" />
         </div>
         <div class="form-group">
-          <label>Free Delivery Above (₹)</label>
+          <label for="freeDeliveryAbove">Free Delivery Above (₹)</label>
           <input type="number" id="freeDeliveryAbove" />
         </div>
         <div class="row-2">
           <div class="form-group">
-            <label>Delivery Time — Minimum (minutes)</label>
+            <label for="deliveryTimeMin">Delivery Time — Minimum (minutes)</label>
             <input type="number" id="deliveryTimeMin" />
           </div>
           <div class="form-group">
-            <label>Delivery Time — Maximum (minutes)</label>
+            <label for="deliveryTimeMax">Delivery Time — Maximum (minutes)</label>
             <input type="number" id="deliveryTimeMax" />
           </div>
         </div>
@@ -99,9 +99,24 @@
       </div>
 
       <div class="panel">
+        <h3>🏢 Business Registration</h3>
+        <div class="form-group">
+          <label for="udyamNumber">Udyam Registration Number</label>
+          <input type="text" id="udyamNumber" placeholder="e.g. UDYAM-BR-23-0133153" />
+        </div>
+        <div class="form-group">
+          <label for="fssaiNumber">FSSAI License Number</label>
+          <input type="text" id="fssaiNumber" placeholder="Jab license mil jaye tab yahan daalein (14-digit number)" />
+        </div>
+        <div style="font-size:11.5px; color:var(--text-gray); margin-top:4px; margin-bottom:12px;">Yeh homepage par (footer aur "How does SachBite work?" section mein) trust signal ke roop mein dikhta hai — khali chhodne par kuch nahi dikhta.</div>
+        <button class="btn-save-settings" id="saveUdyamBtn">Save Changes</button>
+        <div class="success-msg" id="udyamSuccess">✅ Settings saved!</div>
+      </div>
+
+      <div class="panel">
         <h3>ℹ️ About Us (Home page par dikhta hai)</h3>
         <div class="form-group">
-          <label>About Text</label>
+          <label for="aboutText">About Text</label>
           <textarea id="aboutText" rows="4" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; outline:none; font-family:inherit;" placeholder="Apne restaurant/business ke baare me likhein..."></textarea>
         </div>
         <button class="btn-save-settings" id="saveAboutBtn">Save About Text</button>
@@ -111,19 +126,19 @@
       <div class="panel">
         <h3>📧 Contact Info (Home page par dikhta hai)</h3>
         <div class="form-group">
-          <label>Contact Email</label>
+          <label for="contactEmail">Contact Email</label>
           <input type="email" id="contactEmail" placeholder="you@example.com" />
         </div>
         <div class="form-group">
-          <label>Phone Number</label>
+          <label for="contactPhone">Phone Number</label>
           <input type="text" id="contactPhone" placeholder="e.g. +91 93040 96306" />
         </div>
         <div class="form-group">
-          <label>Full Address</label>
+          <label for="contactAddress">Full Address</label>
           <input type="text" id="contactAddress" placeholder="e.g. Kanti, Muzaffarpur, Bihar - 843109" />
         </div>
         <div class="form-group">
-          <label>Support Hours</label>
+          <label for="supportHours">Support Hours</label>
           <input type="text" id="supportHours" placeholder="e.g. 24x7 Support" />
         </div>
         <button class="btn-save-settings" id="saveContactBtn">Save Contact Info</button>
@@ -134,15 +149,15 @@
         <h3>🔥 Home Page Offer Banner</h3>
         <p style="font-size:12.5px; color:var(--text-gray); margin-top:-12px; margin-bottom:14px;">Yeh hero section ke top-right corner me dikhta hai (jaise "🔥 TODAY'S OFFER — Up to 50% OFF").</p>
         <div class="form-group">
-          <label>Small Tag</label>
+          <label for="heroOfferTag">Small Tag</label>
           <input type="text" id="heroOfferTag" placeholder="🔥 TODAY'S OFFER" />
         </div>
         <div class="form-group">
-          <label>Main Offer Text</label>
+          <label for="heroOfferTitle">Main Offer Text</label>
           <input type="text" id="heroOfferTitle" placeholder="Up to 50% OFF" />
         </div>
         <div class="form-group">
-          <label>Subtitle</label>
+          <label for="heroOfferSubtitle">Subtitle</label>
           <input type="text" id="heroOfferSubtitle" placeholder="On Selected Items" />
         </div>
         <button class="btn-save-settings" id="saveOfferBtn">Save Offer Banner</button>
@@ -153,11 +168,11 @@
         <h3>📱 UPI Payment Settings (Direct UPI)</h3>
         <p style="font-size:12.5px; color:var(--text-gray); margin-top:-12px; margin-bottom:14px;">Yahan apna UPI ID daalein — customer checkout par isi par seedha GPay/PhonePe se payment kar sakega (koi middleman/fee nahi).</p>
         <div class="form-group">
-          <label>Business UPI ID</label>
+          <label for="businessUpiId">Business UPI ID</label>
           <input type="text" id="businessUpiId" placeholder="jaise: sachinkumar@paytm" />
         </div>
         <div class="form-group">
-          <label>Payee Name (customer ko dikhega)</label>
+          <label for="businessUpiName">Payee Name (customer ko dikhega)</label>
           <input type="text" id="businessUpiName" placeholder="SachBite" />
         </div>
         <button class="btn-save-settings" id="saveUpiBtn">Save UPI Settings</button>
@@ -167,11 +182,11 @@
       <div class="panel">
         <h3>🔒 Change Admin Password</h3>
         <div class="form-group">
-          <label>Current Password</label>
+          <label for="currentPassword">Current Password</label>
           <input type="password" id="currentPassword" placeholder="Current password" />
         </div>
         <div class="form-group">
-          <label>New Password</label>
+          <label for="newPassword">New Password</label>
           <input type="password" id="newPassword" placeholder="New password" />
         </div>
         <button class="btn-save-settings" id="savePasswordBtn">Update Password</button>
@@ -183,15 +198,15 @@
         <h3>🛡️ Forgot Password Recovery</h3>
         <p style="font-size:12.5px; color:var(--text-gray); margin-top:-12px; margin-bottom:14px;">Agar aap password bhool jaayein, to login page par "Password bhool gaye?" se yeh sawaal-jawaab reset karne ke kaam aayega. Isse set karne ke liye current password bharna zaroori hai.</p>
         <div class="form-group">
-          <label>Security Question</label>
+          <label for="securityQuestion">Security Question</label>
           <input type="text" id="securityQuestion" placeholder="e.g. Aapke pehle pet ka naam kya tha?" />
         </div>
         <div class="form-group">
-          <label>Answer</label>
+          <label for="securityAnswer">Answer</label>
           <input type="text" id="securityAnswer" placeholder="Iska jawaab yaad rakhna zaroori hai" />
         </div>
         <div class="form-group">
-          <label>Current Password (confirm karne ke liye)</label>
+          <label for="securityCurrentPassword">Current Password (confirm karne ke liye)</label>
           <input type="password" id="securityCurrentPassword" placeholder="Current password" />
         </div>
         <button class="btn-save-settings" id="saveSecurityBtn">Security Question Save Karein</button>
@@ -210,15 +225,15 @@
       <div id="staffList" style="margin-bottom:20px;"></div>
 
       <div class="form-group">
-        <label>Staff Ka Naam</label>
+        <label for="staffName">Staff Ka Naam</label>
         <input type="text" id="staffName" placeholder="e.g. Ramesh Kumar" />
       </div>
       <div class="form-group">
-        <label>Username</label>
+        <label for="staffUsername">Username</label>
         <input type="text" id="staffUsername" placeholder="e.g. ramesh" />
       </div>
       <div class="form-group">
-        <label>Password</label>
+        <label for="staffPassword">Password</label>
         <input type="password" id="staffPassword" placeholder="Kam se kam 6 characters" />
       </div>
       <button class="btn-save-settings" id="addStaffBtn">+ Staff Add Karein</button>
