@@ -26,7 +26,7 @@
   .promo-card .sub { font-size: 13px; color: var(--text-gray); margin-bottom: 14px; }
   .promo-card ul { list-style: none; margin: 0 0 18px; padding: 0; flex: 1; }
   .promo-card ul li { font-size: 13px; color: var(--text-dark); padding: 6px 0; padding-left: 22px; position: relative; }
-  .promo-card ul li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+  .promo-card ul li::before { content: "✓"; position: absolute; left: 0; color: #107c38; font-weight: 700; }
   .promo-price { font-size: 18px; font-weight: 800; color: var(--primary-text); margin-bottom: 14px; }
 
   .btn-coming-soon {
@@ -36,7 +36,7 @@
   }
   .btn-current {
     width: 100%; padding: 12px; border-radius: 30px; border: 1.5px solid var(--green);
-    background: var(--green-bg); color: var(--green); font-weight: 700; font-size: 14px; cursor: default;
+    background: var(--green-bg); color: #107c38; font-weight: 700; font-size: 14px; cursor: default;
   }
 
   .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
@@ -44,13 +44,13 @@
   .plan-card.highlight { border-color: var(--primary); box-shadow: var(--shadow); }
   .plan-card .plan-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
   .plan-card .plan-status { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 12px; width: fit-content; }
-  .plan-status.available { background: var(--green-bg); color: var(--green); }
+  .plan-status.available { background: var(--green-bg); color: #107c38; }
   .plan-status.coming-soon { background: var(--bg); color: var(--text-gray); }
   .plan-card .plan-price { font-size: 26px; font-weight: 800; margin-bottom: 2px; }
   .plan-card .plan-period { font-size: 12px; color: var(--text-gray); margin-bottom: 16px; }
   .plan-card ul { list-style: none; margin: 0 0 20px; padding: 0; flex: 1; }
   .plan-card ul li { font-size: 13px; padding: 6px 0; padding-left: 22px; position: relative; }
-  .plan-card ul li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+  .plan-card ul li::before { content: "✓"; position: absolute; left: 0; color: #107c38; font-weight: 700; }
 
   table.mon-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.mon-table th { text-align: left; padding: 10px 12px; color: var(--text-gray); font-weight: 600; border-bottom: 1px solid var(--border); }
@@ -59,9 +59,9 @@
     padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12.5px; width: 100%;
   }
   .status-chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
-  .status-chip.active { background: var(--green-bg); color: var(--green); }
+  .status-chip.active { background: var(--green-bg); color: #107c38; }
   .status-chip.inactive { background: var(--bg); color: var(--text-gray); }
-  .status-chip.pending { background: #fff8e1; color: #b8860b; }
+  .status-chip.pending { background: #fff8e1; color: #916a08; }
 
   .btn-save-mon {
     padding: 8px 16px; border: 1.5px solid var(--primary); background: #fff; color: var(--primary-text);
@@ -100,7 +100,7 @@
           <div class="label">per successful order</div>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
-          <input type="number" id="commissionPercentInput" min="0" max="100" step="0.5" style="width:80px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:14px;" />
+          <input type="number" id="commissionPercentInput" aria-label="Standard commission percent" min="0" max="100" step="0.5" style="width:80px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:14px;" />
           <button class="btn-save-mon" id="saveCommissionBtn">Save</button>
         </div>
       </div>

@@ -24,7 +24,7 @@ function renderRestaurants(list) {
           <h3>${escapeHtml(r.name)}</h3>
           <div class="tags">${escapeHtml(r.tags)}</div>
           <div class="restaurant-meta">
-            <span class="stars">⭐ ${r.rating} (${escapeHtml(r.reviews)})</span>
+            ${r.rating ? `<span class="stars">⭐ ${r.rating} (${escapeHtml(r.reviews)})</span>` : ""}
             <span>⏱ ${escapeHtml(r.time)}</span>
           </div>
           ${r.badge ? `<span class="badge-green">${escapeHtml(r.badge)}</span>` : ""}

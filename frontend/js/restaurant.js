@@ -11,26 +11,35 @@ async function loadRestaurantPage() {
     return;
   }
 
-  const [restaurantsRes, menuRes] = await Promise.all([
-    fetch(`${API}/restaurants`),
+  const [restaurantRes, menuRes] = await Promise.all([
+    fetch(`${API}/restaurants/details?name=${encodeURIComponent(name)}`),
     fetch(`${API}/menu`),
   ]);
-  const restaurants = await restaurantsRes.json();
   const menu = await menuRes.json();
 
-  const restaurant = restaurants.find((r) => r.name === name);
-  if (!restaurant) {
+  if (!restaurantRes.ok) {
     document.getElementById("restName").textContent = "Restaurant nahi mila";
     return;
   }
+  const restaurant = await restaurantRes.json();
 
   document.title = `${restaurant.name} - SachBite`;
   document.getElementById("restBannerImg").src = restaurantImageUrl(restaurant.name, 1200, 400, 1, restaurant.image);
   document.getElementById("restName").textContent = restaurant.name;
   document.getElementById("restTags").textContent = restaurant.tags;
-  document.getElementById("restRating").textContent = `⭐ ${restaurant.rating} (${restaurant.reviews})`;
+  if (restaurant.rating) {
+    document.getElementById("restRating").textContent = `⭐ ${restaurant.rating} (${restaurant.reviews})`;
+  } else {
+    document.getElementById("restRating").style.display = "none";
+  }
   document.getElementById("restTime").textContent = `⏱ ${restaurant.time}`;
   document.getElementById("restBadge").textContent = restaurant.badge;
+
+  const pdfLink = document.getElementById("restMenuPdfLink");
+  if (restaurant.menuPdfUrl) {
+    pdfLink.href = restaurant.menuPdfUrl;
+    pdfLink.style.display = "inline-block";
+  }
 
   const menuList = document.getElementById("menuList");
   const availableItems = menu.filter((item) => item.available !== false);

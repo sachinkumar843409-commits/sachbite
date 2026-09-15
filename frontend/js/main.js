@@ -70,7 +70,7 @@ async function loadRestaurants() {
             <h3>${r.name}</h3>
             <div class="tags">${r.tags}</div>
             <div class="restaurant-meta">
-              <span class="stars">⭐ ${r.rating} (${r.reviews})</span>
+              ${r.rating ? `<span class="stars">⭐ ${r.rating} (${r.reviews})</span>` : ""}
               <span>⏱ ${r.time}</span>
             </div>
             ${r.badge ? `<span class="badge-green">${r.badge}</span>` : ""}

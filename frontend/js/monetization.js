@@ -41,11 +41,11 @@ async function loadMonetization() {
         (r) => `
       <tr data-id="${r.id}">
         <td>${escapeHtml(r.name)}</td>
-        <td><select class="f-plan">${optionsHTML(PLAN_OPTIONS, r.subscriptionPlan)}</select></td>
-        <td><select class="f-status">${optionsHTML(STATUS_OPTIONS, r.subscriptionStatus)}</select></td>
-        <td><select class="f-featured">${optionsHTML(STATUS_OPTIONS, r.featuredStatus)}</select></td>
-        <td><input type="date" class="f-start" value="${toDateInputValue(r.subscriptionStart)}" /></td>
-        <td><input type="date" class="f-end" value="${toDateInputValue(r.subscriptionEnd)}" /></td>
+        <td><select class="f-plan" aria-label="Subscription plan for ${escapeHtml(r.name)}">${optionsHTML(PLAN_OPTIONS, r.subscriptionPlan)}</select></td>
+        <td><select class="f-status" aria-label="Subscription status for ${escapeHtml(r.name)}">${optionsHTML(STATUS_OPTIONS, r.subscriptionStatus)}</select></td>
+        <td><select class="f-featured" aria-label="Featured status for ${escapeHtml(r.name)}">${optionsHTML(STATUS_OPTIONS, r.featuredStatus)}</select></td>
+        <td><input type="date" class="f-start" aria-label="Subscription start date for ${escapeHtml(r.name)}" value="${toDateInputValue(r.subscriptionStart)}" /></td>
+        <td><input type="date" class="f-end" aria-label="Subscription end date for ${escapeHtml(r.name)}" value="${toDateInputValue(r.subscriptionEnd)}" /></td>
         <td>
           <button class="btn-save-mon" onclick="saveRestaurantMonetization('${r.id}', this)">Save</button>
           <span class="row-save-msg" style="font-size:11px; font-weight:600; margin-left:6px;"></span>

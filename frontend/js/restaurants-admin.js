@@ -29,6 +29,9 @@ function renderRestaurants() {
         <span>⏱ ${r.time}</span>
       </div>
       ${r.badge ? `<span class="rest-admin-badge">${r.badge}</span>` : ""}
+      <div style="font-size:11px; color:var(--text-gray); margin-bottom:6px;">
+        ${r.menuPdfUrl ? `📄 Menu PDF uploaded` : `<span style="color:#b45309;">📄 Menu PDF nahi hai</span>`}
+      </div>
       <div style="font-size:11px; color:var(--text-gray); margin-bottom:10px; line-height:1.6;">
         ${r.contactEmail ? `📧 ${r.contactEmail}<br/>` : `<span style="color:#dc2626;">⚠️ Contact email nahi set hai — order notification nahi jayegi</span><br/>`}
         ${r.contactPhone ? `📞 ${r.contactPhone}` : ""}
@@ -57,12 +60,13 @@ function openAddModal() {
   document.getElementById("restId").value = "";
   document.getElementById("restName").value = "";
   document.getElementById("restTags").value = "";
-  document.getElementById("restRating").value = "4.5";
-  document.getElementById("restReviews").value = "New";
+  document.getElementById("restRating").value = "";
+  document.getElementById("restReviews").value = "";
   document.getElementById("restTime").value = "25-35 min";
   document.getElementById("restBadge").value = "";
   document.getElementById("restContactEmail").value = "";
   document.getElementById("restContactPhone").value = "";
+  document.getElementById("menuPdfSection").style.display = "none";
   modal.classList.add("show");
 }
 
@@ -73,13 +77,30 @@ function openEditModal(id) {
   document.getElementById("restId").value = r.id;
   document.getElementById("restName").value = r.name;
   document.getElementById("restTags").value = r.tags;
-  document.getElementById("restRating").value = r.rating;
-  document.getElementById("restReviews").value = r.reviews;
+  document.getElementById("restRating").value = r.rating || "";
+  document.getElementById("restReviews").value = r.reviews || "";
   document.getElementById("restTime").value = r.time;
   document.getElementById("restBadge").value = r.badge;
   document.getElementById("restContactEmail").value = r.contactEmail || "";
   document.getElementById("restContactPhone").value = r.contactPhone || "";
+  renderMenuPdfStatus(r);
+  document.getElementById("menuPdfSection").style.display = "block";
   modal.classList.add("show");
+}
+
+function renderMenuPdfStatus(r) {
+  const statusEl = document.getElementById("menuPdfCurrentStatus");
+  const deleteBtn = document.getElementById("deleteMenuPdfBtn");
+  document.getElementById("menuPdfMsg").textContent = "";
+  document.getElementById("menuPdfFile").value = "";
+
+  if (r.menuPdfUrl) {
+    statusEl.innerHTML = `✅ Current menu: <a href="${r.menuPdfUrl}" target="_blank" rel="noopener">${escapeHtml(r.menuPdfName || "menu.pdf")}</a>`;
+    deleteBtn.style.display = "inline-block";
+  } else {
+    statusEl.innerHTML = `<span style="color:var(--text-gray);">Koi menu PDF upload nahi hui abhi.</span>`;
+    deleteBtn.style.display = "none";
+  }
 }
 
 document.getElementById("addRestBtn").addEventListener("click", openAddModal);
@@ -119,6 +140,54 @@ document.getElementById("saveRestBtn").addEventListener("click", async () => {
 
   modal.classList.remove("show");
   loadRestaurants();
+});
+
+document.getElementById("uploadMenuPdfBtn").addEventListener("click", async () => {
+  const id = document.getElementById("restId").value;
+  const fileInput = document.getElementById("menuPdfFile");
+  const msgEl = document.getElementById("menuPdfMsg");
+
+  if (!id) return; // safety — button is hidden for new restaurants anyway
+  if (!fileInput.files[0]) {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "Pehle ek PDF file select karein.";
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("menuPdf", fileInput.files[0]);
+
+  msgEl.style.color = "var(--text-gray)";
+  msgEl.textContent = "Upload ho raha hai...";
+
+  try {
+    const res = await adminFetch(`${API}/restaurants/${id}/menu-pdf`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Upload fail hua");
+
+    msgEl.style.color = "var(--green)";
+    msgEl.textContent = "✅ PDF upload ho gayi.";
+    await loadRestaurants();
+    const updated = currentRestaurants.find((x) => x.id === id);
+    if (updated) renderMenuPdfStatus(updated);
+  } catch (e) {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "❌ " + e.message;
+  }
+});
+
+document.getElementById("deleteMenuPdfBtn").addEventListener("click", async () => {
+  const id = document.getElementById("restId").value;
+  if (!id) return;
+  if (!confirm("Kya aap is restaurant ki menu PDF hatana chahte hain?")) return;
+
+  await adminFetch(`${API}/restaurants/${id}/menu-pdf`, { method: "DELETE" });
+  await loadRestaurants();
+  const updated = currentRestaurants.find((x) => x.id === id);
+  if (updated) renderMenuPdfStatus(updated);
 });
 
 // ---------- Sales report ----------
