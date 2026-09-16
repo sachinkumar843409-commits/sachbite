@@ -37,7 +37,18 @@ async function loadRestaurantPage() {
 
   const pdfLink = document.getElementById("restMenuPdfLink");
   if (restaurant.menuPdfUrl) {
-    pdfLink.href = restaurant.menuPdfUrl;
+    try {
+      // data: URLs get blocked/blanked by Chrome when opened via target="_blank"
+      // link navigation — convert to a Blob URL instead, which works reliably.
+      const base64 = restaurant.menuPdfUrl.split(",")[1] || "";
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      pdfLink.href = URL.createObjectURL(blob);
+    } catch (e) {
+      pdfLink.href = restaurant.menuPdfUrl; // fallback, better than nothing
+    }
     pdfLink.style.display = "inline-block";
   }
 

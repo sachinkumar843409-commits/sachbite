@@ -99,7 +99,17 @@ function renderMenuPdfStatus(r) {
   document.getElementById("extractItemsList").innerHTML = "";
 
   if (r.menuPdfUrl) {
-    statusEl.innerHTML = `✅ Current menu: <a href="${r.menuPdfUrl}" target="_blank" rel="noopener">${escapeHtml(r.menuPdfName || "menu.pdf")}</a>`;
+    let viewUrl = r.menuPdfUrl;
+    try {
+      const base64 = r.menuPdfUrl.split(",")[1] || "";
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      viewUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+    } catch (e) {
+      // fallback to raw data URL if conversion fails for any reason
+    }
+    statusEl.innerHTML = `✅ Current menu: <a href="${viewUrl}" target="_blank" rel="noopener">${escapeHtml(r.menuPdfName || "menu.pdf")}</a>`;
     deleteBtn.style.display = "inline-block";
     extractBtn.style.display = "inline-block";
   } else {
