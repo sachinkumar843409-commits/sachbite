@@ -30,7 +30,7 @@ function renderRestaurants() {
       </div>
       ${r.badge ? `<span class="rest-admin-badge">${r.badge}</span>` : ""}
       <div style="font-size:11px; color:var(--text-gray); margin-bottom:6px;">
-        ${r.menuPdfUrl ? `📄 Menu PDF uploaded` : `<span style="color:#b45309;">📄 Menu PDF nahi hai</span>`}
+        ${r.hasMenuPdf ? `📄 Menu PDF uploaded` : `<span style="color:#b45309;">📄 Menu PDF nahi hai</span>`}
       </div>
       <div style="font-size:11px; color:var(--text-gray); margin-bottom:10px; line-height:1.6;">
         ${r.contactEmail ? `📧 ${r.contactEmail}<br/>` : `<span style="color:#dc2626;">⚠️ Contact email nahi set hai — order notification nahi jayegi</span><br/>`}
@@ -70,7 +70,7 @@ function openAddModal() {
   modal.classList.add("show");
 }
 
-function openEditModal(id) {
+async function openEditModal(id) {
   const r = currentRestaurants.find((x) => x.id === id);
   if (!r) return;
   document.getElementById("modalTitle").textContent = "Edit Restaurant";
@@ -83,9 +83,26 @@ function openEditModal(id) {
   document.getElementById("restBadge").value = r.badge;
   document.getElementById("restContactEmail").value = r.contactEmail || "";
   document.getElementById("restContactPhone").value = r.contactPhone || "";
-  renderMenuPdfStatus(r);
   document.getElementById("menuPdfSection").style.display = "block";
   modal.classList.add("show");
+
+  // currentRestaurants list-endpoint se aata hai, jo (payload size ke liye) real
+  // menuPdfUrl strip karke sirf hasMenuPdf boolean deta hai. Pehle sab reset karte
+  // hain, phir agar PDF hai to poora data /api/restaurants/details se fetch karte hain.
+  renderMenuPdfStatus({});
+  if (r.hasMenuPdf) {
+    document.getElementById("menuPdfCurrentStatus").innerHTML = `<span style="color:var(--text-gray);">Loading...</span>`;
+    try {
+      const res = await fetch(`${API}/restaurants/details?name=${encodeURIComponent(r.name)}`);
+      const full = await res.json();
+      // Modal band ho chuka ho ya kisi aur restaurant par switch ho gaya ho to ignore
+      if (res.ok && document.getElementById("restId").value === id) {
+        renderMenuPdfStatus(full);
+      }
+    } catch (e) {
+      // network error — status "Loading..." pe hi reh jayega, user retry kar sakta hai edit reopen karke
+    }
+  }
 }
 
 function renderMenuPdfStatus(r) {
@@ -186,9 +203,13 @@ document.getElementById("uploadMenuPdfBtn").addEventListener("click", async () =
 
     msgEl.style.color = "var(--green)";
     msgEl.textContent = "✅ PDF upload ho gayi.";
+    // Card grid (badges) refresh karne ke liye list reload karo, lekin status/extract
+    // button yahin 'data' se dikhao — list endpoint menuPdfUrl strip kar deta hai.
     await loadRestaurants();
-    const updated = currentRestaurants.find((x) => x.id === id);
-    if (updated) renderMenuPdfStatus(updated);
+    renderMenuPdfStatus({ menuPdfUrl: data.menuPdfUrl, menuPdfName: data.menuPdfName });
+    // Upload hote hi turant items extract karke dikhao — admin ko alag se
+    // "Extract" button dabaane ki zaroorat na pade.
+    await runExtraction(id);
   } catch (e) {
     msgEl.style.color = "var(--red)";
     msgEl.textContent = "❌ " + e.message;
@@ -208,8 +229,7 @@ document.getElementById("deleteMenuPdfBtn").addEventListener("click", async () =
 
 let extractedItems = [];
 
-document.getElementById("extractMenuPdfBtn").addEventListener("click", async () => {
-  const id = document.getElementById("restId").value;
+async function runExtraction(id) {
   const msgEl = document.getElementById("extractMsg");
   const btn = document.getElementById("extractMenuPdfBtn");
 
@@ -239,6 +259,11 @@ document.getElementById("extractMenuPdfBtn").addEventListener("click", async () 
   } finally {
     btn.disabled = false;
   }
+}
+
+document.getElementById("extractMenuPdfBtn").addEventListener("click", () => {
+  const id = document.getElementById("restId").value;
+  runExtraction(id);
 });
 
 function renderExtractReview() {
