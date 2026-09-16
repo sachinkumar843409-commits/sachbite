@@ -42,7 +42,9 @@ async function loadRestaurantPage() {
   }
 
   const menuList = document.getElementById("menuList");
-  const availableItems = menu.filter((item) => item.available !== false);
+  const availableItems = menu.filter(
+    (item) => item.available !== false && (!item.restaurantId || item.restaurantId === restaurant.id)
+  );
 
   if (availableItems.length === 0) {
     menuList.innerHTML = "<p style='color:var(--text-gray)'>Abhi menu available nahi hai.</p>";

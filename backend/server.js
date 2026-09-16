@@ -21,6 +21,7 @@ try {
 const { sendRestaurantOrderNotifications, sendOtpEmail } = require("./notify");
 const { initStore, readDB, writeDB } = require("./mongo-store");
 const { getCommissionPercent, PLANS, calculateCommission, checkSubscriptionStatus, setRestaurantMonetization } = require("./monetization");
+const { extractMenuFromPdfBuffer } = require("./pdf-menu-extractor");
 
 // ---------- CUSTOMER SMS NOTIFICATIONS (SMS Gateway for Android) ----------
 // Apne hi Android phone ko SMS-gateway banate hain (sms-gate.app app se) — bilkul
@@ -324,7 +325,7 @@ app.get("/api/menu", (req, res) => {
 // ---------- MENU MANAGEMENT (admin) ----------
 app.post("/api/menu", requireAdmin, (req, res) => {
   const db = readDB();
-  const { name, price, icon, category, image } = req.body;
+  const { name, price, icon, category, image, restaurantId } = req.body;
   if (!name || !price) return res.status(400).json({ error: "Name and price are required" });
 
   const newItem = {
@@ -335,6 +336,7 @@ app.post("/api/menu", requireAdmin, (req, res) => {
     category: category || "Other",
     available: true,
     image: image || null,
+    restaurantId: restaurantId || null, // null = shown on every restaurant (existing behavior)
   };
   db.menu.push(newItem);
   writeDB(db);
@@ -492,6 +494,34 @@ app.delete("/api/restaurants/:id/menu-pdf", requireAdmin, (req, res) => {
 
   writeDB(db);
   res.json({ success: true });
+});
+
+// Extract candidate {name, price} items from a restaurant's already-uploaded
+// menu PDF. Returns SUGGESTIONS only — nothing is added to the real menu
+// here. The admin reviews/edits these in the UI before confirming.
+app.post("/api/restaurants/:id/menu-pdf/extract", requireAdmin, async (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.params.id);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+  if (!restaurant.menuPdfUrl) return res.status(400).json({ error: "Pehle ek menu PDF upload karein." });
+
+  try {
+    const base64 = restaurant.menuPdfUrl.split(",")[1] || "";
+    const buffer = Buffer.from(base64, "base64");
+    const items = await extractMenuFromPdfBuffer(buffer);
+
+    if (items.length === 0) {
+      return res.status(200).json({
+        items: [],
+        message: "Koi item automatically nahi mila. PDF ka layout complex ho sakta hai — items manually add karein.",
+      });
+    }
+
+    res.json({ items });
+  } catch (err) {
+    console.error("Menu PDF extract error:", err.message);
+    res.status(400).json({ error: err.message || "PDF se text extract nahi ho paya." });
+  }
 });
 
 // Delete a restaurant

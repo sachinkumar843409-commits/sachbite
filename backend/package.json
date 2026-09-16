@@ -17,6 +17,7 @@
     "razorpay": "^2.9.4",
     "bcryptjs": "^2.4.3",
     "nodemailer": "^6.9.14",
-    "mongodb": "^6.10.0"
+    "mongodb": "^6.10.0",
+    "pdf-parse": "^1.1.1"
   }
 }

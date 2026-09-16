@@ -91,15 +91,21 @@ function openEditModal(id) {
 function renderMenuPdfStatus(r) {
   const statusEl = document.getElementById("menuPdfCurrentStatus");
   const deleteBtn = document.getElementById("deleteMenuPdfBtn");
+  const extractBtn = document.getElementById("extractMenuPdfBtn");
   document.getElementById("menuPdfMsg").textContent = "";
   document.getElementById("menuPdfFile").value = "";
+  document.getElementById("extractMsg").textContent = "";
+  document.getElementById("extractReviewWrap").style.display = "none";
+  document.getElementById("extractItemsList").innerHTML = "";
 
   if (r.menuPdfUrl) {
     statusEl.innerHTML = `✅ Current menu: <a href="${r.menuPdfUrl}" target="_blank" rel="noopener">${escapeHtml(r.menuPdfName || "menu.pdf")}</a>`;
     deleteBtn.style.display = "inline-block";
+    extractBtn.style.display = "inline-block";
   } else {
     statusEl.innerHTML = `<span style="color:var(--text-gray);">Koi menu PDF upload nahi hui abhi.</span>`;
     deleteBtn.style.display = "none";
+    extractBtn.style.display = "none";
   }
 }
 
@@ -189,6 +195,114 @@ document.getElementById("deleteMenuPdfBtn").addEventListener("click", async () =
   const updated = currentRestaurants.find((x) => x.id === id);
   if (updated) renderMenuPdfStatus(updated);
 });
+
+let extractedItems = [];
+
+document.getElementById("extractMenuPdfBtn").addEventListener("click", async () => {
+  const id = document.getElementById("restId").value;
+  const msgEl = document.getElementById("extractMsg");
+  const btn = document.getElementById("extractMenuPdfBtn");
+
+  btn.disabled = true;
+  msgEl.style.color = "var(--text-gray)";
+  msgEl.textContent = "PDF se text nikaala ja raha hai...";
+
+  try {
+    const res = await adminFetch(`${API}/restaurants/${id}/menu-pdf/extract`, { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Extraction fail hui");
+
+    extractedItems = data.items || [];
+    if (extractedItems.length === 0) {
+      msgEl.style.color = "var(--red)";
+      msgEl.textContent = "⚠️ " + (data.message || "Koi item nahi mila. Items manually add karein.");
+      document.getElementById("extractReviewWrap").style.display = "none";
+      return;
+    }
+
+    msgEl.style.color = "var(--green)";
+    msgEl.textContent = `${extractedItems.length} item(s) mile — neeche check/edit karke confirm karein.`;
+    renderExtractReview();
+  } catch (e) {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "❌ " + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function renderExtractReview() {
+  const wrap = document.getElementById("extractReviewWrap");
+  const list = document.getElementById("extractItemsList");
+
+  if (extractedItems.length === 0) {
+    wrap.style.display = "none";
+    return;
+  }
+
+  wrap.style.display = "block";
+  list.innerHTML =
+    extractedItems
+      .map(
+        (item, i) => `
+    <div class="extract-row" data-idx="${i}">
+      <input type="text" class="x-name" value="${escapeHtml(item.name)}" />
+      <input type="number" class="x-price" value="${item.price}" min="1" />
+      <button type="button" class="btn-remove-row" onclick="removeExtractRow(${i})" title="Is item ko hatayein">✕</button>
+    </div>`
+      )
+      .join("") +
+    `<button type="button" class="btn-edit-menu" id="confirmExtractBtn" style="margin-top:8px;">✅ Add Selected to Menu</button>`;
+
+  document.getElementById("confirmExtractBtn").addEventListener("click", confirmExtractedItems);
+}
+
+function removeExtractRow(idx) {
+  extractedItems.splice(idx, 1);
+  renderExtractReview();
+}
+
+async function confirmExtractedItems() {
+  const id = document.getElementById("restId").value;
+  const rows = document.querySelectorAll("#extractItemsList .extract-row");
+  const msgEl = document.getElementById("extractMsg");
+  const confirmBtn = document.getElementById("confirmExtractBtn");
+
+  const itemsToAdd = Array.from(rows)
+    .map((row) => ({
+      name: row.querySelector(".x-name").value.trim(),
+      price: Number(row.querySelector(".x-price").value),
+    }))
+    .filter((item) => item.name && item.price > 0);
+
+  if (itemsToAdd.length === 0) {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "Koi valid item nahi bacha add karne ke liye.";
+    return;
+  }
+
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = "Add ho raha hai...";
+
+  let successCount = 0;
+  for (const item of itemsToAdd) {
+    try {
+      const res = await adminFetch(`${API}/menu`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: item.name, price: item.price, restaurantId: id }),
+      });
+      if (res.ok) successCount++;
+    } catch (e) {
+      // ek item fail ho to baaki continue karte hain
+    }
+  }
+
+  msgEl.style.color = "var(--green)";
+  msgEl.textContent = `✅ ${successCount} item(s) menu mein add ho gaye. Menu Management page par ja kar confirm kar sakte hain.`;
+  extractedItems = [];
+  document.getElementById("extractReviewWrap").style.display = "none";
+}
 
 // ---------- Sales report ----------
 async function loadSalesReport() {

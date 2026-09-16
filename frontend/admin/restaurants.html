@@ -7,6 +7,10 @@
 <title>Restaurants - SachBite Admin</title>
 <link rel="stylesheet" href="../css/dashboard.css" />
 <style>
+  .extract-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .extract-row input[type="text"] { flex: 2; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; }
+  .extract-row input[type="number"] { width:80px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; }
+  .extract-row .btn-remove-row { background:none; border:none; color:var(--red); font-size:16px; cursor:pointer; padding:4px 8px; }
   .rest-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; margin-bottom: 30px; }
   .rest-admin-card { background:#fff; border:1px solid var(--border); border-radius: var(--radius); padding: 18px; }
   .rest-admin-top { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
@@ -126,6 +130,13 @@
         <button type="button" class="btn-del-menu" id="deleteMenuPdfBtn" style="display:none;">🗑️ PDF Hatayein</button>
       </div>
       <div id="menuPdfMsg" style="font-size:12px; font-weight:600; margin-top:4px;"></div>
+
+      <button type="button" class="btn-edit-menu" id="extractMenuPdfBtn" style="display:none; margin-top:10px;">🔍 Extract Menu Items from PDF</button>
+      <div id="extractMsg" style="font-size:12px; font-weight:600; margin-top:6px;"></div>
+      <div id="extractReviewWrap" style="display:none; margin-top:12px; border:1px solid var(--border); border-radius:10px; padding:12px;">
+        <p style="font-size:12px; color:var(--text-gray); margin-bottom:10px;">⚠️ Yeh automatic guess hai — har item ka naam/price check/edit kar lein, phir "Add to Menu" dabayein. Galat guess wale rows ko "✕" se hata dein.</p>
+        <div id="extractItemsList"></div>
+      </div>
     </div>
 
     <div class="modal-actions">

@@ -22,7 +22,7 @@ async function loadMenu() {
     const menu = await res.json();
 
     row.innerHTML = menu
-      .filter((item) => item.available !== false)
+      .filter((item) => item.available !== false && !item.restaurantId)
       .map(
         (item) => `
       <div class="category-card" role="button" tabindex="0" onclick="addToCart('${escapeJs(item.name)}', ${item.price})">
