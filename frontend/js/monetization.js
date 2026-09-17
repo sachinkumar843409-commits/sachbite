@@ -34,6 +34,7 @@ async function loadMonetization() {
     }
     if (data.subscriptionPrices) SUBSCRIPTION_PLAN_PRICES = data.subscriptionPrices;
     razorpayReady = !!data.razorpayReady;
+    applyTogglesUI(data);
 
     if (!data.restaurants || data.restaurants.length === 0) {
       wrap.innerHTML = `<p style="color:var(--text-gray); font-size:14px;">Koi restaurant listed nahi hai abhi.</p>`;
@@ -298,6 +299,85 @@ async function payAndActivateRazorpay(id, btn) {
     btn.disabled = false;
   }
 }
+
+// ---------- Coming Soon toggles (Featured promo / Sponsored offers / Plan
+// availability) — admin yahin se on/off karta hai, koi code change nahi
+// chahiye. Off rehne par card "Coming Soon" dikhata hai. ----------
+function applyTogglesUI(data) {
+  document.getElementById("toggleFeaturedPromo").checked = data.featuredPromoEnabled;
+  document.getElementById("toggleSponsoredOffers").checked = data.sponsoredOffersEnabled;
+  document.getElementById("togglePlanPro").checked = data.planProAvailable;
+  document.getElementById("togglePlanBusiness").checked = data.planBusinessAvailable;
+
+  setPromoCardState("featuredPromo", data.featuredPromoEnabled);
+  setPromoCardState("sponsoredOffers", data.sponsoredOffersEnabled);
+
+  document.getElementById("planProPriceText").textContent = `₹${SUBSCRIPTION_PLAN_PRICES.pro}`;
+  document.getElementById("planBusinessPriceText").textContent = `₹${SUBSCRIPTION_PLAN_PRICES.business}`;
+  setPlanCardState("planPro", data.planProAvailable);
+  setPlanCardState("planBusiness", data.planBusinessAvailable);
+}
+
+function setPromoCardState(prefix, enabled) {
+  const statusText = document.getElementById(`${prefix}StatusText`);
+  const btn = document.getElementById(`${prefix}Btn`);
+  if (enabled) {
+    statusText.textContent = "Available";
+    statusText.style.color = "#107c38";
+    btn.textContent = "Available — restaurants row mein manage karein";
+    btn.className = "btn-current";
+    btn.disabled = true; // asli activation neeche wali table se hoti hai
+  } else {
+    statusText.textContent = "Coming Soon";
+    statusText.style.color = "";
+    btn.textContent = "Coming Soon";
+    btn.className = "btn-coming-soon";
+    btn.disabled = true;
+  }
+}
+
+function setPlanCardState(prefix, available) {
+  const chip = document.getElementById(`${prefix}StatusChip`);
+  const btn = document.getElementById(`${prefix}Btn`);
+  if (available) {
+    chip.textContent = "Available";
+    chip.className = "plan-status available";
+    btn.textContent = "Available — restaurants row mein manage karein";
+    btn.className = "btn-current";
+  } else {
+    chip.textContent = "Coming Soon";
+    chip.className = "plan-status coming-soon";
+    btn.textContent = "Coming Soon";
+    btn.className = "btn-coming-soon";
+  }
+  btn.disabled = true; // asli plan-activation neeche wali "Monetization Status" table se hoti hai
+}
+
+async function saveToggle(field, checked) {
+  const msg = document.getElementById("togglesSaveMsg");
+  try {
+    const res = await adminFetch(`${API}/admin/monetization/toggles`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: checked }),
+    });
+    if (!res.ok) throw new Error();
+    msg.style.color = "var(--green)";
+    msg.textContent = "✅ Saved.";
+    msg.style.display = "block";
+    setTimeout(() => (msg.style.display = "none"), 2000);
+    loadMonetization();
+  } catch (e) {
+    msg.style.color = "var(--red)";
+    msg.textContent = "❌ Save nahi ho paya.";
+    msg.style.display = "block";
+  }
+}
+
+document.getElementById("toggleFeaturedPromo").addEventListener("change", (e) => saveToggle("featuredPromoEnabled", e.target.checked));
+document.getElementById("toggleSponsoredOffers").addEventListener("change", (e) => saveToggle("sponsoredOffersEnabled", e.target.checked));
+document.getElementById("togglePlanPro").addEventListener("change", (e) => saveToggle("planProAvailable", e.target.checked));
+document.getElementById("togglePlanBusiness").addEventListener("change", (e) => saveToggle("planBusinessAvailable", e.target.checked));
 
 document.getElementById("saveCommissionBtn").addEventListener("click", async () => {
   const btn = document.getElementById("saveCommissionBtn");

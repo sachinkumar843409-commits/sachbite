@@ -38,7 +38,6 @@
     width: 100%; padding: 12px; border-radius: 30px; border: 1.5px solid var(--green);
     background: var(--green-bg); color: #107c38; font-weight: 700; font-size: 14px; cursor: default;
   }
-
   .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
   .plan-card { background: #fff; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; }
   .plan-card.highlight { border-color: var(--primary); box-shadow: var(--shadow); }
@@ -115,7 +114,12 @@
     <!-- B + C) Featured Restaurant / Sponsored Offers -->
     <div class="grid-2">
       <div class="promo-card">
-        <h4>⭐ Featured Restaurant</h4>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <h4>⭐ Featured Restaurant</h4>
+          <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; cursor:pointer;">
+            <input type="checkbox" id="toggleFeaturedPromo" style="width:auto;" /> Live karein
+          </label>
+        </div>
         <div class="sub">Increase your restaurant's visibility on SachBite.</div>
         <ul>
           <li>Featured placement</li>
@@ -123,27 +127,32 @@
           <li>Promotional placement</li>
           <li>Homepage/category visibility when available</li>
         </ul>
-        <div class="promo-price">Coming Soon</div>
-        <button class="btn-coming-soon" disabled>Coming Soon</button>
+        <div class="promo-price" id="featuredPromoStatusText">Coming Soon</div>
+        <button class="btn-coming-soon" id="featuredPromoBtn" disabled>Coming Soon</button>
       </div>
 
       <div class="promo-card">
-        <h4>📣 Sponsored Offers</h4>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <h4>📣 Sponsored Offers</h4>
+          <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; cursor:pointer;">
+            <input type="checkbox" id="toggleSponsoredOffers" style="width:auto;" /> Live karein
+          </label>
+        </div>
         <div class="sub">Promote special offers and reach more customers.</div>
         <ul>
           <li>Sponsored offer placement</li>
           <li>Wider customer reach</li>
           <li>Offer performance visibility (planned)</li>
         </ul>
-        <div class="promo-price">Coming Soon</div>
-        <button class="btn-coming-soon" disabled>Coming Soon</button>
+        <div class="promo-price" id="sponsoredOffersStatusText">Coming Soon</div>
+        <button class="btn-coming-soon" id="sponsoredOffersBtn" disabled>Coming Soon</button>
       </div>
     </div>
 
     <!-- Subscription Plans -->
     <div class="panel">
       <h3>Restaurant Subscription Plans</h3>
-      <div class="sub">In prices ko proposed product-plan prices ke roop mein treat karein — abhi koi payment activate nahi hai.</div>
+      <div class="sub">Restaurant Monetization Status table (neeche) se hi asli payment collect hoti hai — yahan sirf plan ka "Available / Coming Soon" status control karein.</div>
 
       <div class="plans-grid">
         <div class="plan-card">
@@ -162,9 +171,14 @@
         </div>
 
         <div class="plan-card highlight">
-          <div class="plan-name">Pro</div>
-          <div class="plan-status coming-soon">Coming Soon</div>
-          <div class="plan-price">₹499</div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div class="plan-name">Pro</div>
+            <label style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; cursor:pointer;">
+              <input type="checkbox" id="togglePlanPro" style="width:auto;" /> Live
+            </label>
+          </div>
+          <div class="plan-status coming-soon" id="planProStatusChip">Coming Soon</div>
+          <div class="plan-price" id="planProPriceText">₹499</div>
           <div class="plan-period">/month</div>
           <ul>
             <li>Everything in Free</li>
@@ -173,13 +187,18 @@
             <li>Better visibility</li>
             <li>Advanced sales analytics</li>
           </ul>
-          <button class="btn-coming-soon" disabled>Coming Soon</button>
+          <button class="btn-coming-soon" id="planProBtn" disabled>Coming Soon</button>
         </div>
 
         <div class="plan-card">
-          <div class="plan-name">Business</div>
-          <div class="plan-status coming-soon">Coming Soon</div>
-          <div class="plan-price">₹999</div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div class="plan-name">Business</div>
+            <label style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; cursor:pointer;">
+              <input type="checkbox" id="togglePlanBusiness" style="width:auto;" /> Live
+            </label>
+          </div>
+          <div class="plan-status coming-soon" id="planBusinessStatusChip">Coming Soon</div>
+          <div class="plan-price" id="planBusinessPriceText">₹999</div>
           <div class="plan-period">/month</div>
           <ul>
             <li>Everything in Pro</li>
@@ -188,9 +207,10 @@
             <li>Priority visibility</li>
             <li>Additional business tools</li>
           </ul>
-          <button class="btn-coming-soon" disabled>Coming Soon</button>
+          <button class="btn-coming-soon" id="planBusinessBtn" disabled>Coming Soon</button>
         </div>
       </div>
+      <div id="togglesSaveMsg" style="font-size:12.5px; font-weight:600; margin-top:12px; display:none;"></div>
     </div>
 
     <!-- Phase 7: Admin visibility into per-restaurant monetization status -->

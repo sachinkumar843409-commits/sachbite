@@ -1353,6 +1353,10 @@ app.put("/api/settings", requireAdmin, (req, res) => {
     "razorpayEnabled",
     "subscriptionPricePro",
     "subscriptionPriceBusiness",
+    "featuredPromoEnabled",
+    "sponsoredOffersEnabled",
+    "planProAvailable",
+    "planBusinessAvailable",
   ];
   allowedFields.forEach((field) => {
     if (req.body[field] !== undefined) db.settings[field] = req.body[field];
@@ -1679,13 +1683,31 @@ app.get("/api/admin/monetization", requireAdmin, (req, res) => {
     ...checkSubscriptionStatus(r),
   }));
 
+  const s = db.settings || {};
   res.json({
     platformCommissionPercent: getCommissionPercent(db),
     plans: PLANS,
     restaurants,
     subscriptionPrices: getSubscriptionPlanPrices(db),
     razorpayReady: isRazorpayReady(),
+    // In sabko admin yahin se (Monetization page) on/off kar sakta hai —
+    // jab tak off hain, customer/restaurant ko "Coming Soon" dikhta hai.
+    featuredPromoEnabled: !!s.featuredPromoEnabled,
+    sponsoredOffersEnabled: !!s.sponsoredOffersEnabled,
+    planProAvailable: !!s.planProAvailable,
+    planBusinessAvailable: !!s.planBusinessAvailable,
   });
+});
+
+// Admin panel se hi "Coming Soon" wale promo/plan cards on/off karna
+app.put("/api/admin/monetization/toggles", requireAdmin, (req, res) => {
+  const db = readDB();
+  const allowed = ["featuredPromoEnabled", "sponsoredOffersEnabled", "planProAvailable", "planBusinessAvailable"];
+  allowed.forEach((field) => {
+    if (req.body[field] !== undefined) db.settings[field] = !!req.body[field];
+  });
+  writeDB(db);
+  res.json({ success: true });
 });
 
 // Admin: platform-wide commission percent badlein (restaurants isse kabhi nahi badal sakte —
