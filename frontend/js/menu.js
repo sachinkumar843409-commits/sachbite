@@ -18,7 +18,7 @@ function renderMenu() {
       (item) => `
     <div class="menu-item-card">
       <div class="menu-item-top">
-        <div class="menu-item-icon">${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;" />` : item.icon}</div>
+        <div class="menu-item-icon"><img src="${categoryImageUrl(item.name, 120, 120, item.id, item.image)}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;" loading="lazy" /></div>
         <div>
           <div class="menu-item-name">${item.name}</div>
           <div class="menu-item-cat">${item.category}</div>

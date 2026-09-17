@@ -22,6 +22,8 @@ const SKIP_LINE_PATTERNS = [
   /^http/i,
   /^\+?\d[\d\s-]{8,}$/, // phone-number-shaped lines
   /^[-–—_=]{3,}$/, // divider lines
+  /^(contact|contact us|phone|call|mob|mobile)[\s:]/i, // "Contact: 98xxxxxxxx, 99xxxxxxxx" lines
+  /^(gstin|address|pin ?code)[\s:]/i, // restaurant letterhead furniture
 ];
 
 function cleanName(raw) {
@@ -46,7 +48,7 @@ function extractMenuItemsFromText(text) {
   const results = [];
 
   for (const line of lines) {
-    if (line.length < 3 || line.length > 80) continue;
+    if (line.length < 3 || line.length > 100) continue;
     if (SKIP_LINE_PATTERNS.some((p) => p.test(line))) continue;
 
     const match = line.match(PRICE_PATTERN);
@@ -60,7 +62,8 @@ function extractMenuItemsFromText(text) {
     if (/^\d+$/.test(namePart)) continue; // name is just digits — not a real item
 
     results.push({ name: namePart, price, sourceLine: line });
-    if (results.length >= 60) break; // sanity cap for garbled/huge PDFs
+    if (results.length >= 400) break; // sanity cap for garbled/huge PDFs — raised from 60
+    // so full multi-page restaurant menus (200-300+ items) extract completely.
   }
 
   return results;

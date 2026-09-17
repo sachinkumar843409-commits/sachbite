@@ -384,7 +384,7 @@ app.get("/api/restaurants", (req, res) => {
   // hasMenuPdf boolean is enough for the card UI; the full PDF is only sent
   // by /api/restaurants/details (used by the single restaurant detail page).
   const publicRestaurants = db.restaurants.map((r) => {
-    const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd, menuPdfUrl, ...publicFields } = r;
+    const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd, subscriptionPaymentReference, menuPdfUrl, ...publicFields } = r;
     return { ...publicFields, featured: featuredStatus === "active", hasMenuPdf: !!menuPdfUrl };
   });
   res.json(publicRestaurants);
@@ -398,7 +398,7 @@ app.get("/api/restaurants/details", (req, res) => {
   const restaurant = db.restaurants.find((r) => r.name === req.query.name);
   if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
-  const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd, ...publicFields } = restaurant;
+  const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd, subscriptionPaymentReference, ...publicFields } = restaurant;
   res.json({ ...publicFields, featured: featuredStatus === "active" });
 });
 
@@ -492,8 +492,14 @@ app.delete("/api/restaurants/:id/menu-pdf", requireAdmin, (req, res) => {
   restaurant.menuPdfName = null;
   restaurant.menuPdfUploadedAt = null;
 
+  // PDF ke saath-saath usse extract karke banaye gaye is restaurant ke menu
+  // items bhi hata do — warna PDF delete karne ke baad bhi wo purane items
+  // menu mein reh jaate the (customer ko dikhte rehte the).
+  const removedCount = db.menu.filter((m) => m.restaurantId === req.params.id).length;
+  db.menu = db.menu.filter((m) => m.restaurantId !== req.params.id);
+
   writeDB(db);
-  res.json({ success: true });
+  res.json({ success: true, removedMenuItems: removedCount });
 });
 
 // Extract candidate {name, price} items from a restaurant's already-uploaded
@@ -650,6 +656,41 @@ app.post("/api/payment/verify", (req, res) => {
 
   const verified = expectedSignature === razorpay_signature;
   res.json({ verified });
+});
+
+// ---------- SUBSCRIPTION PAYMENT (restaurant plan upgrade) ----------
+// Customer order checkout jaisa hi "UPI Direct" tareeka — koi payment gateway
+// nahi, restaurant business UPI ID par pay karta hai (QR scan karke), aur UTR
+// (transaction reference) daalta hai. Admin panel me admin ye UTR verify karke
+// subscription activate karta hai — bilkul customer checkout ke UPI (Direct)
+// flow jaisa (upar /api/payment se bilkul alag, isme Razorpay involved nahi hai).
+const SUBSCRIPTION_PLAN_PRICES = { free: 0, pro: 499, business: 1499 }; // INR / month
+
+app.post("/api/admin/monetization/:id/activate-upi", requireAdmin, (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.params.id);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+  const { plan, upiReference } = req.body;
+  const amount = SUBSCRIPTION_PLAN_PRICES[plan];
+  if (amount === undefined) return res.status(400).json({ error: "Invalid plan" });
+  if (amount <= 0) return res.status(400).json({ error: "Free plan ke liye payment ki zaroorat nahi hai" });
+  if (!upiReference || !/^\d{12}$/.test(upiReference)) {
+    return res.status(400).json({ error: "UTR number sahi 12-digit ka hona chahiye" });
+  }
+
+  const start = new Date();
+  const end = new Date(start);
+  end.setDate(end.getDate() + 30); // 30-din subscription cycle
+
+  restaurant.subscriptionPlan = plan;
+  restaurant.subscriptionStatus = "active";
+  restaurant.subscriptionStart = start.toISOString();
+  restaurant.subscriptionEnd = end.toISOString();
+  restaurant.subscriptionPaymentReference = upiReference; // audit ke liye — kis UTR se activate hua
+  writeDB(db);
+
+  res.json({ success: true, restaurant });
 });
 
 // ---------- ORDERS ----------

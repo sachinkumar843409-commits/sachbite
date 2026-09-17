@@ -219,12 +219,17 @@ document.getElementById("uploadMenuPdfBtn").addEventListener("click", async () =
 document.getElementById("deleteMenuPdfBtn").addEventListener("click", async () => {
   const id = document.getElementById("restId").value;
   if (!id) return;
-  if (!confirm("Kya aap is restaurant ki menu PDF hatana chahte hain?")) return;
+  if (!confirm("Kya aap is restaurant ki menu PDF hatana chahte hain? Isse extract karke jo bhi items is restaurant mein add hue the, wo bhi hat jaayenge.")) return;
 
-  await adminFetch(`${API}/restaurants/${id}/menu-pdf`, { method: "DELETE" });
+  const res = await adminFetch(`${API}/restaurants/${id}/menu-pdf`, { method: "DELETE" });
+  const data = await res.json().catch(() => ({}));
   await loadRestaurants();
-  const updated = currentRestaurants.find((x) => x.id === id);
-  if (updated) renderMenuPdfStatus(updated);
+  renderMenuPdfStatus({});
+  const msgEl = document.getElementById("menuPdfMsg");
+  msgEl.style.color = "var(--green)";
+  msgEl.textContent = data.removedMenuItems
+    ? `✅ PDF hata di gayi. ${data.removedMenuItems} menu item(s) bhi saath mein hata diye gaye.`
+    : "✅ PDF hata di gayi.";
 });
 
 let extractedItems = [];
