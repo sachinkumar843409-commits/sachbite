@@ -26,6 +26,7 @@ async function loadRestaurantPage() {
   document.title = `${restaurant.name} - SachBite`;
   document.getElementById("restBannerImg").src = restaurantImageUrl(restaurant.name, 1200, 400, 1, restaurant.image);
   document.getElementById("restName").textContent = restaurant.name;
+  document.getElementById("restSponsoredBanner").style.display = restaurant.sponsored ? "block" : "none";
   document.getElementById("restTags").textContent = restaurant.tags;
   if (restaurant.rating) {
     document.getElementById("restRating").textContent = `⭐ ${restaurant.rating} (${restaurant.reviews})`;

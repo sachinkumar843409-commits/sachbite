@@ -49,6 +49,7 @@ async function loadMonetization() {
         <td><select class="f-plan" aria-label="Subscription plan for ${escapeHtml(r.name)}">${optionsHTML(PLAN_OPTIONS, r.subscriptionPlan)}</select></td>
         <td><select class="f-status" aria-label="Subscription status for ${escapeHtml(r.name)}">${optionsHTML(STATUS_OPTIONS, r.subscriptionStatus)}</select></td>
         <td><select class="f-featured" aria-label="Featured status for ${escapeHtml(r.name)}">${optionsHTML(STATUS_OPTIONS, r.featuredStatus)}</select></td>
+        <td><select class="f-sponsored" aria-label="Sponsored status for ${escapeHtml(r.name)}">${optionsHTML(STATUS_OPTIONS, r.sponsoredStatus)}</select></td>
         <td><input type="date" class="f-start" aria-label="Subscription start date for ${escapeHtml(r.name)}" value="${toDateInputValue(r.subscriptionStart)}" /></td>
         <td><input type="date" class="f-end" aria-label="Subscription end date for ${escapeHtml(r.name)}" value="${toDateInputValue(r.subscriptionEnd)}" /></td>
         <td>
@@ -71,6 +72,7 @@ async function loadMonetization() {
             <th>Current Plan</th>
             <th>Subscription Status</th>
             <th>Featured Status</th>
+            <th>Sponsored Status</th>
             <th>Start</th>
             <th>End</th>
             <th>Action</th>
@@ -90,6 +92,7 @@ async function saveRestaurantMonetization(id, btn) {
     subscriptionPlan: row.querySelector(".f-plan").value,
     subscriptionStatus: row.querySelector(".f-status").value,
     featuredStatus: row.querySelector(".f-featured").value,
+    sponsoredStatus: row.querySelector(".f-sponsored").value,
     subscriptionStart: row.querySelector(".f-start").value || null,
     subscriptionEnd: row.querySelector(".f-end").value || null,
   };

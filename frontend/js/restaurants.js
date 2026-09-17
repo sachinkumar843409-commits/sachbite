@@ -18,6 +18,8 @@ function renderRestaurants(list) {
       <a href="restaurant.html?name=${encodeURIComponent(r.name)}">
         <div class="restaurant-img">
           <img src="${restaurantImageUrl(r.name, 500, 340, i + 1, r.image)}" alt="${escapeHtml(r.name)}" loading="lazy" />
+          ${r.featured ? `<div class="bestseller-badge" style="background:linear-gradient(90deg,#ffb703,#fb8500);">⭐ Featured</div>` : ""}
+          ${r.sponsored ? `<div class="bestseller-badge" style="top:auto; bottom:10px; left:10px; background:linear-gradient(90deg,#dc2626,#b91c1c);">🏆 Top Seller Best Food</div>` : ""}
           <div class="heart">🤍</div>
         </div>
         <div class="restaurant-body">

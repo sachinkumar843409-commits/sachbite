@@ -97,7 +97,7 @@ const VALID_FEATURED_STATUSES = ["active", "inactive", "pending"];
 function setRestaurantMonetization(restaurant, updates) {
   if (!restaurant) return { ok: false, error: "Restaurant not found" };
 
-  const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd } = updates || {};
+  const { subscriptionPlan, subscriptionStatus, featuredStatus, sponsoredStatus, subscriptionStart, subscriptionEnd } = updates || {};
 
   if (subscriptionPlan !== undefined) {
     if (!VALID_PLANS.includes(subscriptionPlan)) return { ok: false, error: "Invalid subscriptionPlan" };
@@ -110,6 +110,10 @@ function setRestaurantMonetization(restaurant, updates) {
   if (featuredStatus !== undefined) {
     if (!VALID_FEATURED_STATUSES.includes(featuredStatus)) return { ok: false, error: "Invalid featuredStatus" };
     restaurant.featuredStatus = featuredStatus;
+  }
+  if (sponsoredStatus !== undefined) {
+    if (!VALID_FEATURED_STATUSES.includes(sponsoredStatus)) return { ok: false, error: "Invalid sponsoredStatus" };
+    restaurant.sponsoredStatus = sponsoredStatus;
   }
   if (subscriptionStart !== undefined) restaurant.subscriptionStart = subscriptionStart || null;
   if (subscriptionEnd !== undefined) restaurant.subscriptionEnd = subscriptionEnd || null;
@@ -164,6 +168,7 @@ function checkSubscriptionStatus(restaurant) {
     subscriptionPlan: restaurant.subscriptionPlan || "free",
     subscriptionStatus: restaurant.subscriptionStatus || "active",
     featuredStatus: restaurant.featuredStatus || "inactive",
+    sponsoredStatus: restaurant.sponsoredStatus || "inactive",
     subscriptionStart: restaurant.subscriptionStart || null,
     subscriptionEnd: restaurant.subscriptionEnd || null,
   };

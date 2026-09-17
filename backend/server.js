@@ -415,8 +415,8 @@ app.get("/api/restaurants", (req, res) => {
   // hasMenuPdf boolean is enough for the card UI; the full PDF is only sent
   // by /api/restaurants/details (used by the single restaurant detail page).
   const publicRestaurants = db.restaurants.map((r) => {
-    const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd, subscriptionPaymentReference, menuPdfUrl, ...publicFields } = r;
-    return { ...publicFields, featured: featuredStatus === "active", hasMenuPdf: !!menuPdfUrl };
+    const { subscriptionPlan, subscriptionStatus, featuredStatus, sponsoredStatus, subscriptionStart, subscriptionEnd, subscriptionPaymentReference, menuPdfUrl, ...publicFields } = r;
+    return { ...publicFields, featured: featuredStatus === "active", sponsored: sponsoredStatus === "active", hasMenuPdf: !!menuPdfUrl };
   });
   res.json(publicRestaurants);
 });
@@ -429,8 +429,8 @@ app.get("/api/restaurants/details", (req, res) => {
   const restaurant = db.restaurants.find((r) => r.name === req.query.name);
   if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
-  const { subscriptionPlan, subscriptionStatus, featuredStatus, subscriptionStart, subscriptionEnd, subscriptionPaymentReference, ...publicFields } = restaurant;
-  res.json({ ...publicFields, featured: featuredStatus === "active" });
+  const { subscriptionPlan, subscriptionStatus, featuredStatus, sponsoredStatus, subscriptionStart, subscriptionEnd, subscriptionPaymentReference, ...publicFields } = restaurant;
+  res.json({ ...publicFields, featured: featuredStatus === "active", sponsored: sponsoredStatus === "active" });
 });
 
 // Add a new restaurant (Admin > Restaurants)
@@ -459,6 +459,7 @@ app.post("/api/restaurants", requireAdmin, (req, res) => {
     subscriptionPlan: "free",
     subscriptionStatus: "active",
     featuredStatus: "inactive",
+    sponsoredStatus: "inactive",
     subscriptionStart: null,
     subscriptionEnd: null,
   };
