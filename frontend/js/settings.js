@@ -28,7 +28,66 @@ async function loadSettings() {
   document.getElementById("deliveryTimeMax").value = s.deliveryTimeMax ?? "";
   document.getElementById("udyamNumber").value = s.udyamNumber || "";
   document.getElementById("fssaiNumber").value = s.fssaiNumber || "";
+
+  document.getElementById("razorpayEnabled").checked = !!s.razorpayEnabled;
+  document.getElementById("subscriptionPricePro").value = s.subscriptionPricePro ?? 499;
+  document.getElementById("subscriptionPriceBusiness").value = s.subscriptionPriceBusiness ?? 1499;
+  const badge = document.getElementById("rzpStatusBadge");
+  if (s.razorpayReady) {
+    badge.textContent = "🟢 Live";
+    badge.style.background = "#dcfce7";
+    badge.style.color = "#16a34a";
+  } else {
+    badge.textContent = "🟡 Coming Soon";
+    badge.style.background = "#fef3c7";
+    badge.style.color = "#b45309";
+  }
 }
+
+document.getElementById("saveRazorpayBtn").addEventListener("click", async () => {
+  const successMsg = document.getElementById("razorpaySuccess");
+  const errorMsg = document.getElementById("razorpayError");
+  successMsg.style.display = "none";
+  errorMsg.style.display = "none";
+
+  const body = {
+    razorpayEnabled: document.getElementById("razorpayEnabled").checked,
+    razorpayKeyId: document.getElementById("razorpayKeyId").value.trim(),
+    razorpayKeySecret: document.getElementById("razorpayKeySecret").value.trim(),
+  };
+
+  const res = await adminFetch(`${API}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+
+  if (res.ok) {
+    document.getElementById("razorpayKeySecret").value = "";
+    successMsg.style.display = "block";
+    setTimeout(() => (successMsg.style.display = "none"), 2500);
+    loadSettings();
+  } else {
+    errorMsg.textContent = "❌ " + (data.error || "Kuch galat ho gaya.");
+    errorMsg.style.display = "block";
+  }
+});
+
+document.getElementById("saveSubPricesBtn").addEventListener("click", async () => {
+  const body = {
+    subscriptionPricePro: Number(document.getElementById("subscriptionPricePro").value),
+    subscriptionPriceBusiness: Number(document.getElementById("subscriptionPriceBusiness").value),
+  };
+  await adminFetch(`${API}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const msg = document.getElementById("subPricesSuccess");
+  msg.style.display = "block";
+  setTimeout(() => (msg.style.display = "none"), 2500);
+});
 
 document.getElementById("saveUpiBtn").addEventListener("click", async () => {
   const body = {

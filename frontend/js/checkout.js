@@ -20,6 +20,17 @@ fetch(`${API}/settings`)
     if (document.getElementById("upiDirectBox").classList.contains("show")) {
       updateUpiDirectDetails();
     }
+
+    // Razorpay (Credit/Debit Card) — jab tak admin panel se enable/configure
+    // na ho, ye option "Coming Soon" dikhta hai aur select nahi ho sakta.
+    const cardRadio = document.getElementById("cardPaymentRadio");
+    const cardOpt = document.getElementById("cardPaymentOpt");
+    if (!s.razorpayReady) {
+      cardRadio.disabled = true;
+      cardOpt.style.opacity = "0.55";
+      cardOpt.style.cursor = "not-allowed";
+      document.getElementById("cardComingSoonBadge").style.display = "inline-block";
+    }
   })
   .catch(() => {});
 

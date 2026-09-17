@@ -2,6 +2,8 @@ const API = "/api";
 
 const PLAN_OPTIONS = ["free", "pro", "business"];
 const STATUS_OPTIONS = ["active", "inactive", "pending"];
+let SUBSCRIPTION_PLAN_PRICES = { free: 0, pro: 499, business: 1499 };
+let razorpayReady = false;
 
 function optionsHTML(list, selected) {
   return list
@@ -30,6 +32,8 @@ async function loadMonetization() {
       commissionDisplay.textContent = `${data.platformCommissionPercent}%`;
       commissionInput.value = data.platformCommissionPercent;
     }
+    if (data.subscriptionPrices) SUBSCRIPTION_PLAN_PRICES = data.subscriptionPrices;
+    razorpayReady = !!data.razorpayReady;
 
     if (!data.restaurants || data.restaurants.length === 0) {
       wrap.innerHTML = `<p style="color:var(--text-gray); font-size:14px;">Koi restaurant listed nahi hai abhi.</p>`;
@@ -48,7 +52,10 @@ async function loadMonetization() {
         <td><input type="date" class="f-end" aria-label="Subscription end date for ${escapeHtml(r.name)}" value="${toDateInputValue(r.subscriptionEnd)}" /></td>
         <td>
           <button class="btn-save-mon" onclick="saveRestaurantMonetization('${r.id}', this)">Save</button>
-          <button class="btn-save-mon" style="background:#16a34a;" onclick="payAndActivate('${r.id}', this)">💳 Pay &amp; Activate</button>
+          <button class="btn-save-mon" style="background:#16a34a;" onclick="payAndActivateUpi('${r.id}', this)">📱 Pay via UPI</button>
+          <button class="btn-save-mon" style="background:${razorpayReady ? "#3b82f6" : "#9ca3af"};" onclick="payAndActivateRazorpay('${r.id}', this)" ${razorpayReady ? "" : 'title="Settings page se Razorpay enable karein"'}>
+            💳 Razorpay${razorpayReady ? "" : " (Coming Soon)"}
+          </button>
           <span class="row-save-msg" style="font-size:11px; font-weight:600; margin-left:6px;"></span>
         </td>
       </tr>`
@@ -108,11 +115,11 @@ async function saveRestaurantMonetization(id, btn) {
   }
 }
 
-// ---------- Subscription payment (UPI Direct — same tareeka jo customer
-// order checkout me use hota hai: business UPI QR par restaurant pay karta
-// hai, phir UTR number admin yahan verify karke subscription activate karta
-// hai. Koi payment gateway involved nahi.) ----------
-const SUBSCRIPTION_PLAN_PRICES = { free: 0, pro: 499, business: 1499 };
+// ---------- Subscription payment ----------
+// Do options: (1) UPI Direct — hamesha available, customer checkout jaisa hi
+// tareeka (QR + UTR, admin verify karta hai). (2) Razorpay — sirf tab jab
+// Settings page se admin ne enable + Key ID/Secret configure kiya ho, warna
+// button "Coming Soon" dikhta hai aur disabled rehta hai.
 let businessUpiId = "";
 let businessUpiName = "SachBite";
 
@@ -124,7 +131,7 @@ fetch(`${API}/settings`)
   })
   .catch(() => {});
 
-function payAndActivate(id, btn) {
+function payAndActivateUpi(id, btn) {
   const row = btn.closest("tr");
   const msgEl = row.querySelector(".row-save-msg");
   const plan = row.querySelector(".f-plan").value;
@@ -203,6 +210,92 @@ async function confirmUpiPayment(id, plan, btn) {
     msgEl.textContent = "❌ " + e.message;
     btn.disabled = false;
     btn.textContent = "✅ Confirm Payment";
+  }
+}
+
+// Razorpay se activate — sirf tab kaam karega jab Settings se enable ho.
+async function payAndActivateRazorpay(id, btn) {
+  const row = btn.closest("tr");
+  const msgEl = row.querySelector(".row-save-msg");
+  const plan = row.querySelector(".f-plan").value;
+
+  if (!razorpayReady) {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "Razorpay abhi 'Coming Soon' hai — Settings page se enable karein (Key ID/Secret daal kar), ya UPI (Direct) use karein.";
+    return;
+  }
+  if (plan === "free") {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "Free plan ke liye payment nahi chahiye — seedha 'Save' dabayein.";
+    return;
+  }
+  if (typeof Razorpay === "undefined") {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "Payment widget load nahi hui. Page refresh karke try karein.";
+    return;
+  }
+
+  btn.disabled = true;
+  msgEl.style.color = "var(--text-gray)";
+  msgEl.textContent = "Payment window khul raha hai...";
+
+  try {
+    const orderRes = await adminFetch(`${API}/admin/monetization/${id}/pay/create-order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    const orderData = await orderRes.json();
+    if (!orderRes.ok) throw new Error(orderData.error || "Payment order nahi ban paya");
+
+    const options = {
+      key: orderData.keyId,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      name: "SachBite",
+      description: `Subscription — ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (30 din)`,
+      order_id: orderData.orderId,
+      theme: { color: "#ff7a1a" },
+      handler: async function (response) {
+        msgEl.textContent = "Payment verify ho raha hai...";
+        try {
+          const verifyRes = await adminFetch(`${API}/admin/monetization/${id}/pay/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              plan,
+            }),
+          });
+          const verifyData = await verifyRes.json();
+          if (verifyData.verified) {
+            msgEl.style.color = "var(--green)";
+            msgEl.textContent = "✅ Payment safal — subscription active ho gayi.";
+            loadMonetization();
+          } else {
+            msgEl.style.color = "var(--red)";
+            msgEl.textContent = "❌ Payment verify nahi ho paya.";
+          }
+        } finally {
+          btn.disabled = false;
+        }
+      },
+      modal: { ondismiss: function () { btn.disabled = false; msgEl.textContent = ""; } },
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.on("payment.failed", function (response) {
+      msgEl.style.color = "var(--red)";
+      msgEl.textContent = "❌ Payment fail: " + (response.error.description || "dobara try karein");
+      btn.disabled = false;
+    });
+    rzp.open();
+  } catch (e) {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "❌ " + e.message;
+    btn.disabled = false;
   }
 }
 

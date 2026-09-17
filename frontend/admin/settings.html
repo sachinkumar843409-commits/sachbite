@@ -180,6 +180,43 @@
       </div>
 
       <div class="panel">
+        <h3>💳 Razorpay Payment Gateway <span id="rzpStatusBadge" style="font-size:11px; font-weight:700; padding:3px 8px; border-radius:10px; margin-left:6px;"></span></h3>
+        <p style="font-size:12.5px; color:var(--text-gray); margin-top:-12px; margin-bottom:14px;">Card/Net-Banking ke liye Razorpay. Jab tak yahan Key ID + Key Secret daal kar "Enable" na karein, customer checkout aur subscription payment me ye option "Coming Soon" dikhega — UPI (Direct) tab bhi kaam karta rahega.</p>
+        <div class="form-group">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="razorpayEnabled" style="width:auto;" />
+            Razorpay Enable karein
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="razorpayKeyId">Razorpay Key ID</label>
+          <input type="text" id="razorpayKeyId" placeholder="rzp_live_xxxxxxxxxxxx" />
+        </div>
+        <div class="form-group">
+          <label for="razorpayKeySecret">Razorpay Key Secret</label>
+          <input type="password" id="razorpayKeySecret" placeholder="Naya secret daalne ke liye hi type karein — khaali chhodne par purana wahi rahega" />
+        </div>
+        <button class="btn-save-settings" id="saveRazorpayBtn">Save Razorpay Settings</button>
+        <div class="success-msg" id="razorpaySuccess">✅ Razorpay settings saved!</div>
+        <div class="error-msg" id="razorpayError"></div>
+      </div>
+
+      <div class="panel">
+        <h3>💎 Subscription Plan Prices</h3>
+        <p style="font-size:12.5px; color:var(--text-gray); margin-top:-12px; margin-bottom:14px;">Restaurants ke liye Pro/Business plan ki monthly price — Monetization page par payment isi price par collect hoga.</p>
+        <div class="form-group">
+          <label for="subscriptionPricePro">Pro Plan (₹ / month)</label>
+          <input type="number" id="subscriptionPricePro" min="0" placeholder="499" />
+        </div>
+        <div class="form-group">
+          <label for="subscriptionPriceBusiness">Business Plan (₹ / month)</label>
+          <input type="number" id="subscriptionPriceBusiness" min="0" placeholder="1499" />
+        </div>
+        <button class="btn-save-settings" id="saveSubPricesBtn">Save Plan Prices</button>
+        <div class="success-msg" id="subPricesSuccess">✅ Plan prices updated!</div>
+      </div>
+
+      <div class="panel">
         <h3>🔒 Change Admin Password</h3>
         <div class="form-group">
           <label for="currentPassword">Current Password</label>

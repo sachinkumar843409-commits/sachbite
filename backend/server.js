@@ -113,6 +113,37 @@ const razorpay = new Razorpay({
   key_secret: razorpayKeys.KEY_SECRET || "placeholder_secret",
 });
 
+// ---------- Razorpay: admin-panel se configure/activate hone wala ----------
+// Pehle Razorpay sirf environment variables (Render > Environment) se on hota
+// tha — har baar keys badalne ke liye redeploy chahiye hota tha. Ab admin
+// Settings page se hi Key ID/Secret daal kar, "Enable" karke turant activate
+// kar sakta hai (koi redeploy nahi chahiye). Jab tak enable na ho, poore app
+// me Razorpay wala payment option "Coming Soon" dikhta hai.
+//
+// Priority: DB settings (admin panel se) > environment variables (purana
+// tareeka, sirf tab jab admin ne panel se kabhi kuch set hi nahi kiya).
+function getRazorpayClient() {
+  const db = readDB();
+  const s = db.settings || {};
+
+  if (s.razorpayEnabled && s.razorpayKeyId && s.razorpayKeySecret) {
+    return { client: new Razorpay({ key_id: s.razorpayKeyId, key_secret: s.razorpayKeySecret }), keyId: s.razorpayKeyId, keySecret: s.razorpayKeySecret };
+  }
+
+  // Fallback: sirf tab jab admin panel se kabhi Razorpay explicitly
+  // enable/disable set hi nahi hui (purane env-var-based setup ko na todne
+  // ke liye), aur env me asli (non-placeholder) keys mojood hain.
+  if (s.razorpayEnabled === undefined && razorpayKeys.KEY_ID && razorpayKeys.KEY_SECRET) {
+    return { client: razorpay, keyId: razorpayKeys.KEY_ID, keySecret: razorpayKeys.KEY_SECRET };
+  }
+
+  return null; // Razorpay abhi configure/enable nahi hai — "Coming Soon"
+}
+
+function isRazorpayReady() {
+  return getRazorpayClient() !== null;
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, "db.json");
@@ -589,6 +620,11 @@ app.get("/api/analytics/payment-methods", (req, res) => {
 // Step 1: Frontend cart total ke liye ek Razorpay "order" banao
 app.post("/api/payment/create-order", async (req, res) => {
   try {
+    const rzp = getRazorpayClient();
+    if (!rzp) {
+      return res.status(400).json({ error: "Card/UPI gateway payment abhi enable nahi hai. Cash on Delivery ya UPI (Direct) use karein." });
+    }
+
     const db = readDB();
     const { items, couponCode } = req.body;
 
@@ -623,7 +659,7 @@ app.post("/api/payment/create-order", async (req, res) => {
       return res.status(400).json({ error: "Valid amount zaroori hai" });
     }
 
-    const razorpayOrder = await razorpay.orders.create({
+    const razorpayOrder = await rzp.client.orders.create({
       amount: Math.round(amount * 100), // Razorpay paise me leta hai
       currency: "INR",
       receipt: "sachbite_" + Date.now(),
@@ -633,7 +669,7 @@ app.post("/api/payment/create-order", async (req, res) => {
       orderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
-      keyId: razorpayKeys.KEY_ID, // Yeh public/safe hai, frontend me use hoti hai
+      keyId: rzp.keyId, // Yeh public/safe hai, frontend me use hoti hai
     });
   } catch (err) {
     console.error("Razorpay order create error:", err);
@@ -643,6 +679,9 @@ app.post("/api/payment/create-order", async (req, res) => {
 
 // Step 2: Payment complete hone ke baad signature verify karo (fraud/tampering se bachne ke liye)
 app.post("/api/payment/verify", (req, res) => {
+  const rzp = getRazorpayClient();
+  if (!rzp) return res.status(400).json({ verified: false, error: "Razorpay abhi enable nahi hai" });
+
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -650,7 +689,7 @@ app.post("/api/payment/verify", (req, res) => {
   }
 
   const expectedSignature = crypto
-    .createHmac("sha256", razorpayKeys.KEY_SECRET)
+    .createHmac("sha256", rzp.keySecret)
     .update(`${razorpay_order_id}|${razorpay_payment_id}`)
     .digest("hex");
 
@@ -659,12 +698,20 @@ app.post("/api/payment/verify", (req, res) => {
 });
 
 // ---------- SUBSCRIPTION PAYMENT (restaurant plan upgrade) ----------
-// Customer order checkout jaisa hi "UPI Direct" tareeka — koi payment gateway
-// nahi, restaurant business UPI ID par pay karta hai (QR scan karke), aur UTR
-// (transaction reference) daalta hai. Admin panel me admin ye UTR verify karke
-// subscription activate karta hai — bilkul customer checkout ke UPI (Direct)
-// flow jaisa (upar /api/payment se bilkul alag, isme Razorpay involved nahi hai).
-const SUBSCRIPTION_PLAN_PRICES = { free: 0, pro: 499, business: 1499 }; // INR / month
+// Do tareeke: (1) UPI Direct — restaurant business UPI par pay karta hai, UTR
+// admin verify karta hai (Razorpay involved nahi). (2) Razorpay — sirf tab
+// available jab admin Settings se Razorpay enable + configure kare, warna
+// "Coming Soon". Plan prices bhi Settings se admin khud badal sakta hai.
+const DEFAULT_SUBSCRIPTION_PRICES = { pro: 499, business: 1499 };
+
+function getSubscriptionPlanPrices(db) {
+  const s = db.settings || {};
+  return {
+    free: 0,
+    pro: Number(s.subscriptionPricePro) || DEFAULT_SUBSCRIPTION_PRICES.pro,
+    business: Number(s.subscriptionPriceBusiness) || DEFAULT_SUBSCRIPTION_PRICES.business,
+  };
+}
 
 app.post("/api/admin/monetization/:id/activate-upi", requireAdmin, (req, res) => {
   const db = readDB();
@@ -672,7 +719,7 @@ app.post("/api/admin/monetization/:id/activate-upi", requireAdmin, (req, res) =>
   if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
   const { plan, upiReference } = req.body;
-  const amount = SUBSCRIPTION_PLAN_PRICES[plan];
+  const amount = getSubscriptionPlanPrices(db)[plan];
   if (amount === undefined) return res.status(400).json({ error: "Invalid plan" });
   if (amount <= 0) return res.status(400).json({ error: "Free plan ke liye payment ki zaroorat nahi hai" });
   if (!upiReference || !/^\d{12}$/.test(upiReference)) {
@@ -691,6 +738,69 @@ app.post("/api/admin/monetization/:id/activate-upi", requireAdmin, (req, res) =>
   writeDB(db);
 
   res.json({ success: true, restaurant });
+});
+
+// Razorpay se subscription activate karna — sirf tab kaam karega jab admin
+// panel (Settings) se Razorpay enable + Key ID/Secret configure ho chuke hon.
+app.post("/api/admin/monetization/:id/pay/create-order", requireAdmin, async (req, res) => {
+  try {
+    const rzp = getRazorpayClient();
+    if (!rzp) return res.status(400).json({ error: "Razorpay abhi 'Coming Soon' hai — Settings se enable karein, ya UPI (Direct) use karein." });
+
+    const db = readDB();
+    const restaurant = db.restaurants.find((r) => r.id === req.params.id);
+    if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+    const { plan } = req.body;
+    const amount = getSubscriptionPlanPrices(db)[plan];
+    if (amount === undefined) return res.status(400).json({ error: "Invalid plan" });
+    if (amount <= 0) return res.status(400).json({ error: "Free plan ke liye payment ki zaroorat nahi hai" });
+
+    const razorpayOrder = await rzp.client.orders.create({
+      amount: Math.round(amount * 100),
+      currency: "INR",
+      receipt: "sachbite_sub_" + Date.now(),
+    });
+
+    res.json({ orderId: razorpayOrder.id, amount: razorpayOrder.amount, currency: razorpayOrder.currency, keyId: rzp.keyId, plan });
+  } catch (err) {
+    console.error("Subscription Razorpay order create error:", err);
+    res.status(500).json({ error: "Payment order nahi ban paya." });
+  }
+});
+
+app.post("/api/admin/monetization/:id/pay/verify", requireAdmin, (req, res) => {
+  const rzp = getRazorpayClient();
+  if (!rzp) return res.status(400).json({ verified: false, error: "Razorpay abhi enable nahi hai" });
+
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.params.id);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, plan } = req.body;
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !plan) {
+    return res.status(400).json({ verified: false, error: "Payment details incomplete hain" });
+  }
+
+  const expectedSignature = crypto
+    .createHmac("sha256", rzp.keySecret)
+    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+    .digest("hex");
+
+  if (expectedSignature !== razorpay_signature) return res.json({ verified: false });
+
+  const start = new Date();
+  const end = new Date(start);
+  end.setDate(end.getDate() + 30);
+
+  restaurant.subscriptionPlan = plan;
+  restaurant.subscriptionStatus = "active";
+  restaurant.subscriptionStart = start.toISOString();
+  restaurant.subscriptionEnd = end.toISOString();
+  restaurant.subscriptionPaymentReference = razorpay_payment_id;
+  writeDB(db);
+
+  res.json({ verified: true, restaurant });
 });
 
 // ---------- ORDERS ----------
@@ -1202,7 +1312,10 @@ app.delete("/api/offers/:id", requireAdmin, (req, res) => {
 // ---------- SETTINGS ----------
 app.get("/api/settings", (req, res) => {
   const db = readDB();
-  const { adminPassword, adminPasswordHash, adminSecurityAnswerHash, ...safeSettings } = db.settings;
+  const { adminPassword, adminPasswordHash, adminSecurityAnswerHash, razorpayKeyId, razorpayKeySecret, ...safeSettings } = db.settings;
+  // razorpayReady = frontend ko sirf itna pata hona chahiye ki option live hai ya
+  // "Coming Soon" dikhana hai — asli keys kabhi client ko nahi bhejte.
+  safeSettings.razorpayReady = isRazorpayReady();
   res.json(safeSettings);
 });
 
@@ -1237,10 +1350,26 @@ app.put("/api/settings", requireAdmin, (req, res) => {
     "deliveryTimeMax",
     "udyamNumber",
     "fssaiNumber",
+    "razorpayEnabled",
+    "subscriptionPricePro",
+    "subscriptionPriceBusiness",
   ];
   allowedFields.forEach((field) => {
     if (req.body[field] !== undefined) db.settings[field] = req.body[field];
   });
+
+  // Razorpay Key ID/Secret alag se handle — khaali bheja gaya to purani value
+  // wahi rehti hai (admin ko baar-baar secret dobara type karne ki zaroorat
+  // nahi, aur secret kabhi front-end ko wapas nahi bheja jaata).
+  if (typeof req.body.razorpayKeyId === "string" && req.body.razorpayKeyId.trim()) {
+    db.settings.razorpayKeyId = req.body.razorpayKeyId.trim();
+  }
+  if (typeof req.body.razorpayKeySecret === "string" && req.body.razorpayKeySecret.trim()) {
+    db.settings.razorpayKeySecret = req.body.razorpayKeySecret.trim();
+  }
+  if (req.body.razorpayEnabled === true && (!db.settings.razorpayKeyId || !db.settings.razorpayKeySecret)) {
+    return res.status(400).json({ error: "Razorpay enable karne se pehle Key ID aur Key Secret dono save karein." });
+  }
 
   // Password change (optional, requires current password match)
   if (req.body.newPassword) {
@@ -1254,7 +1383,8 @@ app.put("/api/settings", requireAdmin, (req, res) => {
   }
 
   writeDB(db);
-  const { adminPassword, adminPasswordHash, adminSecurityAnswerHash, ...safeSettings } = db.settings;
+  const { adminPassword, adminPasswordHash, adminSecurityAnswerHash, razorpayKeyId, razorpayKeySecret, ...safeSettings } = db.settings;
+  safeSettings.razorpayReady = isRazorpayReady();
   res.json(safeSettings);
 });
 
@@ -1553,6 +1683,8 @@ app.get("/api/admin/monetization", requireAdmin, (req, res) => {
     platformCommissionPercent: getCommissionPercent(db),
     plans: PLANS,
     restaurants,
+    subscriptionPrices: getSubscriptionPlanPrices(db),
+    razorpayReady: isRazorpayReady(),
   });
 });
 
