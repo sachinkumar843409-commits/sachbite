@@ -329,6 +329,19 @@ app.post("/api/upload", requireAdmin, (req, res) => {
   });
 });
 
+// Restaurant partner apni profile/menu-item photo khud upload kar sake (admin
+// upload jaisa hi, bas requireAdmin ki jagah requireRestaurantAuth se gated)
+app.post("/api/restaurant/upload", requireRestaurantAuth, (req, res) => {
+  upload.single("image")(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: "Koi image file nahi mili" });
+
+    const base64 = req.file.buffer.toString("base64");
+    const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
+    res.status(201).json({ url: dataUrl });
+  });
+});
+
 // List every image in the media library (newest first) — powers the file manager grid
 app.get("/api/uploads", (req, res) => {
   const db = readDB();
@@ -415,8 +428,8 @@ app.get("/api/restaurants", (req, res) => {
   // hasMenuPdf boolean is enough for the card UI; the full PDF is only sent
   // by /api/restaurants/details (used by the single restaurant detail page).
   const publicRestaurants = db.restaurants.map((r) => {
-    const { subscriptionPlan, subscriptionStatus, featuredStatus, sponsoredStatus, subscriptionStart, subscriptionEnd, subscriptionPaymentReference, menuPdfUrl, ...publicFields } = r;
-    return { ...publicFields, featured: featuredStatus === "active", sponsored: sponsoredStatus === "active", hasMenuPdf: !!menuPdfUrl };
+    const { subscriptionPlan, subscriptionStatus, featuredStatus, sponsoredStatus, subscriptionStart, subscriptionEnd, subscriptionPaymentReference, menuPdfUrl, username, passwordHash, ...publicFields } = r;
+    return { ...publicFields, featured: featuredStatus === "active", sponsored: sponsoredStatus === "active", hasMenuPdf: !!menuPdfUrl, hasLogin: !!username };
   });
   res.json(publicRestaurants);
 });
@@ -429,7 +442,7 @@ app.get("/api/restaurants/details", (req, res) => {
   const restaurant = db.restaurants.find((r) => r.name === req.query.name);
   if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
-  const { subscriptionPlan, subscriptionStatus, featuredStatus, sponsoredStatus, subscriptionStart, subscriptionEnd, subscriptionPaymentReference, ...publicFields } = restaurant;
+  const { subscriptionPlan, subscriptionStatus, featuredStatus, sponsoredStatus, subscriptionStart, subscriptionEnd, subscriptionPaymentReference, username, passwordHash, ...publicFields } = restaurant;
   res.json({ ...publicFields, featured: featuredStatus === "active", sponsored: sponsoredStatus === "active" });
 });
 
@@ -1781,6 +1794,233 @@ app.post("/api/admin/logout", (req, res) => {
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : req.body.token;
   adminSessions.delete(token);
   res.json({ success: true });
+});
+
+// ============================================================
+// RESTAURANT PARTNER LOGIN — har restaurant ka apna alag login/dashboard.
+// Admin (Restaurants page se) restaurant ke liye username/password set karta
+// hai; restaurant khud login karke apna profile/menu/orders/subscription
+// manage karta hai. Ye admin session se bilkul ALAG hai — restaurant ko
+// sirf apne hi restaurant ka data dikhta/badalta hai, kisi aur ka nahi.
+// ============================================================
+let restaurantSessions = new Map(); // token -> { issuedAt, restaurantId }
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, session] of restaurantSessions.entries()) {
+    if (now - session.issuedAt >= SESSION_DURATION_MS) restaurantSessions.delete(token);
+  }
+}, 60 * 60 * 1000);
+
+function requireRestaurantAuth(req, res, next) {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const now = Date.now();
+  const session = token && restaurantSessions.get(token);
+
+  if (session && now - session.issuedAt < SESSION_DURATION_MS) {
+    req.restaurantId = session.restaurantId;
+    return next();
+  }
+  return res.status(401).json({ error: "Restaurant login zaroori hai." });
+}
+
+app.post("/api/restaurant-auth/login", (req, res) => {
+  const db = readDB();
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: "Username aur password zaroori hain." });
+
+  const restaurant = db.restaurants.find(
+    (r) => r.username && r.username.toLowerCase() === username.trim().toLowerCase()
+  );
+  if (!restaurant || !restaurant.passwordHash || !bcrypt.compareSync(password, restaurant.passwordHash)) {
+    return res.status(401).json({ error: "Galat username ya password." });
+  }
+
+  const token = crypto.randomBytes(24).toString("hex");
+  restaurantSessions.set(token, { issuedAt: Date.now(), restaurantId: restaurant.id });
+  res.json({ success: true, token, restaurantName: restaurant.name });
+});
+
+app.post("/api/restaurant-auth/verify", (req, res) => {
+  const { token } = req.body;
+  const now = Date.now();
+  const session = restaurantSessions.get(token);
+  if (session && now - session.issuedAt < SESSION_DURATION_MS) {
+    return res.json({ valid: true });
+  }
+  restaurantSessions.delete(token);
+  res.status(401).json({ valid: false });
+});
+
+app.post("/api/restaurant-auth/logout", (req, res) => {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : req.body.token;
+  restaurantSessions.delete(token);
+  res.json({ success: true });
+});
+
+// Restaurant khud apna password badal sake (current password check ke saath)
+app.post("/api/restaurant-auth/change-password", requireRestaurantAuth, (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.restaurantId);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !bcrypt.compareSync(currentPassword, restaurant.passwordHash)) {
+    return res.status(400).json({ error: "Current password galat hai." });
+  }
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: "Naya password kam se kam 6 characters ka hona chahiye." });
+  }
+  restaurant.passwordHash = bcrypt.hashSync(newPassword, 10);
+  writeDB(db);
+  res.json({ success: true });
+});
+
+// Admin restaurant ke liye login set/reset karta hai (Restaurants page se) —
+// restaurant khud forgot-password recovery nahi kar sakta (koi email/OTP nahi
+// hai), isliye reset karna ho to admin hi yahan se naya password set kar dega.
+app.post("/api/restaurants/:id/set-login", requireAdmin, (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.params.id);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+  const { username, password } = req.body;
+  if (!username || !username.trim()) return res.status(400).json({ error: "Username zaroori hai." });
+  if (!password || password.length < 6) return res.status(400).json({ error: "Password kam se kam 6 characters ka hona chahiye." });
+
+  const clash = db.restaurants.find(
+    (r) => r.id !== restaurant.id && r.username && r.username.toLowerCase() === username.trim().toLowerCase()
+  );
+  if (clash) return res.status(400).json({ error: "Ye username kisi aur restaurant ke paas already hai." });
+
+  restaurant.username = username.trim();
+  restaurant.passwordHash = bcrypt.hashSync(password, 10);
+  writeDB(db);
+  res.json({ success: true, username: restaurant.username });
+});
+
+// ---------- Restaurant's OWN dashboard data (scoped to req.restaurantId) ----------
+
+app.get("/api/restaurant/me", requireRestaurantAuth, (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.restaurantId);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+  const { passwordHash, subscriptionPaymentReference, ...safe } = restaurant;
+  res.json(safe);
+});
+
+app.put("/api/restaurant/me", requireRestaurantAuth, (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.restaurantId);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+  // Restaurant sirf apni basic profile hi edit kar sakta hai — rating/badge/
+  // subscription jaisi cheezein sirf admin control karta hai.
+  const allowed = ["name", "contactEmail", "contactPhone", "image", "tags"];
+  allowed.forEach((f) => {
+    if (req.body[f] !== undefined) restaurant[f] = req.body[f];
+  });
+  writeDB(db);
+  const { passwordHash, subscriptionPaymentReference, ...safe } = restaurant;
+  res.json(safe);
+});
+
+app.get("/api/restaurant/menu", requireRestaurantAuth, (req, res) => {
+  const db = readDB();
+  res.json(db.menu.filter((m) => m.restaurantId === req.restaurantId));
+});
+
+app.post("/api/restaurant/menu", requireRestaurantAuth, (req, res) => {
+  const db = readDB();
+  const { name, price, category, icon, image } = req.body;
+  if (!name || !price) return res.status(400).json({ error: "Naam aur price zaroori hain." });
+
+  const newItem = {
+    id: generateId("M"),
+    name,
+    price: Number(price),
+    category: category || "Other",
+    icon: icon || "🍽️",
+    image: image || null,
+    available: true,
+    restaurantId: req.restaurantId, // apne aap apne hi restaurant se link
+  };
+  db.menu.push(newItem);
+  writeDB(db);
+  res.status(201).json(newItem);
+});
+
+app.put("/api/restaurant/menu/:itemId", requireRestaurantAuth, (req, res) => {
+  const db = readDB();
+  const item = db.menu.find((m) => m.id === req.params.itemId);
+  if (!item) return res.status(404).json({ error: "Item not found" });
+  if (item.restaurantId !== req.restaurantId) return res.status(403).json({ error: "Ye item aapke restaurant ka nahi hai." });
+
+  const { name, price, category, icon, image, available } = req.body;
+  if (name !== undefined) item.name = name;
+  if (price !== undefined) item.price = Number(price);
+  if (category !== undefined) item.category = category;
+  if (icon !== undefined) item.icon = icon;
+  if (image !== undefined) item.image = image;
+  if (available !== undefined) item.available = !!available;
+  writeDB(db);
+  res.json(item);
+});
+
+app.delete("/api/restaurant/menu/:itemId", requireRestaurantAuth, (req, res) => {
+  const db = readDB();
+  const item = db.menu.find((m) => m.id === req.params.itemId);
+  if (!item) return res.status(404).json({ error: "Item not found" });
+  if (item.restaurantId !== req.restaurantId) return res.status(403).json({ error: "Ye item aapke restaurant ka nahi hai." });
+
+  db.menu = db.menu.filter((m) => m.id !== req.params.itemId);
+  writeDB(db);
+  res.json({ success: true });
+});
+
+// Apne restaurant ke orders — order.items[].restaurant (naam se) match karke
+// filter karte hain, kyunki order ek hi cart me multiple restaurants ke items
+// le sakta hai (order khud kisi ek restaurant se linked nahi hota).
+app.get("/api/restaurant/orders", requireRestaurantAuth, (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.restaurantId);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+  const myName = restaurant.name.trim().toLowerCase();
+  const myOrders = (db.orders || [])
+    .map((o) => ({
+      ...o,
+      items: (o.items || []).filter((it) => (it.restaurant || "").trim().toLowerCase() === myName),
+    }))
+    .filter((o) => o.items.length > 0)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  res.json(myOrders);
+});
+
+// Restaurant khud subscription/sponsored ke liye REQUEST bhejta hai — turant
+// active NAHI hota. UPI QR (business UPI) dikhake UTR lete hain, status
+// "pending" set ho jaata hai, aur admin Monetization page se verify karke
+// khud "Active" karta hai (existing UPI-verify flow jaisa hi, bas trigger
+// restaurant se hua hai admin se nahi).
+app.post("/api/restaurant/subscription/request", requireRestaurantAuth, (req, res) => {
+  const db = readDB();
+  const restaurant = db.restaurants.find((r) => r.id === req.restaurantId);
+  if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+  const { plan, upiReference } = req.body;
+  if (!["pro", "business"].includes(plan)) return res.status(400).json({ error: "Invalid plan" });
+  if (!upiReference || !/^\d{12}$/.test(upiReference)) {
+    return res.status(400).json({ error: "UTR number sahi 12-digit ka hona chahiye." });
+  }
+
+  restaurant.subscriptionPlan = plan;
+  restaurant.subscriptionStatus = "pending"; // admin verify karke Active karega
+  restaurant.subscriptionPaymentReference = upiReference;
+  writeDB(db);
+  res.json({ success: true, message: "Request bhej di gayi hai. Admin verify karke jald activate kar dega." });
 });
 
 // ---------- FORGOT PASSWORD (Security Question) ----------

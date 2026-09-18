@@ -67,6 +67,7 @@ function openAddModal() {
   document.getElementById("restContactEmail").value = "";
   document.getElementById("restContactPhone").value = "";
   document.getElementById("menuPdfSection").style.display = "none";
+  document.getElementById("partnerLoginSection").style.display = "none";
   modal.classList.add("show");
 }
 
@@ -84,6 +85,13 @@ async function openEditModal(id) {
   document.getElementById("restContactEmail").value = r.contactEmail || "";
   document.getElementById("restContactPhone").value = r.contactPhone || "";
   document.getElementById("menuPdfSection").style.display = "block";
+  document.getElementById("partnerLoginSection").style.display = "block";
+  document.getElementById("partnerUsername").value = "";
+  document.getElementById("partnerPassword").value = "";
+  document.getElementById("partnerLoginMsg").textContent = "";
+  document.getElementById("partnerLoginStatus").innerHTML = r.hasLogin
+    ? `<span style="color:var(--green);">✅ Login pehle se set hai. Naya username/password bharke "Set/Reset" dabayein to badal jayega.</span>`
+    : `<span style="color:var(--text-gray);">Abhi login set nahi hai — restaurant apna dashboard access nahi kar sakta.</span>`;
   modal.classList.add("show");
 
   // currentRestaurants list-endpoint se aata hai, jo (payload size ke liye) real
@@ -230,6 +238,38 @@ document.getElementById("deleteMenuPdfBtn").addEventListener("click", async () =
   msgEl.textContent = data.removedMenuItems
     ? `✅ PDF hata di gayi. ${data.removedMenuItems} menu item(s) bhi saath mein hata diye gaye.`
     : "✅ PDF hata di gayi.";
+});
+
+document.getElementById("setPartnerLoginBtn").addEventListener("click", async () => {
+  const id = document.getElementById("restId").value;
+  const username = document.getElementById("partnerUsername").value.trim();
+  const password = document.getElementById("partnerPassword").value;
+  const msgEl = document.getElementById("partnerLoginMsg");
+
+  if (!id) return;
+  if (!username || !password) {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "Username aur password dono bharein.";
+    return;
+  }
+
+  try {
+    const res = await adminFetch(`${API}/restaurants/${id}/set-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Set nahi ho paya");
+
+    msgEl.style.color = "var(--green)";
+    msgEl.textContent = `✅ Login set ho gaya — restaurant ab "${data.username}" username se apne dashboard mein login kar sakta hai.`;
+    document.getElementById("partnerPassword").value = "";
+    loadRestaurants();
+  } catch (e) {
+    msgEl.style.color = "var(--red)";
+    msgEl.textContent = "❌ " + e.message;
+  }
 });
 
 let extractedItems = [];

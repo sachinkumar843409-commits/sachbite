@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/png" href="icons/icon-192.png" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Partner Dashboard - SachBite</title>
+<style>
+  :root {
+    --primary: #ff7a1a; --primary-dark: #e85d04; --text-dark:#1e1e1e; --text-gray:#6b7280;
+    --border:#eee; --green:#16a34a; --green-bg:#e9f9ee; --red:#dc2626;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; font-family:"Segoe UI", Roboto, Arial, sans-serif; }
+  body { background:#faf9f7; color:var(--text-dark); }
+  header {
+    background:#fff; border-bottom:1px solid var(--border); padding:14px 20px;
+    display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10;
+  }
+  .logo { font-size:20px; font-weight:800; }
+  .logo span { color:var(--primary); }
+  .rest-name-pill { font-size:13px; color:var(--text-gray); }
+  .btn-logout { background:#fdeaea; color:var(--red); border:none; padding:8px 16px; border-radius:20px; font-weight:700; font-size:13px; cursor:pointer; }
+
+  .tabs { display:flex; gap:6px; padding:14px 20px 0; background:#fff; border-bottom:1px solid var(--border); overflow-x:auto; }
+  .tab-btn {
+    padding:10px 16px; border:none; background:transparent; font-weight:700; font-size:13.5px;
+    color:var(--text-gray); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap;
+  }
+  .tab-btn.active { color:var(--primary); border-bottom-color:var(--primary); }
+
+  .content { padding:22px 20px 60px; max-width:900px; margin:0 auto; }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin-bottom:16px; }
+  .card h3 { font-size:16px; margin-bottom:14px; }
+  .form-group { margin-bottom:14px; }
+  .form-group label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .form-group input, .form-group select { width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:14px; outline:none; }
+  .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:600px) { .row-2 { grid-template-columns:1fr; } }
+
+  .btn { padding:10px 20px; border-radius:24px; border:none; font-weight:700; font-size:13.5px; cursor:pointer; }
+  .btn-primary { background:var(--primary); color:#fff; }
+  .btn-primary:hover { background:var(--primary-dark); }
+  .btn-outline { background:#fff; border:1.5px solid var(--border); color:var(--text-dark); }
+  .btn-green { background:var(--green); color:#fff; }
+  .btn-red { background:#fdeaea; color:var(--red); }
+  .btn:disabled { opacity:0.6; cursor:not-allowed; }
+
+  .msg { font-size:13px; font-weight:600; margin-top:10px; display:none; }
+  .msg.show { display:block; }
+  .msg.success { color:var(--green); }
+  .msg.error { color:var(--red); }
+
+  .menu-item-row {
+    display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border);
+  }
+  .menu-item-row img { width:52px; height:52px; border-radius:8px; object-fit:cover; }
+  .menu-item-row .info { flex:1; min-width:0; }
+  .menu-item-row .info .name { font-weight:700; font-size:14px; }
+  .menu-item-row .info .price { color:var(--text-gray); font-size:13px; }
+  .menu-item-row .actions { display:flex; gap:6px; }
+  .menu-item-row .actions button { padding:6px 10px; border-radius:6px; border:none; font-size:12px; font-weight:700; cursor:pointer; }
+
+  .order-card { border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:12px; }
+  .order-card .top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+  .order-card .order-id { font-weight:800; font-size:15px; }
+  .order-card .date { font-size:12px; color:var(--text-gray); }
+  .order-card .item-line { font-size:13px; color:var(--text-dark); padding:2px 0; }
+  .status-chip { font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px; background:var(--green-bg); color:var(--green); }
+
+  .plan-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px; }
+  @media (max-width:600px) { .plan-grid { grid-template-columns:1fr; } }
+  .plan-box { border:2px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+  .plan-box.selected { border-color:var(--primary); background:#fff8f2; }
+  .plan-box .name { font-weight:800; font-size:16px; }
+  .plan-box .price { font-size:22px; font-weight:800; margin:6px 0; }
+  .plan-box .price span { font-size:12px; color:var(--text-gray); font-weight:600; }
+
+  .qr-box { display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; margin-top:16px; background:#fafafa; border-radius:10px; padding:16px; }
+  .qr-box img { border:1px solid var(--border); border-radius:8px; }
+
+  .empty-state { text-align:center; padding:40px 20px; color:var(--text-gray); }
+
+  .subscription-status-box { padding:14px; border-radius:10px; margin-bottom:14px; }
+  .subscription-status-box.active { background:var(--green-bg); color:#107c38; }
+  .subscription-status-box.pending { background:#fff4e0; color:#b45309; }
+  .subscription-status-box.free { background:#f3f4f6; color:var(--text-dark); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Sach<span>Bite</span> 🛵 <span style="font-size:12px; color:var(--text-gray); font-weight:600;">Partner</span></div>
+  <div style="display:flex; align-items:center; gap:14px;">
+    <span class="rest-name-pill" id="restNamePill"></span>
+    <button class="btn-logout" onclick="partnerLogout()">Logout</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="profile">👤 Profile</button>
+  <button class="tab-btn" data-tab="menu">🍽️ Menu</button>
+  <button class="tab-btn" data-tab="orders">📦 Orders</button>
+  <button class="tab-btn" data-tab="subscription">⭐ Subscription</button>
+</div>
+
+<div class="content">
+
+  <!-- PROFILE TAB -->
+  <div class="tab-panel active" id="tab-profile">
+    <div class="card">
+      <h3>Restaurant Profile</h3>
+      <div class="form-group">
+        <label for="pName">Restaurant Name</label>
+        <input type="text" id="pName" />
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label for="pEmail">Contact Email</label>
+          <input type="email" id="pEmail" />
+        </div>
+        <div class="form-group">
+          <label for="pPhone">Contact Phone</label>
+          <input type="text" id="pPhone" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="pTags">Tags (cuisine type, jaise: North Indian, Chinese)</label>
+        <input type="text" id="pTags" />
+      </div>
+      <div class="form-group">
+        <label for="pImage">Restaurant Photo</label>
+        <input type="file" id="pImageFile" accept="image/*" />
+        <div style="margin-top:8px;"><img id="pImagePreview" src="" alt="" style="max-width:140px; border-radius:10px; display:none;" /></div>
+      </div>
+      <button class="btn btn-primary" id="saveProfileBtn">Save Profile</button>
+      <div class="msg" id="profileMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3>🔑 Change Password</h3>
+      <div class="row-2">
+        <div class="form-group">
+          <label for="curPass">Current Password</label>
+          <input type="password" id="curPass" />
+        </div>
+        <div class="form-group">
+          <label for="newPass">New Password</label>
+          <input type="password" id="newPass" placeholder="Kam se kam 6 characters" />
+        </div>
+      </div>
+      <button class="btn btn-outline" id="changePassBtn">Password Badlein</button>
+      <div class="msg" id="passMsg"></div>
+    </div>
+  </div>
+
+  <!-- MENU TAB -->
+  <div class="tab-panel" id="tab-menu">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h3 style="margin:0;">Apna Menu</h3>
+        <button class="btn btn-primary" id="addItemToggleBtn">+ Naya Item</button>
+      </div>
+      <div id="addItemForm" style="display:none; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
+        <div class="row-2">
+          <div class="form-group">
+            <label for="itemName">Item Name</label>
+            <input type="text" id="itemName" />
+          </div>
+          <div class="form-group">
+            <label for="itemPrice">Price (₹)</label>
+            <input type="number" id="itemPrice" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="itemCategory">Category</label>
+          <input type="text" id="itemCategory" placeholder="jaise: Starters, Main Course" />
+        </div>
+        <input type="hidden" id="editItemId" />
+        <button class="btn btn-green" id="saveItemBtn">Save Item</button>
+        <button class="btn btn-outline" id="cancelItemBtn">Cancel</button>
+        <div class="msg" id="itemMsg"></div>
+      </div>
+      <div id="menuItemsList"></div>
+    </div>
+  </div>
+
+  <!-- ORDERS TAB -->
+  <div class="tab-panel" id="tab-orders">
+    <div class="card">
+      <h3>Aapke Orders</h3>
+      <div id="ordersList"></div>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTION TAB -->
+  <div class="tab-panel" id="tab-subscription">
+    <div class="card">
+      <h3>Subscription Status</h3>
+      <div id="subStatusBox" class="subscription-status-box free"></div>
+
+      <div id="planSelectionWrap">
+        <p style="font-size:13px; color:var(--text-gray); margin-bottom:6px;">Plan chunein aur pay karein — admin UTR verify karke activate kar dega.</p>
+        <div class="plan-grid">
+          <div class="plan-box" id="planBoxPro" onclick="selectPlan('pro')">
+            <div class="name">Pro</div>
+            <div class="price" id="proPriceText">₹499<span>/month</span></div>
+          </div>
+          <div class="plan-box" id="planBoxBusiness" onclick="selectPlan('business')">
+            <div class="name">Business</div>
+            <div class="price" id="businessPriceText">₹999<span>/month</span></div>
+          </div>
+        </div>
+
+        <div id="qrPaySection" style="display:none;">
+          <div class="qr-box">
+            <img id="subQrImg" src="" width="160" height="160" alt="UPI QR" />
+            <div style="min-width:220px;">
+              <div id="subAmountText" style="font-weight:700; margin-bottom:6px;"></div>
+              <div style="font-size:12.5px; color:var(--text-gray); margin-bottom:10px;">QR scan karke pay karein, phir 12-digit UTR/transaction reference number daalein.</div>
+              <input type="text" id="subUtrInput" placeholder="12-digit UTR number" maxlength="12" />
+              <button class="btn btn-primary" id="submitSubBtn" style="margin-top:10px;">Payment Submit Karein</button>
+              <div class="msg" id="subMsg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/partner-auth.js"></script>
+<script src="js/partner-dashboard.js"></script>
+</body>
+</html>

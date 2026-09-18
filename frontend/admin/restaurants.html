@@ -139,6 +139,22 @@
       </div>
     </div>
 
+    <hr style="border:none; border-top:1px solid var(--border); margin: 18px 0;" />
+    <div id="partnerLoginSection" style="display:none;">
+      <p style="font-size:12px; color:var(--text-gray); font-weight:600; margin-bottom:10px;">🔑 Restaurant Partner Login — restaurant khud apna dashboard (profile/menu/orders/subscription) manage kar sake</p>
+      <div id="partnerLoginStatus" style="font-size:13px; margin-bottom:10px;"></div>
+      <div class="form-group">
+        <label for="partnerUsername">Username</label>
+        <input type="text" id="partnerUsername" placeholder="jaise: lalandhaba" />
+      </div>
+      <div class="form-group">
+        <label for="partnerPassword">Password (naya set/reset karne ke liye)</label>
+        <input type="text" id="partnerPassword" placeholder="kam se kam 6 characters" />
+      </div>
+      <button type="button" class="btn-edit-menu" id="setPartnerLoginBtn">🔑 Login Set / Reset karein</button>
+      <div id="partnerLoginMsg" style="font-size:12px; font-weight:600; margin-top:6px;"></div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-cancel" id="cancelModalBtn">Cancel</button>
       <button class="btn-save" id="saveRestBtn">Save</button>
