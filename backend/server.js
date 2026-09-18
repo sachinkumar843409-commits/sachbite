@@ -223,6 +223,14 @@ app.get("/index.html", (req, res) => res.redirect(301, "/"));
 // Serve the frontend (index.html, dashboard.html, css, js)
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
+// Android app (TWA) verification file — /.well-known/ folders "dotfile"
+// samajhe jaate hain aur Express ki default static-serving unhe ignore kar
+// deti hai, isliye is ek file ke liye explicit route bana rahe hain taaki
+// Google Play app browser ka address-bar hataker "real app" jaisi khule.
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "frontend", ".well-known", "assetlinks.json"));
+});
+
 // Uploaded images publicly accessible: http://localhost:3000/uploads/xxx.jpg
 app.use("/uploads", express.static(UPLOADS_DIR));
 

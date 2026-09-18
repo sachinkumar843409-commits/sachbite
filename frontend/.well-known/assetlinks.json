@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.sachbite.app",
+        "sha256_cert_fingerprints": ["61:A5:A6:B6:61:CE:A3:1A:41:24:52:D5:EB:7D:33:35:C7:DA:88:5B:3A:F9:8A:8C:A0:0C:93:E5:32:DC:2F:84"]
+      }
+    }]
