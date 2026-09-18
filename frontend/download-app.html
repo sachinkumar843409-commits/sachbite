@@ -18,26 +18,40 @@
   .steps { text-align:left; margin-top:24px; font-size:14px; line-height:1.9; color:#333; }
   .steps b { color:#ed7118; }
   .link { margin-top:18px; font-size:13px; color:#6b7280; word-break:break-all; }
+  .download-btn {
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    background: linear-gradient(90deg, #ff7a1a, #e85d04); color:#fff; text-decoration:none;
+    font-weight:800; font-size:16px; padding:16px 24px; border-radius:16px; margin:20px 0 6px;
+    box-shadow: 0 6px 18px rgba(232,93,4,0.35);
+  }
+  .download-btn:active { transform: scale(0.98); }
+  .download-btn .dl-icon { font-size:22px; }
+  .or-divider { display:flex; align-items:center; gap:10px; color:#9ca3af; font-size:12px; margin:18px 0 10px; }
+  .or-divider::before, .or-divider::after { content:""; flex:1; height:1px; background:#eee; }
 </style>
 </head>
 <body>
   <div class="box">
     <div class="logo">Sach<span>Bite</span> 🛵</div>
-    <h1>Scan karke App Download Karein</h1>
-    <img class="qr" width="220" height="220"
-      src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https%3A%2F%2Fsachbite.onrender.com%2Fdownloads%2Fsachbite.apk"
+    <h1>SachBite App Download Karein</h1>
+
+    <a href="https://sachbite.onrender.com/downloads/sachbite.apk" download class="download-btn">
+      <span class="dl-icon">⬇️</span> App Download Karein
+    </a>
+    <div style="font-size:12px; color:#9ca3af;">(.apk file, ~1 MB)</div>
+
+    <div class="or-divider">YA phir doosre phone se QR scan karein</div>
+
+    <img class="qr" width="180" height="180"
+      src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fsachbite.onrender.com%2Fdownloads%2Fsachbite.apk"
       alt="SachBite App Download QR Code" />
 
     <div class="steps">
-      1. Apne phone ke camera se ye QR code scan karein<br/>
+      1. Upar wale <b>"⬇️ App Download Karein"</b> button ko tap karein (ya QR scan karein)<br/>
       2. <b>SachBite.apk</b> file download hogi<br/>
       3. Download hone ke baad us file par tap karein<br/>
       4. Agar "Install blocked" ya "Unknown source" ka warning aaye, to <b>"Settings"</b> par tap karke us app (Chrome/Files) ke liye <b>"Allow from this source"</b> ON kar dein, phir wapas install par tap karein<br/>
       5. App install ho jaayegi — home screen par SachBite icon dikhega
-    </div>
-
-    <div class="link">
-      Direct link: <a href="https://sachbite.onrender.com/downloads/sachbite.apk">sachbite.onrender.com/downloads/sachbite.apk</a>
     </div>
   </div>
 </body>

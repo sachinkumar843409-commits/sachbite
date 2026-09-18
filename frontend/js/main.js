@@ -155,27 +155,14 @@ loadMenu();
 loadRestaurants();
 loadHeroAndBanner();
 
-// ---------- PWA "Install App" button ----------
-// Browser (Chrome/Edge Android) khud decide karta hai kab install-eligible
-// hai — tab ye event fire hota hai. Hum event ko rokte hain (taaki apna
-// custom button dikha sakein), aur button click par prompt() call karte hain.
+// ---------- PWA "Install App" (beforeinstallprompt) ----------
+// Ye event browser ko batata hai ki app installable hai — agar browser
+// support karta hai (zyadatar Android Chrome), to install prompt turant
+// is native tarike se bhi trigger ho sakta hai. "⬇️ App" button hamesha
+// download-app.html (APK download + QR) par le jaata hai — sabhi browsers
+// mein reliably kaam karta hai, isliye wahi primary tareeka hai.
 let deferredInstallPrompt = null;
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
-  const btn = document.getElementById("installAppBtn");
-  if (btn) btn.style.display = "inline-block";
-});
-
-document.getElementById("installAppBtn")?.addEventListener("click", async () => {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt = null;
-  document.getElementById("installAppBtn").style.display = "none";
-});
-
-window.addEventListener("appinstalled", () => {
-  const btn = document.getElementById("installAppBtn");
-  if (btn) btn.style.display = "none";
 });
