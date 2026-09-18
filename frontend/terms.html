@@ -14,6 +14,15 @@
   .legal-wrap p, .legal-wrap li { color: var(--text-dark); font-size: 14px; }
   .legal-wrap .updated { color: var(--text-gray); font-size: 13px; margin-bottom: 20px; }
 </style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#ff7a1a" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 <header class="topbar" id="headerRoot"></header>

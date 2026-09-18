@@ -38,6 +38,15 @@
   .btn-upi-app:hover { background: var(--primary-dark); }
   .upi-amount { font-size:22px; font-weight:800; color: var(--primary); margin:6px 0; }
 </style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#ff7a1a" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 

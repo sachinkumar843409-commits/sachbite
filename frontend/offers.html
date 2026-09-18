@@ -13,6 +13,15 @@
   .offer-public-title { font-weight: 700; font-size: 17px; margin-bottom: 6px; }
   .offer-public-dates { color: var(--text-gray); font-size: 13px; }
 </style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#ff7a1a" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 

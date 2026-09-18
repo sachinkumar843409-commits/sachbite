@@ -21,6 +21,15 @@
   .notfound-wrap h1 { font-size: 28px; margin-bottom: 8px; }
   .notfound-wrap p { color: var(--text-gray); margin-bottom: 24px; }
 </style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#ff7a1a" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 <header class="topbar" id="headerRoot"></header>

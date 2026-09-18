@@ -22,6 +22,15 @@
   .menu-item-row .price { color: var(--primary); font-weight:700; }
   .menu-item-row button { white-space: nowrap; }
 </style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#ff7a1a" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 
