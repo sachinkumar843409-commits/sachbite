@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/png" href="../icons/icon-192.png" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Delivery Partners - SachBite Admin</title>
+<link rel="stylesheet" href="../css/dashboard.css" />
+<style>
+  .dp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; margin-bottom: 30px; }
+  .dp-card { background:#fff; border:1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .dp-top { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .dp-thumb { width: 52px; height: 52px; border-radius: 50%; overflow:hidden; background: var(--primary-light); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .dp-thumb img { width:100%; height:100%; object-fit:cover; }
+  .dp-name { font-weight:700; font-size:15px; }
+  .dp-meta { font-size:12px; color:var(--text-gray); }
+  .dp-status-pill { font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px; display:inline-block; margin-top:6px; }
+  .dp-status-pill.online { background:#e9f9ee; color:#16a34a; }
+  .dp-status-pill.offline { background:#f3f4f6; color:#6b7280; }
+  .dp-status-pill.inactive { background:#fdeaea; color:#dc2626; }
+  .dp-actions { display:flex; gap:8px; margin-top:12px; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebarRoot"></aside>
+
+<main class="main">
+  <div class="topbar" id="topbarRoot"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div>
+        <h2>Delivery Partners</h2>
+        <p>Delivery partners add/edit karein — inhe login diya jaata hai taaki wo apna dashboard use kar sakein.</p>
+      </div>
+      <button class="btn-add-item" id="addDpBtn">+ Add Delivery Partner</button>
+    </div>
+
+    <div class="dp-grid" id="dpGrid"></div>
+  </div>
+</main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3 id="modalTitle">Add Delivery Partner</h3>
+    <input type="hidden" id="dpId" />
+    <div class="form-group">
+      <label for="dpName">Naam</label>
+      <input type="text" id="dpName" placeholder="e.g. Rajesh Kumar" />
+    </div>
+    <div class="form-group">
+      <label for="dpPhone">Phone</label>
+      <input type="tel" id="dpPhone" placeholder="e.g. 9876543210" />
+    </div>
+    <div class="form-group">
+      <label for="dpVehicle">Vehicle Type</label>
+      <select id="dpVehicle">
+        <option value="Bike">Bike</option>
+        <option value="Scooter">Scooter</option>
+        <option value="Bicycle">Bicycle</option>
+        <option value="On Foot">On Foot</option>
+      </select>
+    </div>
+    <div class="form-group" id="dpStatusGroup" style="display:none;">
+      <label for="dpStatus">Account Status</label>
+      <select id="dpStatus">
+        <option value="active">Active (login kar sakta hai)</option>
+        <option value="inactive">Inactive (login block)</option>
+      </select>
+    </div>
+
+    <hr style="border:none; border-top:1px solid var(--border); margin: 18px 0;" />
+    <p style="font-size:12px; color:var(--text-gray); font-weight:600; margin-bottom:12px;">🔑 Dashboard Login</p>
+    <div class="form-group">
+      <label for="dpUsername">Username</label>
+      <input type="text" id="dpUsername" placeholder="e.g. rajesh01" />
+    </div>
+    <div class="form-group">
+      <label for="dpPassword">Password <span id="dpPasswordHint" style="font-weight:400; color:var(--text-gray);"></span></label>
+      <input type="text" id="dpPassword" placeholder="Kam se kam 6 characters" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelModalBtn">Cancel</button>
+      <button class="btn-save" id="saveDpBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/admin-guard.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  renderSidebar("delivery-partners.html");
+  renderTopbar("Delivery Partners");
+</script>
+<script src="../js/delivery-partners-admin.js"></script>
+</body>
+</html>

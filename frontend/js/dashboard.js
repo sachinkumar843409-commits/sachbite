@@ -189,16 +189,72 @@ async function loadOrders() {
   container.innerHTML = orders.map(renderOrderCard).join("");
 }
 
+let cachedDeliveryPartners = null;
+async function getActiveDeliveryPartners() {
+  if (cachedDeliveryPartners) return cachedDeliveryPartners;
+  try {
+    const res = await adminFetch(`${API}/admin/delivery-partners`);
+    const all = await res.json();
+    cachedDeliveryPartners = all.filter((p) => p.status !== "inactive");
+  } catch (e) {
+    cachedDeliveryPartners = [];
+  }
+  return cachedDeliveryPartners;
+}
+
+// Chhota inline modal banata hai (HTML mein pehle se kuch add karne ki
+// zaroorat nahi) — delivery partner list se select karwata hai, Promise
+// resolve karta hai partner object ya null (cancel par) ke saath.
+function promptDeliveryPartnerSelect(partners) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; display:flex; align-items:center; justify-content:center;";
+    const box = document.createElement("div");
+    box.style.cssText = "background:#fff; border-radius:14px; padding:22px; width:320px; max-width:90vw;";
+
+    const options = partners.length
+      ? partners.map((p) => `<option value="${p.id}">${p.name} (${p.vehicleType || "Bike"})</option>`).join("")
+      : `<option value="">Koi active delivery partner nahi hai</option>`;
+
+    box.innerHTML = `
+      <h3 style="margin-bottom:14px; font-size:16px;">Delivery Partner Chunein</h3>
+      <select id="dpSelectInline" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:16px;" ${partners.length ? "" : "disabled"}>
+        ${options}
+      </select>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button id="dpSelectCancel" class="btn-cancel">Cancel</button>
+        <button id="dpSelectConfirm" class="btn-save" ${partners.length ? "" : "disabled"}>Confirm</button>
+      </div>
+      ${partners.length ? "" : `<p style="font-size:12px; color:var(--text-gray); margin-top:10px;">Pehle "Delivery Partners" page se ek partner add karein.</p>`}
+    `;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    document.getElementById("dpSelectCancel").addEventListener("click", () => {
+      document.body.removeChild(overlay);
+      resolve(null);
+    });
+    document.getElementById("dpSelectConfirm").addEventListener("click", () => {
+      const id = document.getElementById("dpSelectInline").value;
+      const partner = partners.find((p) => p.id === id);
+      document.body.removeChild(overlay);
+      resolve(partner || null);
+    });
+  });
+}
+
 async function updateStatus(id, status) {
-  let deliveryPartnerName;
+  let deliveryPartnerId;
   if (status === "Out for Delivery") {
-    deliveryPartnerName = prompt("Delivery partner ka naam daalein (customer ko dikhega):", "");
-    if (deliveryPartnerName === null) return; // admin ne cancel kiya
+    const partners = await getActiveDeliveryPartners();
+    const chosen = await promptDeliveryPartnerSelect(partners);
+    if (!chosen) return; // admin ne cancel kiya
+    deliveryPartnerId = chosen.id;
   }
   await adminFetch(`${API}/orders/${id}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status, deliveryPartnerName }),
+    body: JSON.stringify({ status, deliveryPartnerId }),
   });
   loadOrders();
 }

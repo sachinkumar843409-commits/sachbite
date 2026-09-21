@@ -2,6 +2,7 @@ const NAV_ITEMS = [
   { label: "🏠 Dashboard", href: "overview.html" },
   { label: "📋 All Orders", href: "dashboard.html" },
   { label: "🛵 Live Tracking", href: "live-tracking.html" },
+  { label: "🚴 Delivery Partners", href: "delivery-partners.html" },
   { label: "🏬 Restaurants", href: "restaurants.html" },
   { label: "🍽️ Menu Management", href: "menu.html" },
   { label: "👥 Customers", href: "customers.html" },

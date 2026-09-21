@@ -350,6 +350,18 @@ app.post("/api/restaurant/upload", requireRestaurantAuth, (req, res) => {
   });
 });
 
+// Delivery partner apni profile photo khud upload kar sake
+app.post("/api/delivery/upload", requireDeliveryAuth, (req, res) => {
+  upload.single("image")(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: "Koi image file nahi mili" });
+
+    const base64 = req.file.buffer.toString("base64");
+    const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
+    res.status(201).json({ url: dataUrl });
+  });
+});
+
 // List every image in the media library (newest first) — powers the file manager grid
 app.get("/api/uploads", (req, res) => {
   const db = readDB();
@@ -1055,7 +1067,7 @@ app.patch("/api/orders/:id/mark-refunded", requireAdmin, (req, res) => {
 
 app.patch("/api/orders/:id/status", requireAdmin, (req, res) => {
   const db = readDB();
-  const { status, deliveryPartnerName } = req.body;
+  const { status, deliveryPartnerName, deliveryPartnerId } = req.body;
   const validStatuses = ["Order Confirmed", "Preparing", "Out for Delivery", "Delivered"];
 
   if (!validStatuses.includes(status)) {
@@ -1068,8 +1080,17 @@ app.patch("/api/orders/:id/status", requireAdmin, (req, res) => {
   order.status = status;
   if (status === "Out for Delivery") {
     if (!order.outForDeliveryAt) order.outForDeliveryAt = new Date().toISOString();
-    if (deliveryPartnerName) order.deliveryPartnerName = deliveryPartnerName;
+    if (deliveryPartnerId) {
+      const partner = (db.deliveryPartners || []).find((p) => p.id === deliveryPartnerId);
+      if (partner) {
+        order.deliveryPartnerId = partner.id;
+        order.deliveryPartnerName = partner.name;
+      }
+    } else if (deliveryPartnerName) {
+      order.deliveryPartnerName = deliveryPartnerName;
+    }
   }
+  if (status === "Delivered" && !order.deliveredAt) order.deliveredAt = new Date().toISOString();
   writeDB(db);
   res.json(order);
 });
@@ -1109,29 +1130,48 @@ function distanceKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function computeDeliveryProgress(order, restaurantLocation) {
+function computeDeliveryProgress(order, restaurantLocation, db) {
   if (!order.location || order.status !== "Out for Delivery" || !order.outForDeliveryAt) {
     return null;
   }
   const totalMinutes = order.estimatedDeliveryMinutes || 25;
   const elapsedMinutes = (Date.now() - new Date(order.outForDeliveryAt).getTime()) / 60000;
-  const progress = Math.min(Math.max(elapsedMinutes / totalMinutes, 0), 1);
+  const timeProgress = Math.min(Math.max(elapsedMinutes / totalMinutes, 0), 1);
 
   const start = restaurantLocation;
   const end = order.location;
-  const currentLat = start.lat + (end.lat - start.lat) * progress;
-  const currentLng = start.lng + (end.lng - start.lng) * progress;
+  let currentLat = start.lat + (end.lat - start.lat) * timeProgress;
+  let currentLng = start.lng + (end.lng - start.lng) * timeProgress;
+  let isRealLocation = false;
+
+  // Agar assigned delivery partner ne apna REAL GPS location bheja hai (last
+  // 3 minute ke andar), to wahi use karo — simulated time-based animation
+  // ki jagah asli position dikhega map par.
+  const partner = order.deliveryPartnerId && db
+    ? (db.deliveryPartners || []).find((p) => p.id === order.deliveryPartnerId)
+    : null;
+  if (partner && partner.currentLocation) {
+    const ageMs = Date.now() - new Date(partner.currentLocation.updatedAt).getTime();
+    if (ageMs < 3 * 60 * 1000) {
+      currentLat = partner.currentLocation.lat;
+      currentLng = partner.currentLocation.lng;
+      isRealLocation = true;
+    }
+  }
 
   const remainingKm = distanceKm(currentLat, currentLng, end.lat, end.lng);
-  const etaMinutes = Math.max(Math.round(totalMinutes * (1 - progress)), progress >= 1 ? 0 : 1);
+  const etaMinutes = isRealLocation
+    ? Math.max(Math.round((remainingKm / 20) * 60), 1) // ~20km/h average city speed se rough estimate
+    : Math.max(Math.round(totalMinutes * (1 - timeProgress)), timeProgress >= 1 ? 0 : 1);
 
   return {
-    progressPercent: Math.round(progress * 100),
+    progressPercent: Math.round(timeProgress * 100),
     currentLat,
     currentLng,
     distanceRemainingKm: Math.round(remainingKm * 10) / 10,
     etaMinutes,
-    arrived: progress >= 1,
+    arrived: isRealLocation ? remainingKm < 0.15 : timeProgress >= 1,
+    isRealLocation,
   };
 }
 
@@ -1141,11 +1181,12 @@ app.get("/api/orders/:id/delivery-progress", (req, res) => {
   const order = db.orders.find((o) => o.id === req.params.id);
   if (!order) return res.status(404).json({ error: "Order not found" });
 
-  const progress = computeDeliveryProgress(order, db.settings.restaurantLocation);
+  const progress = computeDeliveryProgress(order, db.settings.restaurantLocation, db);
   res.json({
     restaurantLocation: db.settings.restaurantLocation,
     customerLocation: order.location,
     status: order.status,
+    deliveryPartnerName: order.deliveryPartnerName || null,
     progress,
   });
 });
@@ -1162,7 +1203,8 @@ app.get("/api/deliveries/live", (req, res) => {
       customerAddress: o.customer.address,
       grandTotal: o.grandTotal,
       location: o.location,
-      progress: computeDeliveryProgress(o, db.settings.restaurantLocation),
+      deliveryPartnerName: o.deliveryPartnerName || null,
+      progress: computeDeliveryProgress(o, db.settings.restaurantLocation, db),
     }))
     .filter((o) => o.location); // sirf woh jinke paas location data hai
 
@@ -2029,6 +2071,281 @@ app.post("/api/restaurant/subscription/request", requireRestaurantAuth, (req, re
   restaurant.subscriptionPaymentReference = upiReference;
   writeDB(db);
   res.json({ success: true, message: "Request bhej di gayi hai. Admin verify karke jald activate kar dega." });
+});
+
+// ============================================================
+// DELIVERY PARTNER LOGIN — restaurant partner jaisa hi pattern, alag data.
+// Admin (naya "Delivery Partners" admin page) partner ke liye username/
+// password banata hai. Partner apne dashboard se: assigned orders dekhta
+// hai, status update karta hai (Picked Up / Delivered), apna live GPS
+// location bhejta hai (jo Live Tracking map + customer Track Order page
+// dono par real position dikhata hai, simulated animation ki jagah), aur
+// apni earnings/history dekhta hai.
+// ============================================================
+let deliveryPartnerSessions = new Map(); // token -> { issuedAt, partnerId }
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, session] of deliveryPartnerSessions.entries()) {
+    if (now - session.issuedAt >= SESSION_DURATION_MS) deliveryPartnerSessions.delete(token);
+  }
+}, 60 * 60 * 1000);
+
+function requireDeliveryAuth(req, res, next) {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const now = Date.now();
+  const session = token && deliveryPartnerSessions.get(token);
+
+  if (session && now - session.issuedAt < SESSION_DURATION_MS) {
+    req.deliveryPartnerId = session.partnerId;
+    return next();
+  }
+  return res.status(401).json({ error: "Delivery partner login zaroori hai." });
+}
+
+app.post("/api/delivery-auth/login", (req, res) => {
+  const db = readDB();
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: "Username aur password zaroori hain." });
+
+  const partner = (db.deliveryPartners || []).find(
+    (p) => p.username && p.username.toLowerCase() === username.trim().toLowerCase()
+  );
+  if (!partner || !partner.passwordHash || !bcrypt.compareSync(password, partner.passwordHash)) {
+    return res.status(401).json({ error: "Galat username ya password." });
+  }
+  if (partner.status === "inactive") {
+    return res.status(403).json({ error: "Aapka account admin ne inactive kar diya hai. Admin se contact karein." });
+  }
+
+  const token = crypto.randomBytes(24).toString("hex");
+  deliveryPartnerSessions.set(token, { issuedAt: Date.now(), partnerId: partner.id });
+  res.json({ success: true, token, partnerName: partner.name });
+});
+
+app.post("/api/delivery-auth/verify", (req, res) => {
+  const { token } = req.body;
+  const now = Date.now();
+  const session = deliveryPartnerSessions.get(token);
+  if (session && now - session.issuedAt < SESSION_DURATION_MS) {
+    return res.json({ valid: true });
+  }
+  deliveryPartnerSessions.delete(token);
+  res.status(401).json({ valid: false });
+});
+
+app.post("/api/delivery-auth/logout", (req, res) => {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : req.body.token;
+  deliveryPartnerSessions.delete(token);
+  res.json({ success: true });
+});
+
+app.post("/api/delivery-auth/change-password", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !bcrypt.compareSync(currentPassword, partner.passwordHash)) {
+    return res.status(400).json({ error: "Current password galat hai." });
+  }
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: "Naya password kam se kam 6 characters ka hona chahiye." });
+  }
+  partner.passwordHash = bcrypt.hashSync(newPassword, 10);
+  writeDB(db);
+  res.json({ success: true });
+});
+
+// ---------- Admin: Delivery Partners management ----------
+
+app.get("/api/admin/delivery-partners", requireAdmin, (req, res) => {
+  const db = readDB();
+  const partners = (db.deliveryPartners || []).map(({ passwordHash, ...safe }) => safe);
+  res.json(partners);
+});
+
+app.post("/api/admin/delivery-partners", requireAdmin, (req, res) => {
+  const db = readDB();
+  const { name, phone, vehicleType, username, password } = req.body;
+  if (!name || !username || !password) return res.status(400).json({ error: "Naam, username aur password zaroori hain." });
+  if (password.length < 6) return res.status(400).json({ error: "Password kam se kam 6 characters ka hona chahiye." });
+
+  const clash = (db.deliveryPartners || []).find((p) => p.username.toLowerCase() === username.trim().toLowerCase());
+  if (clash) return res.status(400).json({ error: "Ye username kisi aur delivery partner ke paas already hai." });
+
+  db.deliveryPartners = db.deliveryPartners || [];
+  const newPartner = {
+    id: generateId("D"),
+    name,
+    phone: phone || "",
+    vehicleType: vehicleType || "Bike",
+    username: username.trim(),
+    passwordHash: bcrypt.hashSync(password, 10),
+    status: "active",
+    online: false,
+    image: null,
+    currentLocation: null,
+    createdAt: new Date().toISOString(),
+  };
+  db.deliveryPartners.push(newPartner);
+  writeDB(db);
+  const { passwordHash, ...safe } = newPartner;
+  res.status(201).json(safe);
+});
+
+app.put("/api/admin/delivery-partners/:id", requireAdmin, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.params.id);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+
+  const { name, phone, vehicleType, status, username, password } = req.body;
+  if (name !== undefined) partner.name = name;
+  if (phone !== undefined) partner.phone = phone;
+  if (vehicleType !== undefined) partner.vehicleType = vehicleType;
+  if (status !== undefined) partner.status = status;
+  if (username !== undefined && username.trim()) {
+    const clash = db.deliveryPartners.find(
+      (p) => p.id !== partner.id && p.username.toLowerCase() === username.trim().toLowerCase()
+    );
+    if (clash) return res.status(400).json({ error: "Ye username kisi aur delivery partner ke paas already hai." });
+    partner.username = username.trim();
+  }
+  if (password) {
+    if (password.length < 6) return res.status(400).json({ error: "Password kam se kam 6 characters ka hona chahiye." });
+    partner.passwordHash = bcrypt.hashSync(password, 10);
+  }
+  writeDB(db);
+  const { passwordHash, ...safe } = partner;
+  res.json(safe);
+});
+
+app.delete("/api/admin/delivery-partners/:id", requireAdmin, (req, res) => {
+  const db = readDB();
+  const exists = (db.deliveryPartners || []).some((p) => p.id === req.params.id);
+  if (!exists) return res.status(404).json({ error: "Partner not found" });
+  db.deliveryPartners = db.deliveryPartners.filter((p) => p.id !== req.params.id);
+  writeDB(db);
+  res.json({ success: true });
+});
+
+// ---------- Delivery partner's OWN dashboard data ----------
+
+app.get("/api/delivery/me", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+  const { passwordHash, ...safe } = partner;
+  res.json(safe);
+});
+
+app.put("/api/delivery/me", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+
+  const allowed = ["name", "phone", "image", "vehicleType"];
+  allowed.forEach((f) => {
+    if (req.body[f] !== undefined) partner[f] = req.body[f];
+  });
+  writeDB(db);
+  const { passwordHash, ...safe } = partner;
+  res.json(safe);
+});
+
+app.put("/api/delivery/online", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+  partner.online = !!req.body.online;
+  writeDB(db);
+  res.json({ success: true, online: partner.online });
+});
+
+// Partner ka live GPS location (browser se bheja jaata hai jab wo "Out for
+// Delivery" order carry kar raha ho) — isi se Live Tracking map aur customer
+// Track Order page par ASLI position dikhta hai.
+app.post("/api/delivery/location", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+
+  const { lat, lng } = req.body;
+  if (typeof lat !== "number" || typeof lng !== "number") {
+    return res.status(400).json({ error: "lat/lng zaroori hain" });
+  }
+  partner.currentLocation = { lat, lng, updatedAt: new Date().toISOString() };
+  writeDB(db);
+  res.json({ success: true });
+});
+
+// Apne assigned orders — jo abhi tak Delivered nahi hue
+app.get("/api/delivery/orders", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const myOrders = (db.orders || [])
+    .filter((o) => o.deliveryPartnerId === req.deliveryPartnerId && o.status !== "Delivered")
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  res.json(myOrders);
+});
+
+// Partner khud apna status update kare — sirf apne hi assigned order par
+app.patch("/api/delivery/orders/:id/status", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const order = db.orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.deliveryPartnerId !== req.deliveryPartnerId) {
+    return res.status(403).json({ error: "Ye order aapko assign nahi hua hai." });
+  }
+
+  const { status } = req.body;
+  if (status === "picked_up") {
+    order.pickedUpAt = new Date().toISOString();
+  } else if (status === "Delivered") {
+    order.status = "Delivered";
+    order.deliveredAt = new Date().toISOString();
+  } else {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+  writeDB(db);
+  res.json(order);
+});
+
+// Apni delivery history + earnings (flat rate per delivery, Settings se configurable)
+app.get("/api/delivery/earnings", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const rate = Number(db.settings.deliveryPartnerEarningPerOrder) || 30;
+
+  const delivered = (db.orders || [])
+    .filter((o) => o.deliveryPartnerId === req.deliveryPartnerId && o.status === "Delivered" && o.deliveredAt)
+    .sort((a, b) => new Date(b.deliveredAt) - new Date(a.deliveredAt));
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const startOfWeek = new Date(startOfDay);
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+
+  const todayCount = delivered.filter((o) => new Date(o.deliveredAt) >= startOfDay).length;
+  const weekCount = delivered.filter((o) => new Date(o.deliveredAt) >= startOfWeek).length;
+
+  res.json({
+    ratePerDelivery: rate,
+    totalDeliveries: delivered.length,
+    totalEarnings: delivered.length * rate,
+    todayDeliveries: todayCount,
+    todayEarnings: todayCount * rate,
+    weekDeliveries: weekCount,
+    weekEarnings: weekCount * rate,
+    history: delivered.slice(0, 50).map((o) => ({
+      id: o.id,
+      deliveredAt: o.deliveredAt,
+      customerName: o.customer.name,
+      customerAddress: o.customer.address,
+      grandTotal: o.grandTotal,
+      earning: rate,
+    })),
+  });
 });
 
 // ---------- FORGOT PASSWORD (Security Question) ----------
