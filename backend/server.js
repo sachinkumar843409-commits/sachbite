@@ -1085,6 +1085,11 @@ app.patch("/api/orders/:id/status", requireAdmin, (req, res) => {
       if (partner) {
         order.deliveryPartnerId = partner.id;
         order.deliveryPartnerName = partner.name;
+        // Naya assignment — partner ko "New Order" alert ke saath Accept/Reject
+        // karna hoga (Zomato/Swiggy jaisa hi), turant final nahi ho jaata.
+        order.assignmentStatus = "pending";
+        order.deliveryStage = null;
+        order.cashCollected = false;
       }
     } else if (deliveryPartnerName) {
       order.deliveryPartnerName = deliveryPartnerName;
@@ -2281,7 +2286,7 @@ app.post("/api/delivery/location", requireDeliveryAuth, (req, res) => {
   res.json({ success: true });
 });
 
-// Apne assigned orders — jo abhi tak Delivered nahi hue
+// Apne assigned orders (pending accept + accepted, jo abhi Delivered nahi hue)
 app.get("/api/delivery/orders", requireDeliveryAuth, (req, res) => {
   const db = readDB();
   const myOrders = (db.orders || [])
@@ -2290,23 +2295,66 @@ app.get("/api/delivery/orders", requireDeliveryAuth, (req, res) => {
   res.json(myOrders);
 });
 
-// Partner khud apna status update kare — sirf apne hi assigned order par
-app.patch("/api/delivery/orders/:id/status", requireDeliveryAuth, (req, res) => {
+// Naya assignment Accept karna — tabhi order partner ki active list me "confirmed" maana jaata hai
+app.post("/api/delivery/orders/:id/accept", requireDeliveryAuth, (req, res) => {
   const db = readDB();
   const order = db.orders.find((o) => o.id === req.params.id);
   if (!order) return res.status(404).json({ error: "Order not found" });
   if (order.deliveryPartnerId !== req.deliveryPartnerId) {
     return res.status(403).json({ error: "Ye order aapko assign nahi hua hai." });
   }
+  order.assignmentStatus = "accepted";
+  order.deliveryStage = "accepted";
+  writeDB(db);
+  res.json(order);
+});
 
-  const { status } = req.body;
-  if (status === "picked_up") {
-    order.pickedUpAt = new Date().toISOString();
-  } else if (status === "Delivered") {
+// Naya assignment Decline karna — order unassigned ho jaata hai, admin kisi
+// aur partner ko assign kar sakta hai (dropdown se dubara)
+app.post("/api/delivery/orders/:id/decline", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const order = db.orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.deliveryPartnerId !== req.deliveryPartnerId) {
+    return res.status(403).json({ error: "Ye order aapko assign nahi hua hai." });
+  }
+  order.deliveryPartnerId = null;
+  order.deliveryPartnerName = null;
+  order.assignmentStatus = null;
+  order.deliveryStage = null;
+  writeDB(db);
+  res.json({ success: true });
+});
+
+// Partner ka delivery-stage progress — Zomato/Swiggy jaisa hi granular flow:
+// accepted -> arrived_at_restaurant -> picked_up -> arrived_at_customer -> delivered
+const DELIVERY_STAGE_ORDER = ["accepted", "arrived_at_restaurant", "picked_up", "arrived_at_customer", "delivered"];
+app.patch("/api/delivery/orders/:id/stage", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const order = db.orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.deliveryPartnerId !== req.deliveryPartnerId) {
+    return res.status(403).json({ error: "Ye order aapko assign nahi hua hai." });
+  }
+  if (order.assignmentStatus !== "accepted" && req.body.stage !== "accepted") {
+    return res.status(400).json({ error: "Pehle order Accept karein." });
+  }
+
+  const { stage, cashCollected } = req.body;
+  if (!DELIVERY_STAGE_ORDER.includes(stage)) return res.status(400).json({ error: "Invalid stage" });
+
+  // COD order ho to "delivered" mark karne se pehle cash collect confirm karna zaroori hai
+  const isCOD = order.customer && order.customer.payment === "Cash on Delivery";
+  if (stage === "delivered" && isCOD && !cashCollected && !order.cashCollected) {
+    return res.status(400).json({ error: "Pehle 'Cash Collected' confirm karein (ye order COD hai)." });
+  }
+
+  order.deliveryStage = stage;
+  if (stage === "picked_up" && !order.pickedUpAt) order.pickedUpAt = new Date().toISOString();
+  if (cashCollected) order.cashCollected = true;
+  if (stage === "delivered") {
     order.status = "Delivered";
     order.deliveredAt = new Date().toISOString();
-  } else {
-    return res.status(400).json({ error: "Invalid status" });
   }
   writeDB(db);
   res.json(order);
