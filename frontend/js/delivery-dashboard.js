@@ -26,7 +26,78 @@ async function init() {
   await loadProfile();
   await loadOrders();
   setInterval(loadOrders, 12000); // har 12 second me naye assigned orders/alerts check karo
+  setupPushNotifications();
+  loadSupportContact();
 }
+
+async function loadSupportContact() {
+  try {
+    const res = await fetch(`${API}/settings`);
+    const s = await res.json();
+    if (s.contactPhone) {
+      document.getElementById("supportCallBtn").href = `tel:${s.contactPhone}`;
+    }
+  } catch (e) {}
+}
+
+// ---------- Real Push Notifications ----------
+// Ye enable hone ke baad, naya order assign hote hi notification aayegi
+// bhale hi ye app/tab band ho — bilkul asli delivery app jaisa.
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
+async function setupPushNotifications() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+  const btn = document.getElementById("enableNotifBtn");
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const existingSub = await reg.pushManager.getSubscription();
+    if (existingSub || Notification.permission === "granted") {
+      btn.style.display = "none";
+      // Agar permission hai lekin subscription kisi wajah se missing ho gayi
+      // ho (jaise cache clear), to chup-chaap dobara subscribe kar dein.
+      if (!existingSub && Notification.permission === "granted") {
+        await subscribeToPush(reg);
+      }
+    } else if (Notification.permission !== "denied") {
+      btn.style.display = "inline-block";
+    }
+  } catch (e) {}
+}
+
+async function subscribeToPush(reg) {
+  try {
+    const res = await fetch(`${API}/push/vapid-public-key`);
+    const { publicKey } = await res.json();
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+    await deliveryFetch(`${API}/delivery/push-subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscription: sub }),
+    });
+    document.getElementById("enableNotifBtn").style.display = "none";
+  } catch (e) {
+    console.warn("Push subscribe fail hua:", e);
+  }
+}
+
+document.getElementById("enableNotifBtn").addEventListener("click", async () => {
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") {
+    const reg = await navigator.serviceWorker.ready;
+    await subscribeToPush(reg);
+  } else {
+    alert("Notifications allow nahi kiye — Settings se browser permission on karein.");
+  }
+});
 
 // ---------- Profile ----------
 async function loadProfile() {

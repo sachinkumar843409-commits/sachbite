@@ -5,6 +5,7 @@ const path = require("path");
 const multer = require("multer");
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
+const webpush = require("web-push");
 const bcrypt = require("bcryptjs");
 // razorpay-config.js .gitignore me hai (security ke liye), isliye Render (ya kisi bhi
 // fresh clone) par ye file exist nahi karti. Agar file mile to usse use karo (local dev),
@@ -1090,6 +1091,13 @@ app.patch("/api/orders/:id/status", requireAdmin, (req, res) => {
         order.assignmentStatus = "pending";
         order.deliveryStage = null;
         order.cashCollected = false;
+        // Asli push notification — partner ka phone/tab band ho tab bhi alert
+        // pahunch jaayega (fire-and-forget, order-assign response ko block nahi karta)
+        sendPushToPartner(partner, {
+          title: "🔔 Naya Order Aaya Hai!",
+          body: `Order #${order.id} — ₹${order.grandTotal}. Dekh kar Accept/Reject karein.`,
+          url: "/delivery-dashboard.html",
+        });
       }
     } else if (deliveryPartnerName) {
       order.deliveryPartnerName = deliveryPartnerName;
@@ -2087,7 +2095,68 @@ app.post("/api/restaurant/subscription/request", requireRestaurantAuth, (req, re
 // dono par real position dikhata hai, simulated animation ki jagah), aur
 // apni earnings/history dekhta hai.
 // ============================================================
+// ---------- Real Push Notifications (Web Push) ----------
+// Ye asli "app jaisa" alert hai — jab delivery partner ka phone/browser tab
+// bhi BAND ho, tab bhi naya order assign hone par notification aa jaati hai
+// (Zomato/Swiggy jaisa). Koi paid service nahi — Web Push standard use karta
+// hai, jo Chrome/Edge/Firefox sabme built-in support karte hain.
+//
+// VAPID keys yahan generate kiye gaye hain (fixed pair) — chahe to Render
+// Environment Variables (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY) se override
+// kar sakte hain, warna yehi default use hongi.
+const VAPID_PUBLIC_KEY =
+  process.env.VAPID_PUBLIC_KEY ||
+  "BLY5vIJHfk46tdCzXmZXQUnNNE-AEX6iH_82vsNfNy51zss3UJ6oc1eRh34Jo9G7F4wJbV2_u9E5MA7Bmm11fD4";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "z_Pjjz6jV0uPJEbcXlH182nN_vyLPG1z6sv3zStBJAE";
+webpush.setVapidDetails("mailto:admin@sachbite.in", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+
+app.get("/api/push/vapid-public-key", (req, res) => {
+  res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+// Kisi delivery partner ko push bhejo (agar usne notifications enable ki hain)
+async function sendPushToPartner(partner, payload) {
+  if (!partner || !partner.pushSubscription) return;
+  try {
+    await webpush.sendNotification(partner.pushSubscription, JSON.stringify(payload));
+  } catch (err) {
+    // Subscription expire/invalid ho gayi ho (410/404) to use clear kar do,
+    // taaki baar-baar fail na ho — partner agli baar app kholte hi dobara
+    // subscribe ho jaayega.
+    if (err.statusCode === 410 || err.statusCode === 404) {
+      const db = readDB();
+      const p = (db.deliveryPartners || []).find((x) => x.id === partner.id);
+      if (p) {
+        p.pushSubscription = null;
+        writeDB(db);
+      }
+    } else {
+      console.error("Push send error:", err.message);
+    }
+  }
+}
+
+app.post("/api/delivery/push-subscribe", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+  partner.pushSubscription = req.body.subscription || null;
+  writeDB(db);
+  res.json({ success: true });
+});
+
+app.post("/api/delivery/push-unsubscribe", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+  partner.pushSubscription = null;
+  writeDB(db);
+  res.json({ success: true });
+});
+
 let deliveryPartnerSessions = new Map(); // token -> { issuedAt, partnerId }
+
+
 
 setInterval(() => {
   const now = Date.now();
