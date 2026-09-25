@@ -1091,12 +1091,21 @@ app.patch("/api/orders/:id/status", requireAdmin, (req, res) => {
         order.assignmentStatus = "pending";
         order.deliveryStage = null;
         order.cashCollected = false;
+        // Delivery OTP — customer ko Track Order page par dikhega, partner ko
+        // "Delivered" mark karne se pehle ye enter karna padega. Isse fake/
+        // fraud delivery marking rukti hai — partner khud se seedha "Delivered"
+        // nahi maar sakta, customer se OTP lena hi hoga.
+        order.deliveryOtp = String(Math.floor(1000 + Math.random() * 9000));
         // Asli push notification — partner ka phone/tab band ho tab bhi alert
         // pahunch jaayega (fire-and-forget, order-assign response ko block nahi karta)
         sendPushToPartner(partner, {
           title: "🔔 Naya Order Aaya Hai!",
           body: `Order #${order.id} — ₹${order.grandTotal}. Dekh kar Accept/Reject karein.`,
           url: "/delivery-dashboard.html",
+        });
+        addPartnerNotification(db, partner.id, {
+          title: "🔔 Naya Order",
+          body: `Order #${order.id} — ₹${order.grandTotal} assign hua hai.`,
         });
       }
     } else if (deliveryPartnerName) {
@@ -1202,6 +1211,20 @@ app.get("/api/orders/:id/delivery-progress", (req, res) => {
     deliveryPartnerName: order.deliveryPartnerName || null,
     progress,
   });
+});
+
+// Delivery OTP — sirf order ka asli customer (apne phone se login/verified)
+// hi dekh sakta hai, isliye alag, customer-token-protected route par rakha
+// hai (public progress endpoint par nahi) — partner ko delivery confirm
+// karne ke liye customer se ye number maangna padega.
+app.get("/api/orders/:id/delivery-otp", requireCustomerToken, (req, res) => {
+  const db = readDB();
+  const order = db.orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.customer.phone !== req.customerPhone) {
+    return res.status(403).json({ error: "Yeh aapka order nahi hai." });
+  }
+  res.json({ otp: order.deliveryOtp || null });
 });
 
 // All active "Out for Delivery" orders with live position (used by Admin Live Tracking page)
@@ -1434,6 +1457,9 @@ app.put("/api/settings", requireAdmin, (req, res) => {
     "sponsoredOffersEnabled",
     "planProAvailable",
     "planBusinessAvailable",
+    "deliveryPartnerEarningPerOrder",
+    "deliveryDailyTarget",
+    "deliveryTargetBonus",
   ];
   allowedFields.forEach((field) => {
     if (req.body[field] !== undefined) db.settings[field] = req.body[field];
@@ -2114,6 +2140,23 @@ app.get("/api/push/vapid-public-key", (req, res) => {
   res.json({ publicKey: VAPID_PUBLIC_KEY });
 });
 
+// In-app Notifications — Zomato/Swiggy jaisa hi, ek notification list bhi
+// server par store karte hain (sirf push par depend nahi karte, kabhi push
+// permission na di ho ya miss ho jaaye to bhi partner app kholke dekh sake).
+function addPartnerNotification(db, partnerId, { title, body }) {
+  const partner = (db.deliveryPartners || []).find((p) => p.id === partnerId);
+  if (!partner) return;
+  partner.notifications = partner.notifications || [];
+  partner.notifications.unshift({
+    id: generateId("N"),
+    title,
+    body,
+    read: false,
+    createdAt: new Date().toISOString(),
+  });
+  partner.notifications = partner.notifications.slice(0, 50); // sirf recent 50 rakhte hain
+}
+
 // Kisi delivery partner ko push bhejo (agar usne notifications enable ki hain)
 async function sendPushToPartner(partner, payload) {
   if (!partner || !partner.pushSubscription) return;
@@ -2150,6 +2193,22 @@ app.post("/api/delivery/push-unsubscribe", requireDeliveryAuth, (req, res) => {
   const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
   if (!partner) return res.status(404).json({ error: "Partner not found" });
   partner.pushSubscription = null;
+  writeDB(db);
+  res.json({ success: true });
+});
+
+app.get("/api/delivery/notifications", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+  res.json(partner.notifications || []);
+});
+
+app.post("/api/delivery/notifications/mark-read", requireDeliveryAuth, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+  (partner.notifications || []).forEach((n) => (n.read = true));
   writeDB(db);
   res.json({ success: true });
 });
@@ -2262,6 +2321,19 @@ app.post("/api/admin/delivery-partners", requireAdmin, (req, res) => {
     online: false,
     image: null,
     currentLocation: null,
+    // KYC — partner khud apne dashboard se bhar sakta hai, admin verify karta hai
+    aadharNumber: "",
+    drivingLicense: "",
+    vehicleNumber: "",
+    kycVerified: false,
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    // Payout — partner apna bank/UPI daalta hai, admin yahin se payout record karta hai
+    bankAccountName: "",
+    bankAccountNumber: "",
+    bankIfsc: "",
+    upiId: "",
+    payoutHistory: [], // [{ id, amount, note, paidAt }]
     createdAt: new Date().toISOString(),
   };
   db.deliveryPartners.push(newPartner);
@@ -2275,11 +2347,12 @@ app.put("/api/admin/delivery-partners/:id", requireAdmin, (req, res) => {
   const partner = (db.deliveryPartners || []).find((p) => p.id === req.params.id);
   if (!partner) return res.status(404).json({ error: "Partner not found" });
 
-  const { name, phone, vehicleType, status, username, password } = req.body;
+  const { name, phone, vehicleType, status, username, password, kycVerified } = req.body;
   if (name !== undefined) partner.name = name;
   if (phone !== undefined) partner.phone = phone;
   if (vehicleType !== undefined) partner.vehicleType = vehicleType;
   if (status !== undefined) partner.status = status;
+  if (kycVerified !== undefined) partner.kycVerified = !!kycVerified;
   if (username !== undefined && username.trim()) {
     const clash = db.deliveryPartners.find(
       (p) => p.id !== partner.id && p.username.toLowerCase() === username.trim().toLowerCase()
@@ -2294,6 +2367,27 @@ app.put("/api/admin/delivery-partners/:id", requireAdmin, (req, res) => {
   writeDB(db);
   const { passwordHash, ...safe } = partner;
   res.json(safe);
+});
+
+// Admin ek payout record karta hai (jaise weekly cash/UPI se partner ko diya gaya) —
+// isse "Pending" earnings kam ho jaati hain partner ke Earnings tab me
+app.post("/api/admin/delivery-partners/:id/payout", requireAdmin, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.params.id);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+
+  const { amount, note } = req.body;
+  if (!amount || Number(amount) <= 0) return res.status(400).json({ error: "Valid amount zaroori hai." });
+
+  partner.payoutHistory = partner.payoutHistory || [];
+  partner.payoutHistory.unshift({
+    id: generateId("PO"),
+    amount: Number(amount),
+    note: note || "",
+    paidAt: new Date().toISOString(),
+  });
+  writeDB(db);
+  res.json({ success: true, payoutHistory: partner.payoutHistory });
 });
 
 app.delete("/api/admin/delivery-partners/:id", requireAdmin, (req, res) => {
@@ -2311,8 +2405,19 @@ app.get("/api/delivery/me", requireDeliveryAuth, (req, res) => {
   const db = readDB();
   const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
   if (!partner) return res.status(404).json({ error: "Partner not found" });
+
+  // Rating — existing order-rating system hi reuse karte hain (customer
+  // pehle se hi delivered order ko 1-5 rate kar sakta hai) — delivery partner
+  // ke delivered orders me se jitno ko rating mili hai, unka average.
+  const myRatedOrders = (db.orders || []).filter(
+    (o) => o.deliveryPartnerId === partner.id && typeof o.rating === "number"
+  );
+  const avgRating = myRatedOrders.length
+    ? Math.round((myRatedOrders.reduce((sum, o) => sum + o.rating, 0) / myRatedOrders.length) * 10) / 10
+    : null;
+
   const { passwordHash, ...safe } = partner;
-  res.json(safe);
+  res.json({ ...safe, avgRating, ratingCount: myRatedOrders.length });
 });
 
 app.put("/api/delivery/me", requireDeliveryAuth, (req, res) => {
@@ -2320,10 +2425,23 @@ app.put("/api/delivery/me", requireDeliveryAuth, (req, res) => {
   const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
   if (!partner) return res.status(404).json({ error: "Partner not found" });
 
-  const allowed = ["name", "phone", "image", "vehicleType"];
+  const allowed = ["name", "phone", "image", "vehicleType", "bankAccountName", "bankAccountNumber", "bankIfsc", "upiId", "emergencyContactName", "emergencyContactPhone"];
   allowed.forEach((f) => {
     if (req.body[f] !== undefined) partner[f] = req.body[f];
   });
+
+  // KYC fields — inhe badalne par dobara verify hona zaroori hai (agar pehle
+  // se verified thi), isliye admin ki "verified" mohar hata dete hain
+  const kycFields = ["aadharNumber", "drivingLicense", "vehicleNumber"];
+  let kycChanged = false;
+  kycFields.forEach((f) => {
+    if (req.body[f] !== undefined && req.body[f] !== partner[f]) {
+      partner[f] = req.body[f];
+      kycChanged = true;
+    }
+  });
+  if (kycChanged) partner.kycVerified = false;
+
   writeDB(db);
   const { passwordHash, ...safe } = partner;
   res.json(safe);
@@ -2360,7 +2478,20 @@ app.get("/api/delivery/orders", requireDeliveryAuth, (req, res) => {
   const db = readDB();
   const myOrders = (db.orders || [])
     .filter((o) => o.deliveryPartnerId === req.deliveryPartnerId && o.status !== "Delivered")
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .map((o) => {
+      const restaurantName = (o.items && o.items[0] && o.items[0].restaurant) || "";
+      const restaurant = db.restaurants.find((r) => r.name === restaurantName);
+      // Delivery OTP kabhi bhi partner ko seedhe nahi dikhana — customer khud
+      // partner ko batayega delivery ke waqt (WhatsApp/kehke), partner sirf
+      // "verify" karta hai apni taraf se.
+      const { deliveryOtp, ...safeOrder } = o;
+      return {
+        ...safeOrder,
+        restaurantPhone: restaurant ? restaurant.contactPhone : "",
+        restaurantLocation: db.settings.restaurantLocation || null,
+      };
+    });
   res.json(myOrders);
 });
 
@@ -2371,6 +2502,11 @@ app.post("/api/delivery/orders/:id/accept", requireDeliveryAuth, (req, res) => {
   if (!order) return res.status(404).json({ error: "Order not found" });
   if (order.deliveryPartnerId !== req.deliveryPartnerId) {
     return res.status(403).json({ error: "Ye order aapko assign nahi hua hai." });
+  }
+  // Duplicate-accept / race-condition guard — agar order already accept ho
+  // chuka hai (ya kisi aur reason se pending nahi raha), dobara accept na ho.
+  if (order.assignmentStatus !== "pending") {
+    return res.status(409).json({ error: "Ye order ab pending nahi hai — already accept/reassign ho chuka hai." });
   }
   order.assignmentStatus = "accepted";
   order.deliveryStage = "accepted";
@@ -2387,6 +2523,13 @@ app.post("/api/delivery/orders/:id/decline", requireDeliveryAuth, (req, res) => 
   if (order.deliveryPartnerId !== req.deliveryPartnerId) {
     return res.status(403).json({ error: "Ye order aapko assign nahi hua hai." });
   }
+  order.declineHistory = order.declineHistory || [];
+  order.declineHistory.push({
+    partnerId: req.deliveryPartnerId,
+    partnerName: order.deliveryPartnerName,
+    reason: req.body.reason || "",
+    declinedAt: new Date().toISOString(),
+  });
   order.deliveryPartnerId = null;
   order.deliveryPartnerName = null;
   order.assignmentStatus = null;
@@ -2409,13 +2552,21 @@ app.patch("/api/delivery/orders/:id/stage", requireDeliveryAuth, (req, res) => {
     return res.status(400).json({ error: "Pehle order Accept karein." });
   }
 
-  const { stage, cashCollected } = req.body;
+  const { stage, cashCollected, otp } = req.body;
   if (!DELIVERY_STAGE_ORDER.includes(stage)) return res.status(400).json({ error: "Invalid stage" });
 
   // COD order ho to "delivered" mark karne se pehle cash collect confirm karna zaroori hai
   const isCOD = order.customer && order.customer.payment === "Cash on Delivery";
   if (stage === "delivered" && isCOD && !cashCollected && !order.cashCollected) {
     return res.status(400).json({ error: "Pehle 'Cash Collected' confirm karein (ye order COD hai)." });
+  }
+
+  // Delivery OTP verify karna zaroori — customer khud partner ko batayega,
+  // isse fake/bina-mile "Delivered" mark karna rukta hai.
+  if (stage === "delivered" && order.deliveryOtp) {
+    if (!otp || String(otp).trim() !== String(order.deliveryOtp)) {
+      return res.status(400).json({ error: "OTP galat hai. Customer se sahi OTP lekar dubara try karein." });
+    }
   }
 
   order.deliveryStage = stage;
@@ -2433,6 +2584,10 @@ app.patch("/api/delivery/orders/:id/stage", requireDeliveryAuth, (req, res) => {
 app.get("/api/delivery/earnings", requireDeliveryAuth, (req, res) => {
   const db = readDB();
   const rate = Number(db.settings.deliveryPartnerEarningPerOrder) || 30;
+  const dailyTarget = Number(db.settings.deliveryDailyTarget) || 0;
+  const targetBonus = Number(db.settings.deliveryTargetBonus) || 0;
+
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
 
   const delivered = (db.orders || [])
     .filter((o) => o.deliveryPartnerId === req.deliveryPartnerId && o.status === "Delivered" && o.deliveredAt)
@@ -2445,15 +2600,26 @@ app.get("/api/delivery/earnings", requireDeliveryAuth, (req, res) => {
 
   const todayCount = delivered.filter((o) => new Date(o.deliveredAt) >= startOfDay).length;
   const weekCount = delivered.filter((o) => new Date(o.deliveredAt) >= startOfWeek).length;
+  const todayTargetHit = dailyTarget > 0 && todayCount >= dailyTarget;
+
+  const totalEarnings = delivered.length * rate + (todayTargetHit ? targetBonus : 0);
+  const payoutHistory = (partner && partner.payoutHistory) || [];
+  const totalPaidOut = payoutHistory.reduce((sum, p) => sum + p.amount, 0);
 
   res.json({
     ratePerDelivery: rate,
     totalDeliveries: delivered.length,
-    totalEarnings: delivered.length * rate,
+    totalEarnings,
     todayDeliveries: todayCount,
     todayEarnings: todayCount * rate,
     weekDeliveries: weekCount,
     weekEarnings: weekCount * rate,
+    dailyTarget,
+    targetBonus,
+    todayTargetHit,
+    totalPaidOut,
+    pendingAmount: Math.max(totalEarnings - totalPaidOut, 0),
+    payoutHistory: payoutHistory.slice(0, 20),
     history: delivered.slice(0, 50).map((o) => ({
       id: o.id,
       deliveredAt: o.deliveredAt,

@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-Sitemap: https://sachbite.onrender.com/sitemap.xml
+Sitemap: https://sachbite.in/sitemap.xml
