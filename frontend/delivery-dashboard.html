@@ -5,83 +5,6 @@
 <link rel="icon" type="image/png" href="icons/icon-192.png" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Delivery Dashboard - SachBite</title>
-<style>
-  :root {
-    --primary: #ff7a1a; --primary-dark: #e85d04; --text-dark:#1e1e1e; --text-gray:#6b7280;
-    --border:#eee; --green:#16a34a; --green-bg:#e9f9ee; --red:#dc2626;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; font-family:"Segoe UI", Roboto, Arial, sans-serif; }
-  body { background:#faf9f7; color:var(--text-dark); }
-  header {
-    background:#fff; border-bottom:1px solid var(--border); padding:14px 20px;
-    display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; flex-wrap:wrap; gap:10px;
-  }
-  .logo { font-size:20px; font-weight:800; }
-  .logo span { color:var(--primary); }
-  .header-right { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
-  .online-toggle { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; }
-  .switch { position:relative; display:inline-block; width:44px; height:24px; }
-  .switch input { opacity:0; width:0; height:0; }
-  .slider { position:absolute; cursor:pointer; inset:0; background:#ccc; border-radius:24px; transition:0.2s; }
-  .slider::before { content:""; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.2s; }
-  input:checked + .slider { background:var(--green); }
-  input:checked + .slider::before { transform:translateX(20px); }
-  .btn-logout { background:#fdeaea; color:var(--red); border:none; padding:8px 16px; border-radius:20px; font-weight:700; font-size:13px; cursor:pointer; }
-
-  .tabs { display:flex; gap:6px; padding:14px 20px 0; background:#fff; border-bottom:1px solid var(--border); overflow-x:auto; }
-  .tab-btn {
-    padding:10px 16px; border:none; background:transparent; font-weight:700; font-size:13.5px;
-    color:var(--text-gray); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap;
-  }
-  .tab-btn.active { color:var(--primary); border-bottom-color:var(--primary); }
-
-  .content { padding:22px 20px 60px; max-width:900px; margin:0 auto; }
-  .tab-panel { display:none; }
-  .tab-panel.active { display:block; }
-
-  .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin-bottom:16px; }
-  .card h3 { font-size:16px; margin-bottom:14px; }
-  .form-group { margin-bottom:14px; }
-  .form-group label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
-  .form-group input, .form-group select { width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:14px; outline:none; }
-  .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  @media (max-width:600px) { .row-2 { grid-template-columns:1fr; } }
-
-  .btn { padding:10px 20px; border-radius:24px; border:none; font-weight:700; font-size:13.5px; cursor:pointer; }
-  .btn-primary { background:var(--primary); color:#fff; }
-  .btn-primary:hover { background:var(--primary-dark); }
-  .btn-outline { background:#fff; border:1.5px solid var(--border); color:var(--text-dark); }
-  .btn-green { background:var(--green); color:#fff; }
-  .btn:disabled { opacity:0.6; cursor:not-allowed; }
-
-  .msg { font-size:13px; font-weight:600; margin-top:10px; display:none; }
-  .msg.show { display:block; }
-  .msg.success { color:var(--green); }
-  .msg.error { color:var(--red); }
-
-  .order-card { border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:14px; }
-  .order-card .top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
-  .order-card .order-id { font-weight:800; font-size:15px; }
-  .order-card .rname { font-size:12.5px; color:var(--primary); font-weight:700; margin-top:2px; }
-  .order-card .item-line { font-size:13px; color:var(--text-dark); padding:2px 0; }
-  .order-card .addr-block { font-size:13px; color:var(--text-gray); margin:8px 0; line-height:1.5; }
-  .order-card .actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
-  .status-chip { font-size:11px; font-weight:700; padding:4px 10px; border-radius:12px; background:#fff4e0; color:#b45309; }
-  .status-chip.picked { background:var(--green-bg); color:var(--green); }
-
-  .stat-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:16px; }
-  @media (max-width:600px) { .stat-grid { grid-template-columns:1fr; } }
-  .stat-box { background:#fff8f2; border-radius:12px; padding:16px; text-align:center; }
-  .stat-box .val { font-size:22px; font-weight:800; color:var(--primary-dark); }
-  .stat-box .lbl { font-size:12px; color:var(--text-gray); margin-top:4px; }
-
-  .history-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
-  .history-row:last-child { border-bottom:none; }
-
-  .empty-state { text-align:center; padding:40px 20px; color:var(--text-gray); }
-  .gps-banner { background:var(--green-bg); color:var(--green); font-size:12.5px; font-weight:600; padding:10px 14px; border-radius:10px; margin-bottom:14px; }
-  .cod-banner { background:#fff4e0; color:#b45309; font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; margin:8px 0; }
-</style>
 <link rel="manifest" href="manifest-delivery.json" />
 <meta name="theme-color" content="#16a34a" />
 <script>
@@ -91,11 +14,119 @@
     });
   }
 </script>
+<style>
+  :root {
+    --primary: #ff7a1a; --primary-dark: #e85d04; --text-dark:#1e1e1e; --text-gray:#6b7280;
+    --border:#eee; --green:#16a34a; --green-bg:#e9f9ee; --red:#dc2626;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; font-family:"Segoe UI", Roboto, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+  body { background:#faf9f7; color:var(--text-dark); padding-bottom:70px; }
+  header {
+    background:#fff; border-bottom:1px solid var(--border); padding:12px 16px;
+    display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:20; flex-wrap:wrap; gap:8px;
+  }
+  .logo { font-size:19px; font-weight:800; }
+  .logo span { color:var(--primary); }
+  .header-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .online-toggle { display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; }
+  .switch { position:relative; display:inline-block; width:42px; height:23px; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; cursor:pointer; inset:0; background:#ccc; border-radius:24px; transition:0.2s; }
+  .slider::before { content:""; position:absolute; height:17px; width:17px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.2s; }
+  input:checked + .slider { background:var(--green); }
+  input:checked + .slider::before { transform:translateX(19px); }
+  .btn-logout { background:#fdeaea; color:var(--red); border:none; padding:7px 12px; border-radius:20px; font-weight:700; font-size:12px; cursor:pointer; }
+  .bell-btn { position:relative; background:#f3f4f6; border:none; width:36px; height:36px; border-radius:50%; font-size:16px; cursor:pointer; }
+  .bell-dot { position:absolute; top:4px; right:5px; width:9px; height:9px; background:var(--red); border-radius:50%; display:none; }
+
+  .content { padding:16px 14px 20px; max-width:640px; margin:0 auto; }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:14px; }
+  .card h3 { font-size:15px; margin-bottom:12px; }
+  .form-group { margin-bottom:14px; }
+  .form-group label { display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; }
+  .form-group input, .form-group select { width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:8px; font-size:14px; outline:none; }
+  .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:480px) { .row-2 { grid-template-columns:1fr; } }
+
+  .btn { padding:11px 18px; border-radius:24px; border:none; font-weight:700; font-size:13.5px; cursor:pointer; min-height:42px; }
+  .btn-primary { background:var(--primary); color:#fff; }
+  .btn-primary:hover { background:var(--primary-dark); }
+  .btn-outline { background:#fff; border:1.5px solid var(--border); color:var(--text-dark); text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+  .btn-green { background:var(--green); color:#fff; }
+  .btn-red-outline { background:#fff; border:1.5px solid var(--red); color:var(--red); text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+  .btn:disabled { opacity:0.6; cursor:not-allowed; }
+  .btn-full { width:100%; }
+
+  .msg { font-size:13px; font-weight:600; margin-top:10px; display:none; }
+  .msg.show { display:block; }
+  .msg.success { color:var(--green); }
+  .msg.error { color:var(--red); }
+
+  .stat-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:14px; }
+  .stat-box { background:#fff8f2; border-radius:12px; padding:14px; text-align:center; }
+  .stat-box .val { font-size:20px; font-weight:800; color:var(--primary-dark); }
+  .stat-box .lbl { font-size:11.5px; color:var(--text-gray); margin-top:3px; }
+  .rating-box { display:flex; align-items:center; justify-content:center; gap:6px; font-size:18px; font-weight:800; color:#f59e0b; }
+
+  .order-card { border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:12px; }
+  .order-card.new-alert { border:2px solid var(--primary); background:#fff8f2; animation: pulse-border 1.5s infinite; }
+  @keyframes pulse-border { 0%,100% { border-color: var(--primary); } 50% { border-color: #ffcc99; } }
+  .order-card .top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+  .order-card .order-id { font-weight:800; font-size:14.5px; }
+  .order-card .rname { font-size:12px; color:var(--primary); font-weight:700; margin-top:2px; }
+  .order-card .item-line { font-size:12.5px; color:var(--text-dark); padding:1px 0; }
+  .order-card .addr-block { font-size:12.5px; color:var(--text-gray); margin:8px 0; line-height:1.5; }
+  .order-card .actions { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+  .order-card .actions .btn { flex:1; min-width:100px; font-size:12.5px; padding:9px 10px; }
+  .status-chip { font-size:10.5px; font-weight:700; padding:4px 9px; border-radius:12px; background:#fff4e0; color:#b45309; white-space:nowrap; }
+  .status-chip.picked { background:var(--green-bg); color:var(--green); }
+  .cod-banner { background:#fff4e0; color:#b45309; font-size:12.5px; font-weight:700; padding:8px 12px; border-radius:8px; margin:8px 0; }
+
+  .otp-box { display:flex; gap:8px; margin-top:10px; }
+  .otp-box input { flex:1; text-align:center; letter-spacing:4px; font-size:17px; font-weight:700; padding:10px; border:1.5px solid var(--border); border-radius:8px; }
+
+  .stat-mini { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:14px; }
+  @media (max-width:480px) { .stat-mini { grid-template-columns:1fr; } }
+  .history-row { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+  .history-row:last-child { border-bottom:none; }
+
+  .notif-row { display:flex; gap:10px; padding:12px 0; border-bottom:1px solid var(--border); }
+  .notif-row:last-child { border-bottom:none; }
+  .notif-row.unread { background:#fff8f2; margin:0 -18px; padding:12px 18px; }
+  .notif-icon { font-size:20px; }
+  .notif-title { font-weight:700; font-size:13.5px; }
+  .notif-body { font-size:12.5px; color:var(--text-gray); margin-top:2px; }
+  .notif-time { font-size:11px; color:var(--text-gray); margin-top:4px; }
+
+  .empty-state { text-align:center; padding:36px 16px; color:var(--text-gray); font-size:13.5px; }
+  .gps-banner { background:var(--green-bg); color:var(--green); font-size:12px; font-weight:600; padding:9px 14px; border-radius:10px; margin-bottom:14px; }
+
+  .kyc-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:10px; }
+  .kyc-badge.verified { background:var(--green-bg); color:var(--green); }
+  .kyc-badge.pending { background:#fff4e0; color:#b45309; }
+
+  .safety-tip { font-size:12.5px; color:var(--text-gray); padding:6px 0; }
+
+  .bottom-nav {
+    position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border);
+    display:flex; z-index:30; padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .nav-btn {
+    flex:1; background:none; border:none; padding:9px 4px 8px; display:flex; flex-direction:column;
+    align-items:center; gap:3px; cursor:pointer; color:var(--text-gray); font-size:10.5px; font-weight:700; position:relative;
+  }
+  .nav-btn .nav-icon { font-size:20px; }
+  .nav-btn.active { color:var(--primary); }
+  .nav-badge { position:absolute; top:4px; right:22%; width:8px; height:8px; background:var(--red); border-radius:50%; display:none; }
+</style>
 </head>
 <body>
 
 <header>
-  <div class="logo">Sach<span>Bite</span> 🛵 <span style="font-size:12px; color:var(--text-gray); font-weight:600;">Delivery</span></div>
+  <div class="logo">Sach<span>Bite</span> 🛵</div>
   <div class="header-right">
     <div class="online-toggle">
       <label class="switch">
@@ -104,35 +135,59 @@
       </label>
       <span id="onlineLabel">Offline</span>
     </div>
-    <button class="btn btn-outline" id="enableNotifBtn" style="display:none; padding:6px 12px; font-size:12px;">🔔 Notifications On Karein</button>
-    <span id="partnerNamePill" style="font-size:13px; color:var(--text-gray);"></span>
+    <button class="bell-btn" onclick="switchTab('notifications')">🔔<span class="bell-dot" id="bellDot"></span></button>
     <button class="btn-logout" onclick="deliveryLogout()">Logout</button>
   </div>
 </header>
 
-<div class="tabs">
-  <button class="tab-btn active" data-tab="orders">📦 Orders</button>
-  <button class="tab-btn" data-tab="earnings">💰 Earnings</button>
-  <button class="tab-btn" data-tab="profile">👤 Profile</button>
-</div>
-
 <div class="content">
 
-  <!-- ORDERS TAB -->
-  <div class="tab-panel active" id="tab-orders">
+  <div class="tab-panel active" id="tab-home">
     <div id="gpsBanner" class="gps-banner" style="display:none;">📍 Live location share ho raha hai...</div>
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="val" id="homeTodayEarn">₹0</div><div class="lbl">Aaj Ki Kamai</div></div>
+      <div class="stat-box"><div class="val" id="homeTodayCount">0</div><div class="lbl">Aaj Ki Deliveries</div></div>
+      <div class="stat-box"><div class="val" id="homePending">₹0</div><div class="lbl">Pending Payout</div></div>
+      <div class="stat-box"><div class="rating-box" id="homeRating">⭐ —</div><div class="lbl">Rating</div></div>
+    </div>
+
+    <div class="card" id="targetCard" style="display:none;">
+      <h3>🎯 Aaj Ka Target</h3>
+      <div id="targetText" style="font-size:13px; color:var(--text-gray);"></div>
+    </div>
+
     <div class="card">
-      <h3>Aapke Assigned Orders</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="margin:0;">📦 Active Deliveries</h3>
+      </div>
+      <div id="homeOrdersList"></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-deliveries">
+    <div class="card">
+      <h3>Aapke Orders</h3>
       <div id="ordersList"></div>
     </div>
   </div>
 
-  <!-- EARNINGS TAB -->
   <div class="tab-panel" id="tab-earnings">
-    <div class="stat-grid">
-      <div class="stat-box"><div class="val" id="todayEarn">₹0</div><div class="lbl">Aaj (<span id="todayCount">0</span> deliveries)</div></div>
-      <div class="stat-box"><div class="val" id="weekEarn">₹0</div><div class="lbl">Is hafte (<span id="weekCount">0</span> deliveries)</div></div>
-      <div class="stat-box"><div class="val" id="totalEarn">₹0</div><div class="lbl">Total (<span id="totalCount">0</span> deliveries)</div></div>
+    <div class="stat-mini">
+      <div class="stat-box"><div class="val" id="todayEarn">₹0</div><div class="lbl">Aaj (<span id="todayCount">0</span>)</div></div>
+      <div class="stat-box"><div class="val" id="weekEarn">₹0</div><div class="lbl">Is hafte (<span id="weekCount">0</span>)</div></div>
+      <div class="stat-box"><div class="val" id="totalEarn">₹0</div><div class="lbl">Total (<span id="totalCount">0</span>)</div></div>
+    </div>
+    <div class="card">
+      <h3>💼 Wallet</h3>
+      <div class="row-2">
+        <div><div class="lbl" style="font-size:12px; color:var(--text-gray);">Pending Payout</div><div style="font-size:19px; font-weight:800; color:var(--red);" id="walletPending">₹0</div></div>
+        <div><div class="lbl" style="font-size:12px; color:var(--text-gray);">Total Paid</div><div style="font-size:19px; font-weight:800; color:var(--green);" id="walletPaid">₹0</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Payout History</h3>
+      <div id="payoutHistoryList"></div>
     </div>
     <div class="card">
       <h3>Delivery History</h3>
@@ -140,10 +195,19 @@
     </div>
   </div>
 
-  <!-- PROFILE TAB -->
+  <div class="tab-panel" id="tab-notifications">
+    <div class="card">
+      <h3>Notifications</h3>
+      <div id="notifList"></div>
+    </div>
+  </div>
+
   <div class="tab-panel" id="tab-profile">
     <div class="card">
-      <h3>Profile</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0;">Profile</h3>
+        <span class="kyc-badge pending" id="kycBadge">KYC Pending</span>
+      </div>
       <div class="form-group">
         <label for="pName">Naam</label>
         <input type="text" id="pName" />
@@ -166,16 +230,91 @@
       <div class="form-group">
         <label for="pImageFile">Profile Photo</label>
         <input type="file" id="pImageFile" accept="image/*" />
-        <div style="margin-top:8px;"><img id="pImagePreview" src="" alt="" style="max-width:100px; border-radius:50%; display:none;" /></div>
+        <div style="margin-top:8px;"><img id="pImagePreview" src="" alt="" style="max-width:90px; border-radius:50%; display:none;" /></div>
       </div>
-      <button class="btn btn-primary" id="saveProfileBtn">Save Profile</button>
+      <button class="btn btn-primary btn-full" id="saveProfileBtn">Save Profile</button>
       <div class="msg" id="profileMsg"></div>
     </div>
 
     <div class="card">
+      <h3>📄 Documents (KYC)</h3>
+      <p style="font-size:12px; color:var(--text-gray); margin-bottom:12px;">Ye details admin verify karega. Badalne par dobara verification lagegi.</p>
+      <div class="form-group">
+        <label for="pAadhar">Aadhar Number</label>
+        <input type="text" id="pAadhar" maxlength="12" />
+      </div>
+      <div class="form-group">
+        <label for="pLicense">Driving License Number</label>
+        <input type="text" id="pLicense" />
+      </div>
+      <div class="form-group">
+        <label for="pVehicleNo">Vehicle Number</label>
+        <input type="text" id="pVehicleNo" placeholder="jaise BR06AB1234" />
+      </div>
+      <button class="btn btn-outline btn-full" id="saveKycBtn">Documents Save Karein</button>
+      <div class="msg" id="kycMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3>🏦 Bank / UPI Payout Details</h3>
+      <div class="form-group">
+        <label for="pUpi">UPI ID</label>
+        <input type="text" id="pUpi" placeholder="jaise 9876543210@paytm" />
+      </div>
+      <div class="form-group">
+        <label for="pBankName">Account Holder Naam</label>
+        <input type="text" id="pBankName" />
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label for="pBankAcc">Account Number</label>
+          <input type="text" id="pBankAcc" />
+        </div>
+        <div class="form-group">
+          <label for="pBankIfsc">IFSC Code</label>
+          <input type="text" id="pBankIfsc" />
+        </div>
+      </div>
+      <button class="btn btn-outline btn-full" id="saveBankBtn">Bank Details Save Karein</button>
+      <div class="msg" id="bankMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3>🆘 Safety Center</h3>
+      <div class="form-group">
+        <label for="pEmergName">Emergency Contact Naam</label>
+        <input type="text" id="pEmergName" />
+      </div>
+      <div class="form-group">
+        <label for="pEmergPhone">Emergency Contact Phone</label>
+        <input type="text" id="pEmergPhone" />
+      </div>
+      <button class="btn btn-outline btn-full" id="saveEmergBtn" style="margin-bottom:14px;">Emergency Contact Save Karein</button>
+      <div class="msg" id="emergMsg"></div>
+
+      <div style="display:flex; gap:8px; margin-top:6px;">
+        <a href="tel:112" class="btn btn-red-outline" style="flex:1;">🚨 Police (112)</a>
+        <a id="emergCallBtn" href="#" class="btn btn-outline" style="flex:1;">📞 Emergency Contact</a>
+      </div>
+      <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
+        <div class="safety-tip">✔️ Hamesha helmet pehnein aur traffic rules follow karein</div>
+        <div class="safety-tip">✔️ Delivery ke waqt kisi ajeeb/unsafe situation mein turant admin ko batayein</div>
+        <div class="safety-tip">✔️ Raat ko akele sunsaan jagah delivery se bachein, admin ko inform karein</div>
+      </div>
+    </div>
+
+    <div class="card">
       <h3>🆘 Help &amp; Support</h3>
-      <p style="font-size:13px; color:var(--text-gray); margin-bottom:12px;">Koi order/payment/app se related dikkat ho to admin se seedha contact karein.</p>
-      <a id="supportCallBtn" href="#" class="btn btn-outline" style="text-decoration:none; display:inline-block;">📞 Admin Ko Call Karein</a>
+      <div class="row-2">
+        <a id="supportCallBtn" href="#" class="btn btn-outline">📞 Call Admin</a>
+        <a id="supportWhatsappBtn" href="#" target="_blank" class="btn btn-outline">💬 WhatsApp</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🔔 Notifications</h3>
+      <button class="btn btn-outline btn-full" id="enableNotifBtn" style="display:none;">🔔 Push Notifications On Karein</button>
+      <div class="msg show success" id="notifStatusMsg" style="display:none;">✅ Notifications ON hain</div>
     </div>
 
     <div class="card">
@@ -190,12 +329,20 @@
           <input type="password" id="newPass" placeholder="Kam se kam 6 characters" />
         </div>
       </div>
-      <button class="btn btn-outline" id="changePassBtn">Password Badlein</button>
+      <button class="btn btn-outline btn-full" id="changePassBtn">Password Badlein</button>
       <div class="msg" id="passMsg"></div>
     </div>
   </div>
 
 </div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-tab="home"><span class="nav-icon">🏠</span>Home</button>
+  <button class="nav-btn" data-tab="deliveries"><span class="nav-icon">📦</span>Deliveries<span class="nav-badge" id="deliveriesBadge"></span></button>
+  <button class="nav-btn" data-tab="earnings"><span class="nav-icon">💰</span>Earnings</button>
+  <button class="nav-btn" data-tab="notifications"><span class="nav-icon">🔔</span>Alerts<span class="nav-badge" id="notifBadge"></span></button>
+  <button class="nav-btn" data-tab="profile"><span class="nav-icon">👤</span>Profile</button>
+</nav>
 
 <script src="js/delivery-auth.js"></script>
 <script src="js/delivery-dashboard.js"></script>

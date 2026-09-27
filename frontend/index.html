@@ -10,27 +10,27 @@
 <meta property="og:title" content="SachBite - Food delivered with love" />
 <meta property="og:description" content="Apna favourite khana order karein — fast delivery, live tracking, aur best restaurants." />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://sachbite.onrender.com/" />
+<meta property="og:url" content="https://sachbite.in/" />
 <meta property="og:image" content="images/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="SachBite - Food delivered with love" />
 <meta name="twitter:description" content="Apna favourite khana order karein — fast delivery, live tracking, aur best restaurants." />
-<meta name="twitter:image" content="https://sachbite.onrender.com/images/og-image.png" />
-<link rel="canonical" href="https://sachbite.onrender.com/" />
+<meta name="twitter:image" content="https://sachbite.in/images/og-image.png" />
+<link rel="canonical" href="https://sachbite.in/" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": "https://sachbite.onrender.com/#website",
+      "@id": "https://sachbite.in/#website",
       "name": "SachBite",
-      "url": "https://sachbite.onrender.com/",
-      "publisher": { "@id": "https://sachbite.onrender.com/#business" }
+      "url": "https://sachbite.in/",
+      "publisher": { "@id": "https://sachbite.in/#business" }
     },
     {
       "@type": "LocalBusiness",
-      "@id": "https://sachbite.onrender.com/#business",
+      "@id": "https://sachbite.in/#business",
       "name": "SachBite",
       "description": "SachBite is an online food ordering and delivery platform serving Kanti, Muzaffarpur, Bihar.",
       "address": {
@@ -39,15 +39,22 @@
         "addressRegion": "Bihar",
         "addressCountry": "IN"
       },
-      "telephone": "+91-93040-96306",
-      "url": "https://sachbite.onrender.com/",
+      "areaServed": "Kanti, Muzaffarpur, Bihar, India",
+      "email": "sachinkumar843409@gmail.com",
+      "url": "https://sachbite.in/",
+      "founder": {
+        "@type": "Person",
+        "name": "Sachin Mishra",
+        "jobTitle": "Founder & CEO"
+      },
+      "foundingDate": "2026-09",
       "identifier": {
         "@type": "PropertyValue",
         "propertyID": "Udyam Registration Number",
         "value": "UDYAM-BR-23-0133153"
       },
-      "mainEntityOfPage": "https://sachbite.onrender.com/",
-      "isPartOf": { "@id": "https://sachbite.onrender.com/#website" }
+      "mainEntityOfPage": "https://sachbite.in/",
+      "isPartOf": { "@id": "https://sachbite.in/#website" }
     }
   ]
 }
@@ -123,13 +130,13 @@
 
 <header class="topbar">
   <div class="topbar-inner">
-    <a href="index.html" class="logo">
+    <a href="/" class="logo">
       Sach<span>Bite</span> 🛵
       <small data-i18n="tagline">Food delivered with love ❤️</small>
     </a>
 
     <nav class="main-nav" id="mainNav">
-      <a href="index.html" class="active" data-i18n="nav_home">Home</a>
+      <a href="/" class="active" data-i18n="nav_home">Home</a>
       <a href="restaurants.html" data-i18n="nav_restaurants">Restaurants</a>
       <a href="offers.html" data-i18n="nav_offers">Offers</a>
       <a href="track-order.html" data-i18n="nav_track">Track Order</a>
@@ -267,7 +274,18 @@
     <h2 data-i18n="about_heading">About Us</h2>
   </div>
   <div class="about-box">
-    <p id="aboutText">SachBite ek local food delivery service hai jo aapke favourite restaurants ko aapke ghar tak pahunchata hai.</p>
+    <h3 style="margin-bottom:10px;">🌟 Our Vision</h3>
+    <p>SachBite's vision is not just to become a food delivery platform, but to build a trusted, customer-first food-tech ecosystem across India.</p>
+    <p style="margin-top:10px;">We want every customer to easily discover their favorite food, order at the right price, and enjoy a reliable delivery experience at their doorstep.</p>
+    <p style="margin-top:10px;">At the same time, our goal is to empower local restaurants and small food businesses with technology, helping them reach new customers and grow their businesses.</p>
+    <p style="margin-top:10px;">Our dream is simple — to bring the taste of every city closer to every customer. ❤️</p>
+
+    <h3 style="margin-top:22px; margin-bottom:10px;">📅 Our Journey</h3>
+    <p>SachBite was founded in September 2026 with a vision to create a better food experience for customers while providing new growth opportunities for local restaurants.</p>
+
+    <p style="margin-top:22px;">Thank You for Choosing SachBite</p>
+    <p style="font-weight:700;">Founder &amp; CEO — Sachin Mishra</p>
+    <p style="margin-top:14px; font-style:italic; color:var(--text-gray);">SachBite — Discover Local. Order Better. Enjoy More.</p>
   </div>
 </section>
 
@@ -283,11 +301,11 @@
         <a href="mailto:sachinkumar843409@gmail.com" id="contactEmail" class="contact-value">sachinkumar843409@gmail.com</a>
       </div>
     </div>
-    <div class="contact-card">
+    <div class="contact-card" id="contactPhoneCard" style="display:none;">
       <div class="contact-icon">📞</div>
       <div>
         <div class="contact-label" data-i18n="call_us">Call us</div>
-        <a href="tel:+919304096306" id="contactPhone" class="contact-value">+91 93040 96306</a>
+        <a href="#" id="contactPhone" class="contact-value"></a>
       </div>
     </div>
     <div class="contact-card">

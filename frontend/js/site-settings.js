@@ -56,8 +56,14 @@ async function applySiteSettings() {
     emailEl.href = `mailto:${settings.contactEmail || ""}`;
   }
   if (phoneEl) {
-    phoneEl.textContent = settings.contactPhone || "";
-    phoneEl.href = `tel:${(settings.contactPhone || "").replace(/[^0-9+]/g, "")}`;
+    const phoneCard = document.getElementById("contactPhoneCard");
+    if (settings.contactPhone) {
+      phoneEl.textContent = settings.contactPhone;
+      phoneEl.href = `tel:${settings.contactPhone.replace(/[^0-9+]/g, "")}`;
+      if (phoneCard) phoneCard.style.display = "";
+    } else if (phoneCard) {
+      phoneCard.style.display = "none";
+    }
   }
   if (hoursEl) hoursEl.textContent = settings.supportHours || "24x7 Support";
 

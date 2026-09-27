@@ -3,12 +3,12 @@ function renderCustomerHeader(activePage) {
   if (!root) return;
 
   const navItems = [
-    { label: "Home", href: "index.html", key: "nav_home" },
+    { label: "Home", href: "/", key: "nav_home" },
     { label: "Restaurants", href: "restaurants.html", key: "nav_restaurants" },
     { label: "Offers", href: "offers.html", key: "nav_offers" },
     { label: "Track Order", href: "track-order.html", key: "nav_track" },
-    { label: "About", href: "index.html#about", key: "nav_about" },
-    { label: "Contact", href: "index.html#contact", key: "nav_contact" },
+    { label: "About", href: "/#about", key: "nav_about" },
+    { label: "Contact", href: "/#contact", key: "nav_contact" },
   ];
 
   const navHTML = navItems
@@ -20,7 +20,7 @@ function renderCustomerHeader(activePage) {
 
   root.innerHTML = `
     <div class="topbar-inner">
-      <a href="index.html" class="logo">
+      <a href="/" class="logo">
         Sach<span>Bite</span> 🛵
         <small data-i18n="tagline">Food delivered with love ❤️</small>
       </a>
