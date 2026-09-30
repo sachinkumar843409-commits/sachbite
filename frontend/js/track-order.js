@@ -102,6 +102,7 @@ async function trackByPhone() {
           <div style="margin-top:6px; font-size:14px; color:var(--text-gray);">Grand Total: ₹${o.grandTotal}</div>
           <div class="track-status" style="--progress-pct: ${progressPct};">${stepsHTML}</div>
           ${o.deliveryPartnerName ? `<div style="margin-top:10px; font-size:13px; color:var(--text-gray);">🛵 Delivery Partner: <strong>${o.deliveryPartnerName}</strong></div>` : ""}
+          ${o.status === "Out for Delivery" ? `<div class="delivery-otp-box" id="otp-box-${o.id}" style="margin-top:10px; background:#fff4e0; border-radius:10px; padding:10px 14px; font-size:13px; color:#b45309;">OTP load ho raha hai...</div>` : ""}
           ${showMap ? `<div class="live-map-box" id="map-${o.id}"></div><div class="live-eta" id="eta-${o.id}"><span class="eta-bike">🛵</span> <span id="eta-text-${o.id}">Live tracking load ho raha hai...</span></div>` : ""}
           ${showRating ? renderRatingSection(o) : ""}
           <div class="track-actions">
@@ -118,6 +119,12 @@ async function trackByPhone() {
     const liveOrders = orders.filter((o) => o.status === "Out for Delivery" && o.location);
     liveOrders.forEach((o) => setupLiveMap(o.id));
 
+    // Delivery OTP — customer ko dikhana hai (partner delivery complete karne
+    // se pehle ye number maangega, fraud/galat-delivery se bachne ke liye)
+    orders
+      .filter((o) => o.status === "Out for Delivery")
+      .forEach((o) => loadDeliveryOtp(o.id));
+
     if (liveOrders.length > 0) {
       pollInterval = setInterval(() => {
         liveOrders.forEach((o) => updateLiveMap(o.id));
@@ -129,6 +136,29 @@ async function trackByPhone() {
     }
   } catch (e) {
     results.innerHTML = "<p style='color:var(--text-gray)'>Kuch galat ho gaya. Backend chal raha hai check karein.</p>";
+  }
+}
+
+async function loadDeliveryOtp(orderId) {
+  const box = document.getElementById(`otp-box-${orderId}`);
+  if (!box) return;
+  const token = localStorage.getItem("sachbite_token");
+  if (!token) {
+    box.style.display = "none";
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/orders/${orderId}/delivery-otp`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (res.ok && data.otp) {
+      box.innerHTML = `🔐 Delivery OTP: <strong style="font-size:16px; letter-spacing:2px;">${data.otp}</strong><br/><span style="font-size:11.5px;">Ye number sirf delivery partner ko dein jab wo order de raha ho.</span>`;
+    } else {
+      box.style.display = "none";
+    }
+  } catch (e) {
+    box.style.display = "none";
   }
 }
 

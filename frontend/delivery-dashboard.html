@@ -88,8 +88,8 @@
   .otp-box { display:flex; gap:8px; margin-top:10px; }
   .otp-box input { flex:1; text-align:center; letter-spacing:4px; font-size:17px; font-weight:700; padding:10px; border:1.5px solid var(--border); border-radius:8px; }
 
-  .stat-mini { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:14px; }
-  @media (max-width:480px) { .stat-mini { grid-template-columns:1fr; } }
+  .stat-mini { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:14px; }
+  @media (max-width:480px) { .stat-mini { grid-template-columns:repeat(2, 1fr); } }
   .history-row { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
   .history-row:last-child { border-bottom:none; }
 
@@ -176,7 +176,8 @@
     <div class="stat-mini">
       <div class="stat-box"><div class="val" id="todayEarn">₹0</div><div class="lbl">Aaj (<span id="todayCount">0</span>)</div></div>
       <div class="stat-box"><div class="val" id="weekEarn">₹0</div><div class="lbl">Is hafte (<span id="weekCount">0</span>)</div></div>
-      <div class="stat-box"><div class="val" id="totalEarn">₹0</div><div class="lbl">Total (<span id="totalCount">0</span>)</div></div>
+      <div class="stat-box"><div class="val" id="monthEarn">₹0</div><div class="lbl">Is mahine (<span id="monthCount">0</span>)</div></div>
+      <div class="stat-box"><div class="val" id="totalEarn">₹0</div><div class="lbl">Lifetime (<span id="totalCount">0</span>)</div></div>
     </div>
     <div class="card">
       <h3>💼 Wallet</h3>
@@ -184,6 +185,15 @@
         <div><div class="lbl" style="font-size:12px; color:var(--text-gray);">Pending Payout</div><div style="font-size:19px; font-weight:800; color:var(--red);" id="walletPending">₹0</div></div>
         <div><div class="lbl" style="font-size:12px; color:var(--text-gray);">Total Paid</div><div style="font-size:19px; font-weight:800; color:var(--green);" id="walletPaid">₹0</div></div>
       </div>
+    </div>
+    <div class="card">
+      <h3>💵 COD Cash Balance</h3>
+      <p style="font-size:12px; color:var(--text-gray); margin-bottom:10px;">Customers se jo cash collect kiya hai, usme se jitna abhi tak admin ko jama nahi kiya.</p>
+      <div class="row-2">
+        <div><div class="lbl" style="font-size:12px; color:var(--text-gray);">Aapke Paas (Deposit Baaki)</div><div style="font-size:19px; font-weight:800; color:#b45309;" id="codBalanceVal">₹0</div></div>
+        <div><div class="lbl" style="font-size:12px; color:var(--text-gray);">Ab Tak Jama Kiya</div><div style="font-size:19px; font-weight:800; color:var(--green);" id="codDepositedVal">₹0</div></div>
+      </div>
+      <div id="codDepositHistoryList" style="margin-top:10px;"></div>
     </div>
     <div class="card">
       <h3>Payout History</h3>

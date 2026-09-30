@@ -34,19 +34,111 @@ function renderPartners() {
         </div>
       </div>
       <span class="dp-status-pill ${pillClass}">${pillText}</span>
+      <span class="kyc-pill ${p.kycVerified ? "verified" : "pending"}">${p.kycVerified ? "✅ KYC Verified" : "⏳ KYC Pending"}</span>
       <div class="dp-meta" style="margin-top:8px;">Username: ${escapeHtml(p.username)}</div>
+      ${p.aadharNumber || p.drivingLicense || p.vehicleNumber ? `
+      <div class="dp-meta" style="margin-top:4px; font-size:11px;">
+        ${p.aadharNumber ? `Aadhar: ${escapeHtml(p.aadharNumber)}<br/>` : ""}
+        ${p.drivingLicense ? `DL: ${escapeHtml(p.drivingLicense)}<br/>` : ""}
+        ${p.vehicleNumber ? `Vehicle No: ${escapeHtml(p.vehicleNumber)}` : ""}
+      </div>` : ""}
+      ${p.upiId || p.bankAccountNumber ? `
+      <div class="dp-meta" style="margin-top:4px; font-size:11px;">
+        ${p.upiId ? `UPI: ${escapeHtml(p.upiId)}<br/>` : ""}
+        ${p.bankAccountNumber ? `Bank: ${escapeHtml(p.bankAccountName || "")} · A/C ${escapeHtml(p.bankAccountNumber)} · ${escapeHtml(p.bankIfsc || "")}` : ""}
+      </div>` : ""}
+      ${p.stats ? `
+      <div class="dp-stats">
+        <div><b>${p.stats.totalDeliveries}</b><span>Deliveries</span></div>
+        <div><b>${p.stats.avgRating ? "⭐ " + p.stats.avgRating : "—"}</b><span>Rating${p.stats.ratingCount ? " (" + p.stats.ratingCount + ")" : ""}</span></div>
+        <div><b>${p.stats.activeOrderCount}</b><span>Active</span></div>
+        <div><b style="color:#dc2626;">₹${p.stats.pendingAmount}</b><span>Pending Payout</span></div>
+        <div><b style="color:#b45309;">₹${p.stats.codBalance}</b><span>COD Balance</span></div>
+        <div><b style="color:#16a34a;">₹${p.stats.totalPaidOut}</b><span>Paid Out</span></div>
+      </div>` : ""}
       <div class="dp-actions">
         <button class="btn-edit-menu" onclick="openEditModal('${p.id}')">✏️ Edit</button>
         <button class="btn-del-menu" onclick="deletePartner('${p.id}')">🗑️ Delete</button>
+      </div>
+      <div class="dp-actions">
+        <button class="btn-edit-menu" style="background:${p.kycVerified ? "#f3f4f6" : "#16a34a"}; color:${p.kycVerified ? "#374151" : "#fff"};" onclick="toggleKyc('${p.id}', ${!p.kycVerified})">${p.kycVerified ? "❌ Unverify" : "✅ Verify KYC"}</button>
+        <button class="btn-edit-menu" style="background:#3b82f6; color:#fff;" onclick="openPayoutModal('${p.id}')">💸 Payout</button>
+      </div>
+      <div class="dp-actions">
+        <button class="btn-edit-menu" style="background:#b45309; color:#fff; flex:1;" onclick="openCodDepositModal('${p.id}')">💵 COD Deposit Record</button>
       </div>
     </div>`;
     })
     .join("");
 }
 
+function openCodDepositModal(id) {
+  const p = currentPartners.find((x) => x.id === id);
+  if (!p) return;
+  const balance = p.stats ? p.stats.codBalance : 0;
+  const amount = prompt(`${p.name} ne COD ka kitna cash jama kiya? (₹)\n\nAbhi COD balance (partner ke paas): ₹${balance}`);
+  if (!amount || isNaN(amount) || Number(amount) <= 0) {
+    if (amount !== null) alert("Valid amount daalein.");
+    return;
+  }
+  const note = prompt("Koi note? (optional)") || "";
+  recordCodDeposit(id, Number(amount), note);
+}
+
+async function recordCodDeposit(id, amount, note) {
+  const res = await adminFetch(`${API}/admin/delivery-partners/${id}/cod-deposit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount, note }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    alert(data.error || "Deposit record nahi ho paya");
+    return;
+  }
+  alert(`✅ ₹${amount} COD deposit record ho gaya. Baaki COD balance: ₹${data.codBalance}`);
+  loadPartners();
+}
+
 async function deletePartner(id) {
   if (!confirm("Kya aap is delivery partner ko delete karna chahte hain?")) return;
   await adminFetch(`${API}/admin/delivery-partners/${id}`, { method: "DELETE" });
+  loadPartners();
+}
+
+async function toggleKyc(id, verify) {
+  await adminFetch(`${API}/admin/delivery-partners/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ kycVerified: verify }),
+  });
+  loadPartners();
+}
+
+function openPayoutModal(id) {
+  const p = currentPartners.find((x) => x.id === id);
+  if (!p) return;
+  const amount = prompt(`${p.name} ko kitna payout record karna hai? (₹)`);
+  if (!amount || isNaN(amount) || Number(amount) <= 0) {
+    if (amount !== null) alert("Valid amount daalein.");
+    return;
+  }
+  const note = prompt("Koi note? (optional, jaise 'Week 1 payout')") || "";
+  recordPayout(id, Number(amount), note);
+}
+
+async function recordPayout(id, amount, note) {
+  const res = await adminFetch(`${API}/admin/delivery-partners/${id}/payout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount, note }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    alert(data.error || "Payout record nahi ho paya");
+    return;
+  }
+  alert(`✅ ₹${amount} payout record ho gaya.`);
   loadPartners();
 }
 

@@ -217,6 +217,25 @@
       </div>
 
       <div class="panel">
+        <h3>🛵 Delivery Partner Settings</h3>
+        <p style="font-size:12.5px; color:var(--text-gray); margin-top:-12px; margin-bottom:14px;">Har delivery ka rate, aur daily target + bonus (delivery partner ke Home tab par target progress dikhega).</p>
+        <div class="form-group">
+          <label for="deliveryPartnerEarningPerOrder">Har Delivery Ka Rate (₹)</label>
+          <input type="number" id="deliveryPartnerEarningPerOrder" min="0" placeholder="30" />
+        </div>
+        <div class="form-group">
+          <label for="deliveryDailyTarget">Daily Target (kitni deliveries) — 0 rakhein to target off</label>
+          <input type="number" id="deliveryDailyTarget" min="0" placeholder="jaise: 20" />
+        </div>
+        <div class="form-group">
+          <label for="deliveryTargetBonus">Target Poora Hone Par Bonus (₹)</label>
+          <input type="number" id="deliveryTargetBonus" min="0" placeholder="jaise: 50" />
+        </div>
+        <button class="btn-save-settings" id="saveDeliverySettingsBtn">Delivery Settings Save Karein</button>
+        <div class="success-msg" id="deliverySettingsSuccess">✅ Delivery settings updated!</div>
+      </div>
+
+      <div class="panel">
         <h3>🔒 Change Admin Password</h3>
         <div class="form-group">
           <label for="currentPassword">Current Password</label>

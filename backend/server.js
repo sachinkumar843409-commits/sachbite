@@ -2294,10 +2294,99 @@ app.post("/api/delivery-auth/change-password", requireDeliveryAuth, (req, res) =
 
 // ---------- Admin: Delivery Partners management ----------
 
+// Ek partner ke saare computed stats (earnings, COD balance, rating, active orders)
+// ek jagah — admin list aur partner ki apni earnings dono isse use karte hain,
+// taaki calculation ek hi jagah rahe (dono me alag-alag numbers na dikhein).
+function computePartnerStats(db, partner) {
+  const rate = Number(db.settings.deliveryPartnerEarningPerOrder) || 30;
+  const dailyTarget = Number(db.settings.deliveryDailyTarget) || 0;
+  const targetBonus = Number(db.settings.deliveryTargetBonus) || 0;
+
+  const delivered = (db.orders || []).filter(
+    (o) => o.deliveryPartnerId === partner.id && o.status === "Delivered" && o.deliveredAt
+  );
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const todayCount = delivered.filter((o) => new Date(o.deliveredAt) >= startOfDay).length;
+  const todayTargetHit = dailyTarget > 0 && todayCount >= dailyTarget;
+
+  const totalEarnings = delivered.length * rate + (todayTargetHit ? targetBonus : 0);
+  const totalPaidOut = (partner.payoutHistory || []).reduce((sum, p) => sum + p.amount, 0);
+
+  // COD — partner ne customer se jitna cash collect kiya (sirf wahi orders jinme
+  // cashCollected=true mark hua), aur admin ke paas jitna deposit kar diya.
+  const codCollected = delivered
+    .filter((o) => o.customer && o.customer.payment === "Cash on Delivery" && o.cashCollected)
+    .reduce((sum, o) => sum + (o.grandTotal || 0), 0);
+  const codDeposited = (partner.codDeposits || []).reduce((sum, d) => sum + d.amount, 0);
+
+  const ratedOrders = (db.orders || []).filter(
+    (o) => o.deliveryPartnerId === partner.id && typeof o.rating === "number"
+  );
+  const avgRating = ratedOrders.length
+    ? Math.round((ratedOrders.reduce((sum, o) => sum + o.rating, 0) / ratedOrders.length) * 10) / 10
+    : null;
+
+  const activeOrders = (db.orders || []).filter(
+    (o) => o.deliveryPartnerId === partner.id && o.status !== "Delivered" && o.status !== "Cancelled"
+  );
+
+  return {
+    rate,
+    dailyTarget,
+    targetBonus,
+    todayCount,
+    todayTargetHit,
+    totalDeliveries: delivered.length,
+    totalEarnings,
+    totalPaidOut,
+    pendingAmount: Math.max(totalEarnings - totalPaidOut, 0),
+    codCollected,
+    codDeposited,
+    codBalance: Math.max(codCollected - codDeposited, 0), // partner ke paas abhi jitna cash admin ko dena baaki hai
+    avgRating,
+    ratingCount: ratedOrders.length,
+    activeOrderCount: activeOrders.length,
+  };
+}
+
 app.get("/api/admin/delivery-partners", requireAdmin, (req, res) => {
   const db = readDB();
-  const partners = (db.deliveryPartners || []).map(({ passwordHash, ...safe }) => safe);
+  const partners = (db.deliveryPartners || []).map(({ passwordHash, pushSubscription, ...safe }) => ({
+    ...safe,
+    stats: computePartnerStats(db, safe),
+  }));
   res.json(partners);
+});
+
+// Admin record karta hai ki partner ne COD ka cash admin ke paas jama kar diya
+app.post("/api/admin/delivery-partners/:id/cod-deposit", requireAdmin, (req, res) => {
+  const db = readDB();
+  const partner = (db.deliveryPartners || []).find((p) => p.id === req.params.id);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+
+  const { amount, note } = req.body;
+  if (!amount || Number(amount) <= 0) return res.status(400).json({ error: "Valid amount zaroori hai." });
+
+  const stats = computePartnerStats(db, partner);
+  if (Number(amount) > stats.codBalance) {
+    return res.status(400).json({ error: `Deposit amount partner ke COD balance (₹${stats.codBalance}) se zyada nahi ho sakta.` });
+  }
+
+  partner.codDeposits = partner.codDeposits || [];
+  partner.codDeposits.unshift({
+    id: generateId("CD"),
+    amount: Number(amount),
+    note: note || "",
+    depositedAt: new Date().toISOString(),
+  });
+  addPartnerNotification(db, partner.id, {
+    title: "💵 COD Deposit Record Hua",
+    body: `₹${Number(amount)} ka COD deposit admin ne record kar liya hai.`,
+  });
+  writeDB(db);
+  res.json({ success: true, codBalance: computePartnerStats(db, partner).codBalance });
 });
 
 app.post("/api/admin/delivery-partners", requireAdmin, (req, res) => {
@@ -2348,11 +2437,20 @@ app.put("/api/admin/delivery-partners/:id", requireAdmin, (req, res) => {
   if (!partner) return res.status(404).json({ error: "Partner not found" });
 
   const { name, phone, vehicleType, status, username, password, kycVerified } = req.body;
+  const wasKycVerified = !!partner.kycVerified;
   if (name !== undefined) partner.name = name;
   if (phone !== undefined) partner.phone = phone;
   if (vehicleType !== undefined) partner.vehicleType = vehicleType;
   if (status !== undefined) partner.status = status;
-  if (kycVerified !== undefined) partner.kycVerified = !!kycVerified;
+  if (kycVerified !== undefined) {
+    partner.kycVerified = !!kycVerified;
+    if (partner.kycVerified && !wasKycVerified) {
+      addPartnerNotification(db, partner.id, {
+        title: "✅ KYC Verify Ho Gaya",
+        body: "Aapke documents admin ne verify kar diye hain.",
+      });
+    }
+  }
   if (username !== undefined && username.trim()) {
     const clash = db.deliveryPartners.find(
       (p) => p.id !== partner.id && p.username.toLowerCase() === username.trim().toLowerCase()
@@ -2386,7 +2484,16 @@ app.post("/api/admin/delivery-partners/:id/payout", requireAdmin, (req, res) => 
     note: note || "",
     paidAt: new Date().toISOString(),
   });
+  addPartnerNotification(db, partner.id, {
+    title: "💰 Payout Mil Gaya",
+    body: `₹${Number(amount)} ka payout record ho gaya hai.${note ? " (" + note + ")" : ""}`,
+  });
   writeDB(db);
+  sendPushToPartner(partner, {
+    title: "💰 Payout Mil Gaya",
+    body: `₹${Number(amount)} ka payout record ho gaya hai.`,
+    url: "/delivery-dashboard.html",
+  });
   res.json({ success: true, payoutHistory: partner.payoutHistory });
 });
 
@@ -2583,11 +2690,11 @@ app.patch("/api/delivery/orders/:id/stage", requireDeliveryAuth, (req, res) => {
 // Apni delivery history + earnings (flat rate per delivery, Settings se configurable)
 app.get("/api/delivery/earnings", requireDeliveryAuth, (req, res) => {
   const db = readDB();
-  const rate = Number(db.settings.deliveryPartnerEarningPerOrder) || 30;
-  const dailyTarget = Number(db.settings.deliveryDailyTarget) || 0;
-  const targetBonus = Number(db.settings.deliveryTargetBonus) || 0;
-
   const partner = (db.deliveryPartners || []).find((p) => p.id === req.deliveryPartnerId);
+  if (!partner) return res.status(404).json({ error: "Partner not found" });
+
+  const stats = computePartnerStats(db, partner);
+  const rate = stats.rate;
 
   const delivered = (db.orders || [])
     .filter((o) => o.deliveryPartnerId === req.deliveryPartnerId && o.status === "Delivered" && o.deliveredAt)
@@ -2597,35 +2704,39 @@ app.get("/api/delivery/earnings", requireDeliveryAuth, (req, res) => {
   startOfDay.setHours(0, 0, 0, 0);
   const startOfWeek = new Date(startOfDay);
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  const startOfMonth = new Date(startOfDay.getFullYear(), startOfDay.getMonth(), 1);
 
   const todayCount = delivered.filter((o) => new Date(o.deliveredAt) >= startOfDay).length;
   const weekCount = delivered.filter((o) => new Date(o.deliveredAt) >= startOfWeek).length;
-  const todayTargetHit = dailyTarget > 0 && todayCount >= dailyTarget;
-
-  const totalEarnings = delivered.length * rate + (todayTargetHit ? targetBonus : 0);
-  const payoutHistory = (partner && partner.payoutHistory) || [];
-  const totalPaidOut = payoutHistory.reduce((sum, p) => sum + p.amount, 0);
+  const monthCount = delivered.filter((o) => new Date(o.deliveredAt) >= startOfMonth).length;
 
   res.json({
     ratePerDelivery: rate,
-    totalDeliveries: delivered.length,
-    totalEarnings,
+    totalDeliveries: stats.totalDeliveries,
+    totalEarnings: stats.totalEarnings,
     todayDeliveries: todayCount,
-    todayEarnings: todayCount * rate,
+    todayEarnings: todayCount * rate + (stats.todayTargetHit ? stats.targetBonus : 0),
     weekDeliveries: weekCount,
     weekEarnings: weekCount * rate,
-    dailyTarget,
-    targetBonus,
-    todayTargetHit,
-    totalPaidOut,
-    pendingAmount: Math.max(totalEarnings - totalPaidOut, 0),
-    payoutHistory: payoutHistory.slice(0, 20),
+    monthDeliveries: monthCount,
+    monthEarnings: monthCount * rate,
+    dailyTarget: stats.dailyTarget,
+    targetBonus: stats.targetBonus,
+    todayTargetHit: stats.todayTargetHit,
+    totalPaidOut: stats.totalPaidOut,
+    pendingAmount: stats.pendingAmount,
+    codCollected: stats.codCollected,
+    codDeposited: stats.codDeposited,
+    codBalance: stats.codBalance,
+    payoutHistory: (partner.payoutHistory || []).slice(0, 20),
+    codDepositHistory: (partner.codDeposits || []).slice(0, 20),
     history: delivered.slice(0, 50).map((o) => ({
       id: o.id,
       deliveredAt: o.deliveredAt,
-      customerName: o.customer.name,
-      customerAddress: o.customer.address,
+      restaurant: (o.items && o.items[0] && o.items[0].restaurant) || "",
+      customerArea: o.customer.address,
       grandTotal: o.grandTotal,
+      isCOD: o.customer.payment === "Cash on Delivery",
       earning: rate,
     })),
   });

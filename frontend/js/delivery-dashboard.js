@@ -460,10 +460,29 @@ async function loadEarnings() {
   document.getElementById("todayCount").textContent = data.todayDeliveries;
   document.getElementById("weekEarn").textContent = `₹${data.weekEarnings}`;
   document.getElementById("weekCount").textContent = data.weekDeliveries;
+  document.getElementById("monthEarn").textContent = `₹${data.monthEarnings}`;
+  document.getElementById("monthCount").textContent = data.monthDeliveries;
   document.getElementById("totalEarn").textContent = `₹${data.totalEarnings}`;
   document.getElementById("totalCount").textContent = data.totalDeliveries;
   document.getElementById("walletPending").textContent = `₹${data.pendingAmount}`;
   document.getElementById("walletPaid").textContent = `₹${data.totalPaidOut}`;
+  document.getElementById("codBalanceVal").textContent = `₹${data.codBalance}`;
+  document.getElementById("codDepositedVal").textContent = `₹${data.codDeposited}`;
+
+  const codHistWrap = document.getElementById("codDepositHistoryList");
+  codHistWrap.innerHTML = data.codDepositHistory && data.codDepositHistory.length
+    ? data.codDepositHistory
+        .map(
+          (d) => `
+    <div class="history-row">
+      <div>
+        <div style="font-weight:700;">₹${d.amount} jama kiya</div>
+        <div style="color:var(--text-gray); font-size:11px;">${new Date(d.depositedAt || d.date).toLocaleDateString("en-IN")} ${d.note ? "· " + escapeHtml(d.note) : ""}</div>
+      </div>
+    </div>`
+        )
+        .join("")
+    : "";
 
   const targetCard = document.getElementById("targetCard");
   if (data.dailyTarget > 0) {

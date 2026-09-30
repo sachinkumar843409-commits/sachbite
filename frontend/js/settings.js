@@ -32,6 +32,9 @@ async function loadSettings() {
   document.getElementById("razorpayEnabled").checked = !!s.razorpayEnabled;
   document.getElementById("subscriptionPricePro").value = s.subscriptionPricePro ?? 499;
   document.getElementById("subscriptionPriceBusiness").value = s.subscriptionPriceBusiness ?? 1499;
+  document.getElementById("deliveryPartnerEarningPerOrder").value = s.deliveryPartnerEarningPerOrder ?? 30;
+  document.getElementById("deliveryDailyTarget").value = s.deliveryDailyTarget ?? "";
+  document.getElementById("deliveryTargetBonus").value = s.deliveryTargetBonus ?? "";
   const badge = document.getElementById("rzpStatusBadge");
   if (s.razorpayReady) {
     badge.textContent = "🟢 Live";
@@ -85,6 +88,22 @@ document.getElementById("saveSubPricesBtn").addEventListener("click", async () =
     body: JSON.stringify(body),
   });
   const msg = document.getElementById("subPricesSuccess");
+  msg.style.display = "block";
+  setTimeout(() => (msg.style.display = "none"), 2500);
+});
+
+document.getElementById("saveDeliverySettingsBtn").addEventListener("click", async () => {
+  const body = {
+    deliveryPartnerEarningPerOrder: Number(document.getElementById("deliveryPartnerEarningPerOrder").value) || 30,
+    deliveryDailyTarget: Number(document.getElementById("deliveryDailyTarget").value) || 0,
+    deliveryTargetBonus: Number(document.getElementById("deliveryTargetBonus").value) || 0,
+  };
+  await adminFetch(`${API}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const msg = document.getElementById("deliverySettingsSuccess");
   msg.style.display = "block";
   setTimeout(() => (msg.style.display = "none"), 2500);
 });
