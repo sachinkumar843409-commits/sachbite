@@ -35,6 +35,15 @@
 
   .btn-add-item { background: var(--primary); color:#fff; border:none; border-radius: 30px; padding: 12px 20px; font-weight:700; cursor:pointer; }
 </style>
+<link rel="manifest" href="../manifest-admin.json" />
+<meta name="theme-color" content="#1e1e1e" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 

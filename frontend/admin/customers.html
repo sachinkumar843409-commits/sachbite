@@ -17,6 +17,15 @@
   .history-panel.show { display:block; }
   .history-row { display:flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
 </style>
+<link rel="manifest" href="../manifest-admin.json" />
+<meta name="theme-color" content="#1e1e1e" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 

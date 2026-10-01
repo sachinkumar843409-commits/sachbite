@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>All Orders - SachBite</title>
 <link rel="stylesheet" href="../css/dashboard.css" />
+<link rel="manifest" href="../manifest-admin.json" />
+<meta name="theme-color" content="#1e1e1e" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 

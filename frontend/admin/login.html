@@ -49,6 +49,15 @@
   .hidden { display: none; }
   .question-box { background: #f9f9f9; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--text-dark); margin-bottom: 14px; text-align: left; }
 </style>
+<link rel="manifest" href="../manifest-admin.json" />
+<meta name="theme-color" content="#1e1e1e" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 

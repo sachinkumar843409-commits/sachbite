@@ -27,6 +27,15 @@
   .dp-stats > div span { font-size:10px; color:var(--text-gray); }
   .dp-actions { display:flex; gap:8px; margin-top:12px; }
 </style>
+<link rel="manifest" href="../manifest-admin.json" />
+<meta name="theme-color" content="#1e1e1e" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 

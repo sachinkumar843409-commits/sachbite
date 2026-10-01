@@ -88,6 +88,15 @@
   .subscription-status-box.pending { background:#fff4e0; color:#b45309; }
   .subscription-status-box.free { background:#f3f4f6; color:var(--text-dark); }
 </style>
+<link rel="manifest" href="manifest-partner.json" />
+<meta name="theme-color" content="#3b82f6" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 

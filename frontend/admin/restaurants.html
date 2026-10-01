@@ -44,6 +44,15 @@
   .report-table th { background: var(--bg); color: var(--text-gray); font-size:12px; text-transform:uppercase; }
   .report-table tr:last-child td { border-bottom:none; }
 </style>
+<link rel="manifest" href="../manifest-admin.json" />
+<meta name="theme-color" content="#1e1e1e" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 

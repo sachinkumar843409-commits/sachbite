@@ -1,0 +1,18 @@
+{
+  "name": "SachBite Admin",
+  "short_name": "SB Admin",
+  "description": "SachBite ka poora admin panel — orders, restaurants, menu, delivery partners, monetization sab yahin se.",
+  "start_url": "/admin/login.html",
+  "scope": "/",
+  "id": "/admin/login.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e1e1e",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

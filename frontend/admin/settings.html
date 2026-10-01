@@ -19,6 +19,15 @@
   .success-msg { color: var(--green); font-size: 13px; font-weight: 600; margin-top: 10px; display:none; }
   .error-msg { color: var(--red); font-size: 13px; font-weight: 600; margin-top: 10px; display:none; }
 </style>
+<link rel="manifest" href="../manifest-admin.json" />
+<meta name="theme-color" content="#1e1e1e" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 

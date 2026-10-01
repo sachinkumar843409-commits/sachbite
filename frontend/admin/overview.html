@@ -24,6 +24,15 @@
   .compare-card .t { font-size: 12px; color: var(--text-gray); }
   .compare-card .v { font-size: 20px; font-weight: 800; margin-top: 4px; }
 </style>
+<link rel="manifest" href="../manifest-admin.json" />
+<meta name="theme-color" content="#1e1e1e" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    });
+  }
+</script>
 </head>
 <body>
 
